@@ -81,6 +81,8 @@ export type WidgetType =
   | 'health_summary_card'
   | 'premium_update_card'
   | 'policy_celebration'
+  | 'app_download_cta'
+  | 'nps_feedback'
   | 'cancel_rebuttal'
   | 'dashboard_home'
   | 'hospital_picker'

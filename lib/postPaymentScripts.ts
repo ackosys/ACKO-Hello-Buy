@@ -426,8 +426,54 @@ const postPaymentSteps: ConversationStep[] = [
         botMessages: [t.ppScripts.policyIssuedMsg(name, planName)],
       };
     },
+    processResponse: () => ({}),
+    getNextStep: () => 'pp.nps',
+  },
+
+  /* ─── NPS Feedback ─── */
+  {
+    id: 'pp.nps',
+    module: 'completion',
+    widgetType: 'nps_feedback',
+    getScript: () => ({
+      botMessages: [
+        `We'd love to hear how your experience was. A quick rating helps us improve!`,
+      ],
+    }),
+    processResponse: () => ({}),
+    getNextStep: () => 'pp.app_download',
+  },
+
+  /* ─── App Download CTA ─── */
+  {
+    id: 'pp.app_download',
+    module: 'completion',
+    widgetType: 'app_download_cta',
+    getScript: () => ({
+      botMessages: [
+        `Download the ACKO app to manage your health policy, find cashless hospitals, and file claims instantly.`,
+      ],
+    }),
+    processResponse: () => ({}),
+    getNextStep: () => 'pp.end',
+  },
+
+  /* ─── End — Go home or buy another policy ─── */
+  {
+    id: 'pp.end',
+    module: 'completion',
+    widgetType: 'selection_cards',
+    getScript: () => ({
+      botMessages: [
+        `Stay healthy — you are all set! If you ever need help, just come back and say hello.`,
+      ],
+      options: [
+        { id: 'home', label: 'Go to Home', description: 'Back to the main page' },
+        { id: 'dashboard', label: 'View my policy', description: 'Go to your policy dashboard' },
+      ],
+    }),
     processResponse: () => ({ journeyComplete: true }),
-    getNextStep: () => 'pp.policy_issued',
+    getNextStep: () => 'pp.end',
   },
 ];
 

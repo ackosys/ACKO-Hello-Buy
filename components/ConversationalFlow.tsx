@@ -173,7 +173,10 @@ export default function ConversationalFlow({
     const script = step.getScript(resolvedPersona, currentState);
 
     let userLabel = String(response);
-    if (Array.isArray(response)) {
+    if (step.widgetType === 'nps_feedback' && response && typeof response === 'object' && response.score) {
+      const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+      userLabel = `${emojis[response.score] || ''} Rated ${response.score}/5`;
+    } else if (Array.isArray(response)) {
       userLabel = response.map(r => {
         const opt = script.options?.find(o => o.id === r);
         return opt ? opt.label : r;
@@ -216,7 +219,10 @@ export default function ConversationalFlow({
     const script = step.getScript(resolvedPersona, currentState);
 
     let userLabel = String(response);
-    if (Array.isArray(response)) {
+    if (step.widgetType === 'nps_feedback' && response && typeof response === 'object' && response.score) {
+      const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+      userLabel = `${emojis[response.score] || ''} Rated ${response.score}/5`;
+    } else if (Array.isArray(response)) {
       userLabel = response.map(r => {
         const opt = script.options?.find(o => o.id === r);
         return opt ? opt.label : r;
@@ -310,7 +316,7 @@ export default function ConversationalFlow({
     const step = getStep(currentStepId);
     if (!step) return false;
     // Built-in large widgets
-    const builtInLarge = ['celebration', 'policy_celebration', 'health_summary_card', 'premium_update_card',
+    const builtInLarge = ['celebration', 'policy_celebration', 'app_download_cta', 'nps_feedback', 'health_summary_card', 'premium_update_card',
       'scenario_select', 'voice_call', 'call_schedule_picker', 'test_schedule_picker',
       'dashboard_home', 'hospital_picker', 'claim_form', 'document_list', 'member_form',
       'si_selector', 'coverage_chat', 'cancel_rebuttal'];

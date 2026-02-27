@@ -740,6 +740,134 @@ function PolicyCelebrationWidget({ onResponse }: { onResponse: (r: any) => void 
   );
 }
 
+/* ── NPS Feedback Widget ── */
+function HealthNpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; feedback: string }) => void }) {
+  const [score, setScore] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const emojis = [
+    { value: 1, emoji: '😞', label: 'Poor' },
+    { value: 2, emoji: '😕', label: 'Fair' },
+    { value: 3, emoji: '😐', label: 'Okay' },
+    { value: 4, emoji: '😊', label: 'Good' },
+    { value: 5, emoji: '🤩', label: 'Loved it!' },
+  ];
+
+  const handleSubmit = () => {
+    if (score === null) return;
+    setSubmitted(true);
+    setTimeout(() => onSubmit({ score, feedback }), 800);
+  };
+
+  if (submitted) {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-6">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-[40px] mb-3">
+          {emojis.find(e => e.value === score)?.emoji}
+        </motion.div>
+        <p className="text-[14px] font-semibold text-white">Thanks for your feedback!</p>
+        <p className="text-[12px] text-white/50 mt-1">This helps us improve the experience</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <div className="flex justify-center gap-3">
+        {emojis.map((e) => (
+          <button
+            key={e.value}
+            onClick={() => setScore(e.value)}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all ${score === e.value ? 'bg-white/15 scale-110 border border-purple-400/40' : 'bg-white/5 border border-transparent hover:bg-white/10'}`}
+          >
+            <span className="text-[28px]">{e.emoji}</span>
+            <span className={`text-[10px] font-medium ${score === e.value ? 'text-white' : 'text-white/40'}`}>{e.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {score !== null && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Any suggestions? (optional)"
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-[13px] text-white placeholder:text-white/30 resize-none h-20 focus:outline-none focus:border-purple-400/40"
+          />
+          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold text-white transition-colors active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}>
+            Submit Feedback
+          </button>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ── App Download CTA Widget ── */
+function HealthAppDownloadCta({ onComplete }: { onComplete: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <div className="bg-white/6 border border-white/10 rounded-2xl overflow-hidden">
+        <div className="p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="text-[15px] font-bold text-white">Get the ACKO App</h4>
+              <p className="text-[12px] text-white/50">Manage your policy on the go</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            {[
+              { icon: '🏥', text: 'Find 14,000+ cashless hospitals nearby' },
+              { icon: '⚡', text: 'File claims in under 2 minutes' },
+              { icon: '📄', text: 'Download policy documents anytime' },
+              { icon: '🔔', text: 'Get renewal reminders & health tips' },
+            ].map((f, i) => (
+              <div key={i} className="flex items-center gap-2.5">
+                <span className="text-[16px]">{f.icon}</span>
+                <p className="text-[12px] text-white/60">{f.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button className="flex-1 py-3 rounded-xl text-[13px] font-semibold text-white bg-white/10 border border-white/15 hover:bg-white/15 transition-colors flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" /></svg>
+              App Store
+            </button>
+            <button className="flex-1 py-3 rounded-xl text-[13px] font-semibold text-white bg-white/10 border border-white/15 hover:bg-white/15 transition-colors flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5V3.5c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.24-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm.91-1.01L20.16 12 17.72 10.89l-2.52 2.52 2.52 1.7zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z" /></svg>
+              Play Store
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-amber-500/10 border-t border-amber-500/15 p-4">
+          <div className="flex items-start gap-2.5">
+            <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <div>
+              <p className="text-[12px] font-semibold text-amber-400 mb-1">Need to file a claim?</p>
+              <p className="text-[11px] text-white/50 leading-relaxed">Open the ACKO app and tap &quot;File a Claim&quot;. Our team will guide you through cashless or reimbursement claims within minutes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97] text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}>
+        Done
+      </button>
+    </motion.div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════
    Main PostPaymentJourney Component
    ═══════════════════════════════════════════════════════ */
@@ -871,6 +999,12 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
       case 'policy_celebration':
         return <PolicyCelebrationWidget onResponse={onResponse} />;
 
+      case 'nps_feedback':
+        return <HealthNpsFeedback onSubmit={(data) => onResponse(data)} />;
+
+      case 'app_download_cta':
+        return <HealthAppDownloadCta onComplete={() => onResponse({})} />;
+
       default:
         return null;
     }
@@ -880,6 +1014,14 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
   const handleStepResponse = (stepId: string, response: any): boolean => {
     if (stepId === 'pp.cancelled' && response === 'home') {
       onDashboard();
+      return true;
+    }
+    if (stepId === 'pp.end') {
+      if (response === 'home') {
+        window.location.href = '/';
+      } else if (response === 'dashboard') {
+        onDashboard();
+      }
       return true;
     }
     // Doctor call done — user is now at scenario select
