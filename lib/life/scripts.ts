@@ -1452,10 +1452,55 @@ const lifeUnderwriting: ConversationStep<LifeJourneyState> = {
       `They'll review your KYC, financial verification, and medical evaluation — typically takes **3–5 business days**.\n\nYou'll be notified by Email & WhatsApp the moment a decision is made.`,
     ],
   }),
-  processResponse: (_response, _state) => ({
-    journeyComplete: true,
+  processResponse: () => ({}),
+  getNextStep: () => 'life_nps',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: COMPLETION — NPS, App Download, End
+   ═══════════════════════════════════════════════ */
+
+const lifeNps: ConversationStep<LifeJourneyState> = {
+  id: 'life_nps',
+  module: 'completion',
+  widgetType: 'nps_feedback',
+  getScript: () => ({
+    botMessages: [
+      `Quick question — how was your experience getting life insurance through this conversation?`,
+    ],
   }),
-  getNextStep: (_response, _state) => 'life_underwriting',
+  processResponse: () => ({}),
+  getNextStep: () => 'life_app_download',
+};
+
+const lifeAppDownload: ConversationStep<LifeJourneyState> = {
+  id: 'life_app_download',
+  module: 'completion',
+  widgetType: 'app_download_cta',
+  getScript: () => ({
+    botMessages: [
+      `Thanks for the feedback! Download the ACKO app to track your application status, manage your policy, and get instant support.`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'life_end',
+};
+
+const lifeEnd: ConversationStep<LifeJourneyState> = {
+  id: 'life_end',
+  module: 'completion',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `You're all set! Your application is being reviewed. What would you like to do next?`,
+    ],
+    options: [
+      { id: 'home', label: 'Go to Home', description: 'Back to the main page' },
+      { id: 'dashboard', label: 'Track application', description: 'Check your application status' },
+    ],
+  }),
+  processResponse: () => ({ journeyComplete: true }),
+  getNextStep: () => 'life_end',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1521,6 +1566,11 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeFinancial,
   lifeMedicalEval,
   lifeUnderwriting,
+
+  // Completion: NPS, app download, end
+  lifeNps,
+  lifeAppDownload,
+  lifeEnd,
 ];
 
 export function getLifeStep(stepId: string): ConversationStep<LifeJourneyState> | undefined {

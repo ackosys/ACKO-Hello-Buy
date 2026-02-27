@@ -253,6 +253,11 @@ export default function LifeChatContainer() {
       userLabel = 'Medical evaluation scheduled ✓';
     } else if (step.widgetType === 'underwriting_status') {
       userLabel = 'Acknowledged';
+    } else if (step.widgetType === 'nps_feedback' && response && typeof response === 'object' && response.score) {
+      const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+      userLabel = `${emojis[response.score] || ''} Rated ${response.score}/5`;
+    } else if (step.widgetType === 'app_download_cta') {
+      userLabel = 'Got it!';
     }
 
     addMessage({
@@ -262,6 +267,17 @@ export default function LifeChatContainer() {
       module: step.module,
       editable: true,
     });
+
+    // Handle end step navigation
+    if (currentStepId === 'life_end') {
+      setShowWidget(false);
+      if (response === 'home') {
+        window.location.href = '/';
+      } else if (response === 'dashboard') {
+        window.location.href = '/';
+      }
+      return;
+    }
 
     // Handle LOB navigation from explore step
     if (currentStepId === 'life_explore_other_lobs') {
@@ -293,7 +309,7 @@ export default function LifeChatContainer() {
   const isLargeWidget = () => {
     const step = getLifeStep(currentStepId);
     if (!step) return false;
-    return ['coverage_card', 'premium_summary', 'rider_cards', 'review_summary', 'post_payment_timeline', 'celebration', 'coverage_input', 'payment_screen'].includes(step.widgetType);
+    return ['coverage_card', 'premium_summary', 'rider_cards', 'review_summary', 'post_payment_timeline', 'celebration', 'coverage_input', 'payment_screen', 'nps_feedback', 'app_download_cta'].includes(step.widgetType);
   };
 
   // Render edit widget
@@ -359,6 +375,10 @@ export default function LifeChatContainer() {
         return <LifeCoverageInput onContinue={() => handleResponse('continue')} />;
       case 'payment_screen':
         return <LifePaymentScreen onContinue={() => handleResponse('continue')} />;
+      case 'nps_feedback':
+        return <LifeNpsFeedback onSubmit={(data) => handleResponse(data)} />;
+      case 'app_download_cta':
+        return <LifeAppDownloadCta onComplete={() => handleResponse({})} />;
       case 'ekyc_screen':
       case 'financial_screen':
       case 'medical_screen':
@@ -588,5 +608,123 @@ export default function LifeChatContainer() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* ── NPS Feedback Widget ── */
+function LifeNpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; feedback: string }) => void }) {
+  const [score, setScore] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const emojis = [
+    { value: 1, emoji: '😞', label: 'Poor' },
+    { value: 2, emoji: '😕', label: 'Fair' },
+    { value: 3, emoji: '😐', label: 'Okay' },
+    { value: 4, emoji: '😊', label: 'Good' },
+    { value: 5, emoji: '🤩', label: 'Loved it!' },
+  ];
+
+  const handleSubmit = () => {
+    if (score === null) return;
+    setSubmitted(true);
+    setTimeout(() => onSubmit({ score, feedback }), 800);
+  };
+
+  if (submitted) {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-6">
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-[40px] mb-3">
+          {emojis.find(e => e.value === score)?.emoji}
+        </motion.div>
+        <p className="text-[14px] font-semibold text-white">Thanks for your feedback!</p>
+        <p className="text-[12px] text-white/50 mt-1">This helps us improve the experience</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <div className="flex justify-center gap-3">
+        {emojis.map((e) => (
+          <button
+            key={e.value}
+            onClick={() => setScore(e.value)}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all ${score === e.value ? 'bg-white/15 scale-110 border border-purple-400/40' : 'bg-white/5 border border-transparent hover:bg-white/10'}`}
+          >
+            <span className="text-[28px]">{e.emoji}</span>
+            <span className={`text-[10px] font-medium ${score === e.value ? 'text-white' : 'text-white/40'}`}>{e.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {score !== null && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Any suggestions? (optional)"
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-[13px] text-white placeholder:text-white/30 resize-none h-20 focus:outline-none focus:border-purple-400/40"
+          />
+          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold text-white transition-colors active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}>
+            Submit Feedback
+          </button>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ── App Download CTA Widget ── */
+function LifeAppDownloadCta({ onComplete }: { onComplete: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+      <div className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-white">Get the ACKO App</p>
+              <p className="text-[11px] text-white/50">Track your application in real time</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            {[
+              'Live application & underwriting status',
+              'Upload documents anytime',
+              'Policy management & renewals',
+              '24/7 support at your fingertips',
+            ].map((feature, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400/60" />
+                <span className="text-[12px] text-white/60">{feature}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <button className="flex-1 py-2.5 bg-white/10 border border-white/15 rounded-xl text-[12px] font-medium text-white/80 hover:bg-white/15 transition-colors">
+              App Store
+            </button>
+            <button className="flex-1 py-2.5 bg-white/10 border border-white/15 rounded-xl text-[12px] font-medium text-white/80 hover:bg-white/15 transition-colors">
+              Play Store
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onComplete}
+        className="w-full py-3 rounded-xl text-[14px] font-semibold text-white transition-colors active:scale-[0.97]"
+        style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
+      >
+        Continue
+      </button>
+    </motion.div>
   );
 }

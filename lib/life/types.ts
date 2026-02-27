@@ -35,7 +35,8 @@ export type LifeModule =
   | 'ekyc'                    // e-KYC verification
   | 'financial'               // Financial / income verification
   | 'medical'                 // Medical evaluation
-  | 'underwriting';           // Underwriting decision
+  | 'underwriting'            // Underwriting decision
+  | 'completion';             // NPS, app download, end
 
 // Life widget types
 export type LifeWidgetType =
@@ -55,7 +56,10 @@ export type LifeWidgetType =
   | 'ekyc_screen'             // e-KYC verification
   | 'financial_screen'        // Financial / income verification
   | 'medical_screen'          // Medical evaluation scheduling
-  | 'underwriting_status';    // Underwriting timeline
+  | 'underwriting_status'     // Underwriting timeline
+  | 'nps_feedback'            // NPS emoji rating
+  | 'app_download_cta'        // App download card
+  | 'life_end';               // End — navigation options
 
 // Smoking status
 export type SmokingStatus = 'never' | 'past' | 'current';
