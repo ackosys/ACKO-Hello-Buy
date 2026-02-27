@@ -30,7 +30,7 @@ import {
   MotorTextInput,
   DocumentUploadWidget,
 } from './AuraMotorWidgets';
-import { PremiumBreakdown, DashboardCTA, PolicyTracker, NpsFeedback, AppDownloadCta } from './AuraMotorFinalWidgets';
+import { PremiumBreakdown, PaymentGateway, DashboardCTA, PolicyTracker, NpsFeedback, AppDownloadCta } from './AuraMotorFinalWidgets';
 import {
   SafetyConditionPicker,
   DamagePhotoCapture,
@@ -207,8 +207,23 @@ export default function AuraMotorChatContainer() {
         return <MotorSelectionCards options={script.options || []} onSelect={handleEditResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleEditResponse} />;
-      case 'text_input':
-        return <MotorTextInput placeholder={script.placeholder} inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'} onSubmit={handleEditResponse} />;
+      case 'text_input': {
+        const isPincode = editingStepId?.includes('pincode') && !editingStepId?.includes('mobile');
+        return (
+          <MotorTextInput
+            placeholder={script.placeholder}
+            inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
+            onSubmit={handleEditResponse}
+            maxLength={isPincode ? 6 : undefined}
+            validate={isPincode ? (v: string) => {
+              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              const first = parseInt(v[0]);
+              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              return null;
+            } : undefined}
+          />
+        );
+      }
       case 'number_input':
         return <MotorTextInput placeholder={script.placeholder} inputType="number" onSubmit={handleEditResponse} />;
       case 'brand_selector':
@@ -285,6 +300,8 @@ export default function AuraMotorChatContainer() {
       userLabel = count > 0 ? `Added ${count} protection cover${count > 1 ? 's' : ''}` : 'Continue without add-ons';
     } else if (step.widgetType === 'premium_breakdown') {
       userLabel = 'Proceed to payment';
+    } else if (step.widgetType === 'payment_gateway') {
+      userLabel = 'Payment completed';
     } else if (step.widgetType === 'motor_celebration') {
       userLabel = '';
     } else if (step.widgetType === 'policy_tracker') {
@@ -338,6 +355,19 @@ export default function AuraMotorChatContainer() {
     const mergedState = { ...useMotorStore.getState(), ...stateUpdate } as MotorJourneyState;
     updateState(stateUpdate as Partial<MotorJourneyState>);
 
+    // Post-purchase end: navigate away instead of advancing
+    if (currentStepId === 'post_purchase.end') {
+      setShowWidget(false);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      if (response === 'home') {
+        window.location.href = basePath || '/';
+      } else if (response === 'new_vehicle') {
+        useMotorStore.getState().resetJourney();
+        window.location.href = `${basePath}/motor-v3?vehicle=${mergedState.vehicleType || 'car'}`;
+      }
+      return;
+    }
+
     setShowWidget(false);
     const nextStepId = step.getNextStep(response, mergedState);
     const nextStep = getMotorStep(nextStepId);
@@ -361,8 +391,23 @@ export default function AuraMotorChatContainer() {
         return <MotorSelectionCards options={script.options || []} onSelect={handleResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleResponse} />;
-      case 'text_input':
-        return <MotorTextInput placeholder={script.placeholder} inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'} onSubmit={handleResponse} />;
+      case 'text_input': {
+        const isPincode = currentStepId.includes('pincode') && !currentStepId.includes('mobile');
+        return (
+          <MotorTextInput
+            placeholder={script.placeholder}
+            inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
+            onSubmit={handleResponse}
+            maxLength={isPincode ? 6 : undefined}
+            validate={isPincode ? (v: string) => {
+              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              const first = parseInt(v[0]);
+              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              return null;
+            } : undefined}
+          />
+        );
+      }
       case 'number_input':
         return <MotorTextInput placeholder={script.placeholder} inputType="number" onSubmit={handleResponse} />;
       case 'progressive_loader':
@@ -383,8 +428,36 @@ export default function AuraMotorChatContainer() {
         return <NcbReward onContinue={() => handleResponse('continue')} />;
       case 'insurer_selector':
         return <InsurerSelector onSelect={handleResponse} />;
-      case 'editable_summary':
-        return <EditableSummary onConfirm={() => handleResponse('confirmed')} />;
+      case 'editable_summary': {
+        const st = useMotorStore.getState() as MotorJourneyState;
+        const brandNew = st.vehicleEntryType === 'brand_new';
+        return (
+          <EditableSummary
+            onConfirm={() => handleResponse('confirmed')}
+            isBrandNew={brandNew}
+            onEditField={(targetStepId: string) => {
+              const cur = useMotorStore.getState() as MotorJourneyState;
+              const vd = cur.vehicleData;
+              let cleared: Partial<typeof vd> = {};
+              if (targetStepId === 'manual_entry.select_brand') {
+                cleared = { make: '', model: '', variant: '', fuelType: '' as const };
+              } else if (targetStepId === 'manual_entry.select_model') {
+                cleared = { model: '', variant: '', fuelType: '' as const };
+              } else if (targetStepId === 'manual_entry.select_variant') {
+                cleared = { variant: '' };
+              }
+              trimAndUpdateFromStep(targetStepId, '');
+              processedRef.current.clear();
+              setShowWidget(false);
+              updateState({
+                vehicleData: { ...vd, ...cleared },
+                currentStepId: targetStepId,
+                currentModule: 'manual_entry',
+              } as Partial<MotorJourneyState>);
+            }}
+          />
+        );
+      }
       case 'rejection_screen':
         return <RejectionScreen />;
       case 'plan_calculator':
@@ -399,6 +472,8 @@ export default function AuraMotorChatContainer() {
         return <ProtectEveryoneAddons onContinue={(addons) => handleResponse({ addons })} />;
       case 'premium_breakdown':
         return <PremiumBreakdown onContinue={() => handleResponse({})} />;
+      case 'payment_gateway':
+        return <PaymentGateway onComplete={() => handleResponse({})} />;
       case 'motor_celebration':
         return <AuraCelebration onContinue={() => handleResponse({})} />;
       case 'policy_tracker':
@@ -444,7 +519,7 @@ export default function AuraMotorChatContainer() {
       'progressive_loader', 'vehicle_details_card',
       'ncb_reward', 'editable_summary', 'rejection_screen', 'plan_calculator',
       'plan_selector', 'plan_recommendation', 'out_of_pocket_addons', 'protect_everyone_addons',
-      'premium_breakdown', 'motor_celebration', 'policy_tracker', 'app_download_cta',
+      'premium_breakdown', 'payment_gateway', 'motor_celebration', 'policy_tracker', 'app_download_cta',
       'dashboard_cta', 'document_upload',
       'self_inspection', 'surveyor_assigned', 'claim_heartbeat', 'settlement_offer',
       'claim_closure',

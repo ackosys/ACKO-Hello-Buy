@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useMotorStore } from '../../lib/motor/store';
 import { assetPath } from '../../lib/assetPath';
@@ -103,63 +103,208 @@ export function PremiumBreakdown({ onContinue }: { onContinue: () => void }) {
   );
 }
 
-// Motor Celebration Widget — confetti then morphs into thank-you card
+// Mock Razorpay Payment Gateway
+export function PaymentGateway({ onComplete }: { onComplete: () => void }) {
+  const { vehicleData, selectedPlan, selectedAddOns } = useMotorStore();
+  const [stage, setStage] = useState<'methods' | 'processing' | 'success'>('methods');
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+  const basePremium = selectedPlan?.totalPrice || 0;
+  const addonPremium = (selectedAddOns as any[])?.reduce((sum: number, a: any) => sum + (a.price || 0) * 1.18, 0) || 0;
+  const grandTotal = Math.round(basePremium + addonPremium);
+
+  const handlePay = () => {
+    setStage('processing');
+    setTimeout(() => {
+      setStage('success');
+      setTimeout(onComplete, 1500);
+    }, 2500);
+  };
+
+  const methods = [
+    { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: '⚡' },
+    { id: 'card', label: 'Card', desc: 'Visa, Mastercard, RuPay', icon: '💳' },
+    { id: 'netbanking', label: 'Net Banking', desc: 'All major banks', icon: '🏦' },
+    { id: 'wallet', label: 'Wallet', desc: 'Paytm, Amazon Pay', icon: '👝' },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl overflow-hidden border border-white/10" style={{ background: '#1a1f36' }}>
+      {/* Razorpay-style header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2b3a67 0%, #1a1f36 100%)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#528FF0]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.076 2L4 12.239l3.076 0L11.153 2zM11.669 2L8.593 12.239l3.076 0L15.746 2zM20 2l-7.077 10.239L16 22l4-9.761L16.923 2z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-white">ACKO Insurance</p>
+            <p className="text-[11px] text-white/40">{`${vehicleData.make} ${vehicleData.model}`.trim()} — Motor Insurance</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[11px] text-white/40">Amount</p>
+          <p className="text-[18px] font-bold text-white">₹{grandTotal.toLocaleString()}</p>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <AnimatePresence mode="wait">
+          {stage === 'methods' && (
+            <motion.div key="methods" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
+              <p className="text-[12px] font-semibold text-white/50 uppercase tracking-wider mb-3">Payment Method</p>
+              <div className="space-y-2.5">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                    className="w-full flex items-center gap-3.5 p-3.5 rounded-xl transition-all text-left"
+                    style={{
+                      background: selectedMethod === m.id ? 'rgba(82, 143, 240, 0.12)' : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${selectedMethod === m.id ? 'rgba(82, 143, 240, 0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    }}
+                  >
+                    <span className="text-[20px]">{m.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-semibold text-white">{m.label}</p>
+                      <p className="text-[11px] text-white/40">{m.desc}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedMethod === m.id ? 'border-[#528FF0] bg-[#528FF0]' : 'border-white/20'}`}>
+                      {selectedMethod === m.id && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handlePay}
+                disabled={!selectedMethod}
+                className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-30"
+                style={{ background: selectedMethod ? 'linear-gradient(135deg, #528FF0 0%, #3b6fd4 100%)' : '#528FF0' }}
+              >
+                Pay ₹{grandTotal.toLocaleString()}
+              </button>
+
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <svg className="w-3.5 h-3.5 text-white/25" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm4 8H8v-1c0-1.33 2.67-2 4-2s4 .67 4 2v1z"/></svg>
+                <p className="text-[10px] text-white/25">Secured by Razorpay | PCI DSS Compliant</p>
+              </div>
+            </motion.div>
+          )}
+
+          {stage === 'processing' && (
+            <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-8">
+              <div className="w-14 h-14 rounded-full border-[3px] border-white/10 border-t-[#528FF0] animate-spin mb-5" />
+              <p className="text-[15px] font-semibold text-white mb-1">Processing Payment</p>
+              <p className="text-[12px] text-white/40">Please do not close this screen...</p>
+            </motion.div>
+          )}
+
+          {stage === 'success' && (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center py-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4"
+              >
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </motion.div>
+              <p className="text-[16px] font-bold text-green-400 mb-1">Payment Successful!</p>
+              <p className="text-[12px] text-white/40">₹{grandTotal.toLocaleString()} paid via {methods.find(m => m.id === selectedMethod)?.label}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
+// Motor Celebration Widget — confetti inside card then reveals details
+const CONFETTI_COLORS = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A78BFA', '#F472B6'];
+
 export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
-  const [phase, setPhase] = useState<'confetti' | 'thank_you'>('confetti');
+  const [showDetails, setShowDetails] = useState(false);
   const { vehicleData, policyNumber } = useMotorStore();
   const vehicleName = `${vehicleData.make} ${vehicleData.model}`.trim();
   const vehicleImage = VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png';
 
+  const confetti = useMemo(() =>
+    Array.from({ length: 30 }).map(() => ({
+      xPct: Math.random() * 100,
+      rotation: Math.random() * 720,
+      duration: 2 + Math.random() * 2,
+      delay: Math.random() * 0.5,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+    }))
+  , []);
+
   useEffect(() => {
-    const morphTimer = setTimeout(() => setPhase('thank_you'), 3000);
-    return () => clearTimeout(morphTimer);
+    const timer = setTimeout(() => setShowDetails(true), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative py-6">
-      <AnimatePresence mode="wait">
-        {phase === 'confetti' && (
-          <motion.div key="confetti" exit={{ opacity: 0, scale: 0.9 }} className="relative">
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {Array.from({ length: 30 }).map((_, i) => (
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
+      <div className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden relative">
+        {/* Confetti layer inside the card */}
+        <AnimatePresence>
+          {!showDetails && (
+            <motion.div exit={{ opacity: 0 }} className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+              {confetti.map((p, i) => (
                 <motion.div
                   key={i}
-                  initial={{ y: -20, x: Math.random() * 300, opacity: 1 }}
-                  animate={{ y: 600, opacity: 0, rotate: Math.random() * 720 }}
-                  transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5, ease: 'linear' }}
+                  initial={{ y: -10, opacity: 1 }}
+                  animate={{ y: 400, opacity: 0, rotate: p.rotation }}
+                  transition={{ duration: p.duration, delay: p.delay, ease: 'linear' }}
                   className="absolute w-2 h-2 rounded-full"
-                  style={{ backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A78BFA', '#F472B6'][Math.floor(Math.random() * 5)] }}
+                  style={{ left: `${p.xPct}%`, backgroundColor: p.color }}
                 />
               ))}
-            </div>
-            <div className="text-center py-12">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
-                className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/30"
-              >
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </motion.div>
-              <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-[22px] font-bold text-white">
-                Payment Successful!
-              </motion.h2>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {phase === 'thank_you' && (
-          <motion.div key="thankyou" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
-            <div className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 p-6 text-center">
+        {/* Card header */}
+        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 p-6 text-center relative">
+          <AnimatePresence mode="wait">
+            {!showDetails ? (
+              <motion.div key="success" exit={{ opacity: 0, scale: 0.9 }}>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
+                  className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/30"
+                >
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </motion.div>
+                <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-[20px] font-bold text-white">
+                  Payment Successful!
+                </motion.h2>
+              </motion.div>
+            ) : (
+              <motion.div key="thankyou" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
                   <Image src={assetPath(vehicleImage)} alt={vehicleName} width={56} height={56} className="object-contain" />
                 </div>
                 <h3 className="text-[18px] font-bold text-green-400 mb-1">Thank you for choosing ACKO!</h3>
                 <p className="text-[13px] text-white/60">{vehicleName} is now insured</p>
-              </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Details section */}
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="overflow-hidden">
               <div className="p-5 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] text-white/50">Policy Number</span>
@@ -176,15 +321,18 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
                   <span className="text-[13px] font-semibold text-white">{new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
               </div>
-            </div>
-            {onContinue && (
-              <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
-                Continue
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {showDetails && onContinue && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+            Continue
+          </button>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

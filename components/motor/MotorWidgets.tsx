@@ -375,10 +375,14 @@ export function MotorTextInput({
   placeholder,
   inputType = 'text',
   onSubmit,
+  validate,
+  maxLength,
 }: {
   placeholder?: string;
   inputType?: 'text' | 'number' | 'tel';
   onSubmit: (value: string) => void;
+  validate?: (value: string) => string | null;
+  maxLength?: number;
 }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
@@ -392,6 +396,10 @@ export function MotorTextInput({
     if (!value.trim()) {
       setError('Please enter a value');
       return;
+    }
+    if (validate) {
+      const err = validate(value.trim());
+      if (err) { setError(err); return; }
     }
     onSubmit(value.trim());
   };
@@ -408,6 +416,7 @@ export function MotorTextInput({
         className="w-full px-4 py-4 rounded-xl text-[16px] focus:outline-none focus:border-purple-400 transition-colors"
         style={{ background: 'var(--motor-input-bg)', border: '1px solid var(--motor-input-border)', color: 'var(--motor-input-text)' }}
         autoComplete="off"
+        maxLength={maxLength}
       />
       {error && <p className="text-[12px] text-red-400 mt-1.5">{error}</p>}
       <button
@@ -1239,10 +1248,16 @@ export function InsurerSelector({ onSelect }: { onSelect: (insurer: string) => v
    Editable Summary — Pre-quote review
    ═══════════════════════════════════════════════ */
 
-export function EditableSummary({ onConfirm }: { onConfirm: () => void }) {
+export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
+  onConfirm: () => void;
+  onEditField?: (stepId: string) => void;
+  isBrandNew?: boolean;
+}) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const v = state.vehicleData;
   const vType = state.vehicleType === 'bike' ? 'Bike' : 'Car';
+
+  const editable = !!onEditField;
 
   return (
     <motion.div
@@ -1256,14 +1271,14 @@ export function EditableSummary({ onConfirm }: { onConfirm: () => void }) {
         </div>
         <div className="px-5 py-4 space-y-3">
           <SummaryRow label="Vehicle Type" value={vType} />
-          {v.make && <SummaryRow label="Brand" value={v.make} />}
-          {v.model && <SummaryRow label="Model" value={v.model} />}
-          {v.variant && <SummaryRow label="Variant" value={v.variant} />}
-          {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} />}
-          {v.registrationYear && <SummaryRow label="Reg. Year" value={String(v.registrationYear)} />}
-          {state.registrationNumber && <SummaryRow label="Reg. Number" value={state.registrationNumber} />}
-          {state.policyStatus && <SummaryRow label="Policy Status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} />}
-          {state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} highlight />}
+          {v.make && <SummaryRow label="Brand" value={v.make} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
+          {v.model && <SummaryRow label="Model" value={v.model} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
+          {v.variant && <SummaryRow label="Variant" value={v.variant} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
+          {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
+          {!isBrandNew && v.registrationYear && <SummaryRow label="Reg. Year" value={String(v.registrationYear)} />}
+          {!isBrandNew && state.registrationNumber && <SummaryRow label="Reg. Number" value={state.registrationNumber} />}
+          {!isBrandNew && state.policyStatus && <SummaryRow label="Policy Status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} />}
+          {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} highlight />}
         </div>
       </div>
 
@@ -1278,11 +1293,24 @@ export function EditableSummary({ onConfirm }: { onConfirm: () => void }) {
   );
 }
 
-function SummaryRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+const PencilIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+  </svg>
+);
+
+function SummaryRow({ label, value, highlight, editable, onEdit }: { label: string; value: string; highlight?: boolean; editable?: boolean; onEdit?: () => void }) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>{label}</span>
-      <span className="text-[13px] font-medium" style={{ color: highlight ? '#22C55E' : 'var(--motor-text)' }}>{value}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[13px] font-medium" style={{ color: highlight ? '#22C55E' : 'var(--motor-text)' }}>{value}</span>
+        {editable && onEdit && (
+          <button onClick={onEdit} className="opacity-40 hover:opacity-80 transition-opacity p-0.5" style={{ color: 'var(--motor-text)' }}>
+            <PencilIcon />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

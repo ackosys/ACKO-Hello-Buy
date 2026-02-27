@@ -478,7 +478,7 @@ const brandNewPincode: MotorConversationStep = {
       botMessages: [t.pincodeQuestion],
       subText: t.pincodeSub,
       placeholder: t.pincodePlaceholder,
-      inputType: 'text' as const,
+      inputType: 'tel' as const,
     };
   },
   processResponse: (response) => ({ pincode: response }),
@@ -1294,18 +1294,12 @@ const reviewPremiumBreakdown: MotorConversationStep = {
 const paymentProcess: MotorConversationStep = {
   id: 'payment.process',
   module: 'payment',
-  widgetType: 'none',
-  getScript: (state) => {
-    const basePremium = state.selectedPlan?.totalPrice || 0;
-    const addonPremium = (state.selectedAddOns as any[])?.reduce((sum: number, a: any) => sum + (a.price || 0) * 1.18, 0) || 0;
-    const grandTotal = basePremium + addonPremium;
-    return {
-      botMessages: [
-        `Processing your payment of Rs. ${Math.round(grandTotal).toLocaleString()}...`,
-        `Payment successful.`,
-      ],
-    };
-  },
+  widgetType: 'payment_gateway',
+  getScript: () => ({
+    botMessages: [
+      `Let's complete your payment securely. Choose a payment method below.`,
+    ],
+  }),
   processResponse: () => ({ paymentComplete: true }),
   getNextStep: () => 'payment.success',
 };
@@ -1410,12 +1404,17 @@ const postPurchaseAppDownload: MotorConversationStep = {
 const postPurchaseEnd: MotorConversationStep = {
   id: 'post_purchase.end',
   module: 'post_purchase',
-  widgetType: 'none',
+  widgetType: 'selection_cards',
   getScript: (state) => {
     const v = state.vehicleType === 'bike' ? 'Ride' : 'Drive';
+    const vLabel = state.vehicleType === 'bike' ? 'bike' : 'car';
     return {
       botMessages: [
-        `${v} safe — you are all set! If you ever need help, just come back and say hello.`,
+        `${v} safe — you are all set! What would you like to do next?`,
+      ],
+      options: [
+        { id: 'home', label: 'Go to Home', description: 'Back to the main page' },
+        { id: 'new_vehicle', label: `Insure another ${vLabel}`, description: `Start a new ${vLabel} insurance journey` },
       ],
     };
   },
