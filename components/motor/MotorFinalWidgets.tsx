@@ -115,13 +115,6 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
     return () => clearTimeout(morphTimer);
   }, []);
 
-  useEffect(() => {
-    if (onContinue) {
-      const advanceTimer = setTimeout(() => onContinue(), 5500);
-      return () => clearTimeout(advanceTimer);
-    }
-  }, [onContinue]);
-
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative py-6">
       <AnimatePresence mode="wait">
@@ -158,30 +151,37 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
         )}
 
         {phase === 'thank_you' && (
-          <motion.div key="thankyou" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
-                <Image src={assetPath(vehicleImage)} alt={vehicleName} width={56} height={56} className="object-contain" />
+          <motion.div key="thankyou" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
+            <div className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 p-6 text-center">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
+                  <Image src={assetPath(vehicleImage)} alt={vehicleName} width={56} height={56} className="object-contain" />
+                </div>
+                <h3 className="text-[18px] font-bold text-green-400 mb-1">Thank you for choosing ACKO!</h3>
+                <p className="text-[13px] text-white/60">{vehicleName} is now insured</p>
               </div>
-              <h3 className="text-[18px] font-bold text-green-400 mb-1">Thank you for choosing ACKO!</h3>
-              <p className="text-[13px] text-white/60">{vehicleName} is now insured</p>
+              <div className="p-5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px] text-white/50">Policy Number</span>
+                  <span className="text-[13px] font-semibold text-white">{policyNumber || 'Generating...'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px] text-white/50">Status</span>
+                  <span className="text-[12px] font-semibold text-green-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" /> Active
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px] text-white/50">Valid Until</span>
+                  <span className="text-[13px] font-semibold text-white">{new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
             </div>
-            <div className="p-5 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] text-white/50">Policy Number</span>
-                <span className="text-[13px] font-semibold text-white">{policyNumber || 'Generating...'}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] text-white/50">Status</span>
-                <span className="text-[12px] font-semibold text-green-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" /> Active
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] text-white/50">Valid Until</span>
-                <span className="text-[13px] font-semibold text-white">{new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-              </div>
-            </div>
+            {onContinue && (
+              <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+                Continue
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -202,13 +202,9 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
     { label: 'Policy issued', status: 'pending' as const, detail: 'After KYC verification' },
   ];
 
-  useEffect(() => {
-    const timer = setTimeout(() => onContinue(), 4000);
-    return () => clearTimeout(timer);
-  }, [onContinue]);
-
   return (
-    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
+    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    <div className="bg-white/10 border border-white/15 rounded-2xl overflow-hidden">
       <div className="flex items-center gap-3 p-4 border-b border-white/10">
         <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
           <Image src={assetPath(vehicleImage)} alt={vehicleName} width={40} height={40} className="object-contain" />
@@ -250,6 +246,10 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
           <p className="text-[10px] text-white/40 mt-0.5">Complete your KYC to ensure uninterrupted coverage</p>
         </div>
       </div>
+    </div>
+    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+      Got it, continue
+    </button>
     </motion.div>
   );
 }
@@ -320,11 +320,6 @@ export function NpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; fe
 
 // App Download CTA — compact card with accident info
 export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(() => onComplete(), 6000);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
       <div className="bg-white/10 border border-white/15 rounded-2xl p-5">
@@ -374,6 +369,10 @@ export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
           </div>
         </div>
       </div>
+
+      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+        Done
+      </button>
     </motion.div>
   );
 }

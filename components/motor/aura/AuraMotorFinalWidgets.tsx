@@ -142,13 +142,6 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
     return () => clearTimeout(morphTimer);
   }, []);
 
-  useEffect(() => {
-    if (onContinue) {
-      const advanceTimer = setTimeout(() => onContinue(), 5500);
-      return () => clearTimeout(advanceTimer);
-    }
-  }, [onContinue]);
-
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative py-6">
       <AnimatePresence mode="wait">
@@ -186,32 +179,39 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
         )}
 
         {phase === 'thank_you' && (
-          <motion.div key="thankyou" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
-            <div className="p-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,163,74,0.08))' }}>
-              <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: 'var(--aura-surface-2)' }}>
-                <svg className="w-8 h-8" style={{ color: 'var(--aura-text)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125v-9M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                </svg>
+          <motion.div key="thankyou" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
+              <div className="p-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,163,74,0.08))' }}>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: 'var(--aura-surface-2)' }}>
+                  <svg className="w-8 h-8" style={{ color: 'var(--aura-text)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125v-9M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-[18px] font-bold text-green-400 mb-1">Thank you for choosing ACKO!</h3>
+                <p className="text-[13px]" style={{ color: 'var(--aura-text-muted)' }}>{vehicleName} is now insured</p>
               </div>
-              <h3 className="text-[18px] font-bold text-green-400 mb-1">Thank you for choosing ACKO!</h3>
-              <p className="text-[13px]" style={{ color: 'var(--aura-text-muted)' }}>{vehicleName} is now insured</p>
+              <div className="p-5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Policy Number</span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--aura-text)' }}>{policyNumber || 'Generating...'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Status</span>
+                  <span className="text-[12px] font-semibold text-green-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" /> Active
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Valid Until</span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--aura-text)' }}>{new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
             </div>
-            <div className="p-5 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Policy Number</span>
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--aura-text)' }}>{policyNumber || 'Generating...'}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Status</span>
-                <span className="text-[12px] font-semibold text-green-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" /> Active
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px]" style={{ color: 'var(--aura-text-muted)' }}>Valid Until</span>
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--aura-text)' }}>{new Date(Date.now() + 365 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-              </div>
-            </div>
+            {onContinue && (
+              <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+                Continue
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -231,13 +231,9 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
     { label: 'Policy issued', status: 'pending' as const, detail: 'After KYC verification' },
   ];
 
-  useEffect(() => {
-    const timer = setTimeout(() => onContinue(), 4000);
-    return () => clearTimeout(timer);
-  }, [onContinue]);
-
   return (
-    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
+    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
       <div className="flex items-center gap-3 p-4" style={{ borderBottom: '1px solid var(--aura-border)' }}>
         <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center" style={{ background: 'var(--aura-surface-2)' }}>
           <svg className="w-5 h-5" style={{ color: 'var(--aura-text)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -281,6 +277,10 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
           <p className="text-[10px]" style={{ color: 'var(--aura-text-muted)' }}>Complete your KYC to ensure uninterrupted coverage</p>
         </div>
       </div>
+    </div>
+    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+      Got it, continue
+    </button>
     </motion.div>
   );
 }
@@ -356,11 +356,6 @@ export function NpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; fe
 
 // App Download CTA — compact card with accident info
 export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(() => onComplete(), 6000);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
       <div className="rounded-2xl p-5" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
@@ -410,6 +405,10 @@ export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
           </div>
         </div>
       </div>
+
+      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+        Done
+      </button>
     </motion.div>
   );
 }
