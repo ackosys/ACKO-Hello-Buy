@@ -1323,8 +1323,104 @@ const paymentSuccess: MotorConversationStep = {
       ],
     };
   },
+  processResponse: () => {
+    const policyNum = `ACKO-M-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    return { paymentComplete: true, policyNumber: policyNum };
+  },
+  getNextStep: () => 'post_purchase.status_intro',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: POST PURCHASE — Conversational post-buy
+   ═══════════════════════════════════════════════ */
+
+const postPurchaseStatusIntro: MotorConversationStep = {
+  id: 'post_purchase.status_intro',
+  module: 'post_purchase',
+  widgetType: 'none',
+  getScript: (state) => {
+    const vehicleName = `${state.vehicleData.make} ${state.vehicleData.model}`;
+    return {
+      botMessages: [
+        `Your ${vehicleName} policy is being prepared. Here is where things stand right now.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'post_purchase.policy_tracker',
+};
+
+const postPurchasePolicyTracker: MotorConversationStep = {
+  id: 'post_purchase.policy_tracker',
+  module: 'post_purchase',
+  widgetType: 'policy_tracker',
+  getScript: () => ({
+    botMessages: [],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'post_purchase.kyc_prompt',
+};
+
+const postPurchaseKycPrompt: MotorConversationStep = {
+  id: 'post_purchase.kyc_prompt',
+  module: 'post_purchase',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `One quick thing — you will need to complete KYC within 4 days to activate your policy. Want to start now?`,
+    ],
+    options: [
+      { id: 'start_kyc', label: 'Start KYC now', description: 'Takes about 2 minutes' },
+      { id: 'later', label: "I'll do it later", description: 'Complete within 4 days' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'post_purchase.nps',
+};
+
+const postPurchaseNps: MotorConversationStep = {
+  id: 'post_purchase.nps',
+  module: 'post_purchase',
+  widgetType: 'nps_feedback',
+  getScript: () => ({
+    botMessages: [
+      `Quick question — how was your experience buying insurance through this conversation?`,
+    ],
+  }),
+  processResponse: (response) => ({
+    npsScore: response.score ?? null,
+    npsFeedback: response.feedback ?? '',
+  }),
+  getNextStep: () => 'post_purchase.app_download',
+};
+
+const postPurchaseAppDownload: MotorConversationStep = {
+  id: 'post_purchase.app_download',
+  module: 'post_purchase',
+  widgetType: 'app_download_cta',
+  getScript: () => ({
+    botMessages: [
+      `Thanks for the feedback! Download the ACKO app to manage your policy, file claims instantly, and get roadside assistance anytime.`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'post_purchase.end',
+};
+
+const postPurchaseEnd: MotorConversationStep = {
+  id: 'post_purchase.end',
+  module: 'post_purchase',
+  widgetType: 'none',
+  getScript: (state) => {
+    const v = state.vehicleType === 'bike' ? 'Ride' : 'Drive';
+    return {
+      botMessages: [
+        `${v} safe — you are all set! If you ever need help, just come back and say hello.`,
+      ],
+    };
+  },
   processResponse: () => ({ journeyComplete: true }),
-  getNextStep: () => 'payment.success',
+  getNextStep: () => 'post_purchase.end',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1441,6 +1537,12 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'review.premium_breakdown': reviewPremiumBreakdown,
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
+  'post_purchase.status_intro': postPurchaseStatusIntro,
+  'post_purchase.policy_tracker': postPurchasePolicyTracker,
+  'post_purchase.kyc_prompt': postPurchaseKycPrompt,
+  'post_purchase.nps': postPurchaseNps,
+  'post_purchase.app_download': postPurchaseAppDownload,
+  'post_purchase.end': postPurchaseEnd,
   'acko_drive.browse_make': ackoDriveBrowseMake,
   'acko_drive.browse_model': ackoDriveBrowseModel,
   'acko_drive.browse_variant': ackoDriveBrowseVariant,

@@ -30,7 +30,7 @@ import {
   MotorTextInput,
   DocumentUploadWidget,
 } from './AuraMotorWidgets';
-import { PremiumBreakdown, DashboardCTA } from './AuraMotorFinalWidgets';
+import { PremiumBreakdown, DashboardCTA, PolicyTracker, NpsFeedback, AppDownloadCta } from './AuraMotorFinalWidgets';
 import {
   SafetyConditionPicker,
   DamagePhotoCapture,
@@ -42,74 +42,7 @@ import {
   ReimbursementUpload,
   ClaimClosure,
 } from './AuraClaimsWidgets';
-
-function AuraCelebration({ onContinue }: { onContinue?: () => void }) {
-  const [confetti, setConfetti] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setConfetti(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (onContinue) {
-      const advanceTimer = setTimeout(() => onContinue(), 3500);
-      return () => clearTimeout(advanceTimer);
-    }
-  }, [onContinue]);
-
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative py-8">
-      {confetti && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: -20, x: Math.random() * 300, opacity: 1 }}
-              animate={{ y: 600, opacity: 0, rotate: Math.random() * 720 }}
-              transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5, ease: 'linear' }}
-              className="absolute w-2 h-2 rounded-full"
-              style={{ backgroundColor: ['#A855F7', '#C084FC', '#22C55E', '#3B82F6', '#EC4899'][Math.floor(Math.random() * 5)] }}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
-          className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #22C55E, #16A34A)', boxShadow: '0 8px 24px rgba(34,197,94,0.3)' }}
-        >
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-        </motion.div>
-
-        <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}           className="text-[22px] font-bold mb-3" style={{ color: 'var(--aura-text)' }}>
-          Payment Successful!
-        </motion.h2>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-[14px] mb-6 leading-relaxed" style={{ color: 'var(--aura-text-muted)' }}>
-          Your motor insurance is now active.<br />Welcome to ACKO!
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="rounded-xl p-4"
-          style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}
-        >
-          <p className="text-[12px] mb-2" style={{ color: 'var(--aura-text-subtle)' }}>Policy Number</p>
-          <p className="text-[16px] font-bold" style={{ color: 'var(--aura-text)' }}>ACKO/MOT/{Math.floor(Math.random() * 9000000 + 1000000)}</p>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
+import { MotorCelebration as AuraCelebration } from './AuraMotorFinalWidgets';
 
 export default function AuraMotorChatContainer() {
   const {
@@ -354,6 +287,13 @@ export default function AuraMotorChatContainer() {
       userLabel = 'Proceed to payment';
     } else if (step.widgetType === 'motor_celebration') {
       userLabel = '';
+    } else if (step.widgetType === 'policy_tracker') {
+      userLabel = '';
+    } else if (step.widgetType === 'nps_feedback') {
+      const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+      userLabel = response.score ? `${emojis[response.score] || ''} Rated ${response.score}/5` : '';
+    } else if (step.widgetType === 'app_download_cta') {
+      userLabel = '';
     } else if (step.widgetType === 'dashboard_cta') {
       userLabel = response.choice === 'dashboard' ? 'Go to Dashboard' : 'Download Policy';
     } else if (step.widgetType === 'safety_condition_picker') {
@@ -461,6 +401,12 @@ export default function AuraMotorChatContainer() {
         return <PremiumBreakdown onContinue={() => handleResponse({})} />;
       case 'motor_celebration':
         return <AuraCelebration onContinue={() => handleResponse({})} />;
+      case 'policy_tracker':
+        return <PolicyTracker onContinue={() => handleResponse({})} />;
+      case 'nps_feedback':
+        return <NpsFeedback onSubmit={(data) => handleResponse(data)} />;
+      case 'app_download_cta':
+        return <AppDownloadCta onComplete={() => handleResponse({})} />;
       case 'dashboard_cta':
         return <DashboardCTA onSelect={(choice) => handleResponse({ choice })} />;
       case 'document_upload':
@@ -498,7 +444,8 @@ export default function AuraMotorChatContainer() {
       'progressive_loader', 'vehicle_details_card',
       'ncb_reward', 'editable_summary', 'rejection_screen', 'plan_calculator',
       'plan_selector', 'plan_recommendation', 'out_of_pocket_addons', 'protect_everyone_addons',
-      'premium_breakdown', 'motor_celebration', 'dashboard_cta', 'document_upload',
+      'premium_breakdown', 'motor_celebration', 'policy_tracker', 'app_download_cta',
+      'dashboard_cta', 'document_upload',
       'self_inspection', 'surveyor_assigned', 'claim_heartbeat', 'settlement_offer',
       'claim_closure',
     ].includes(step.widgetType);

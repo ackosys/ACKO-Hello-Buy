@@ -29,7 +29,8 @@ export type MotorModule =
   | 'addons'
   | 'owner_details'
   | 'review'
-  | 'payment';
+  | 'payment'
+  | 'post_purchase';
 
 export type MotorWidgetType =
   | 'selection_cards'
@@ -58,6 +59,21 @@ export type MotorWidgetType =
   | 'protect_everyone_addons'
   | 'premium_breakdown'
   | 'motor_celebration'
+  | 'payment_gateway'
+  | 'policy_tracker'
+  | 'nps_feedback'
+  | 'app_download_cta'
+  | 'dashboard_cta'
+  | 'document_upload'
+  | 'safety_condition_picker'
+  | 'damage_photo_capture'
+  | 'self_inspection'
+  | 'surveyor_assigned'
+  | 'claim_heartbeat'
+  | 'settlement_offer'
+  | 'garage_selector_claim'
+  | 'reimbursement_upload'
+  | 'claim_closure'
   | 'none';
 
 export interface VehicleData {
@@ -166,6 +182,16 @@ export interface MotorJourneyState extends BaseJourneyState {
   /* ── Entry Intent ── */
   motorIntent: MotorIntent | null;
   ackoDriveSelectedCar: { make: string; model: string; variant: string } | null;
+
+  /* ── Post-Purchase ── */
+  policyNumber: string;
+  npsScore: number | null;
+  npsFeedback: string;
+
+  /* ── Dashboard / Claims (used by Aura claims flow) ── */
+  dashboardPolicies: any[];
+  dashboardSubmittedClaims: { id: string; type: string; hospital: string; member: string; reason: string; amount: string; date: string; status: string; submittedAt: number }[];
+  dashboardClaimSettlementAmount: number;
 }
 
 export type MotorIntent = 'renew' | 'new_car' | 'acko_drive' | 'manage';
@@ -281,4 +307,14 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   /* Entry intent */
   motorIntent: null,
   ackoDriveSelectedCar: null,
+
+  /* Post-Purchase */
+  policyNumber: '',
+  npsScore: null,
+  npsFeedback: '',
+
+  /* Dashboard / Claims */
+  dashboardPolicies: [],
+  dashboardSubmittedClaims: [],
+  dashboardClaimSettlementAmount: 0,
 };

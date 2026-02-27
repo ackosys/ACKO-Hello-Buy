@@ -30,72 +30,7 @@ import {
   ProtectEveryoneAddons,
   MotorTextInput,
 } from './MotorWidgets';
-import { PremiumBreakdown } from './MotorFinalWidgets';
-
-// Add MotorCelebration locally since it needs to be inline
-function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
-  const [confetti, setConfetti] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setConfetti(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Auto-advance after celebration
-  useEffect(() => {
-    if (onContinue) {
-      const advanceTimer = setTimeout(() => {
-        onContinue();
-      }, 3500); // Advance after confetti ends
-      return () => clearTimeout(advanceTimer);
-    }
-  }, [onContinue]);
-
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative py-8">
-      {confetti && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: -20, x: Math.random() * 300, opacity: 1 }}
-              animate={{ y: 600, opacity: 0, rotate: Math.random() * 720 }}
-              transition={{ duration: 2 + Math.random() * 2, delay: Math.random() * 0.5, ease: 'linear' }}
-              className="absolute w-2 h-2 rounded-full"
-              style={{ backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A78BFA', '#F472B6'][Math.floor(Math.random() * 5)] }}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
-          className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/30"
-        >
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-        </motion.div>
-
-        <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-[22px] font-bold text-white mb-3">
-          Payment Successful! 🎉
-        </motion.h2>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-[14px] text-white/70 mb-6 leading-relaxed">
-          Your motor insurance is now active.<br />Welcome to ACKO!
-        </motion.p>
-
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-white/5 rounded-xl p-4 border border-white/10">
-          <p className="text-[12px] text-white/50 mb-2">Policy Number</p>
-          <p className="text-[16px] font-bold text-white">ACKO/MOT/{Math.floor(Math.random() * 9000000 + 1000000)}</p>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
+import { PremiumBreakdown, MotorCelebration, PolicyTracker, NpsFeedback, AppDownloadCta } from './MotorFinalWidgets';
 
 export default function MotorChatContainer() {
   const {
@@ -384,6 +319,13 @@ export default function MotorChatContainer() {
       userLabel = 'Proceed to payment';
     } else if (step.widgetType === 'motor_celebration') {
       userLabel = '';
+    } else if (step.widgetType === 'policy_tracker') {
+      userLabel = '';
+    } else if (step.widgetType === 'nps_feedback') {
+      const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+      userLabel = response.score ? `${emojis[response.score] || ''} Rated ${response.score}/5` : '';
+    } else if (step.widgetType === 'app_download_cta') {
+      userLabel = '';
     }
 
     // Add user message (skip for loading states)
@@ -465,6 +407,12 @@ export default function MotorChatContainer() {
         return <PremiumBreakdown onContinue={() => handleResponse({})} />;
       case 'motor_celebration':
         return <MotorCelebration onContinue={() => handleResponse({})} />;
+      case 'policy_tracker':
+        return <PolicyTracker onContinue={() => handleResponse({})} />;
+      case 'nps_feedback':
+        return <NpsFeedback onSubmit={(data) => handleResponse(data)} />;
+      case 'app_download_cta':
+        return <AppDownloadCta onComplete={() => handleResponse({})} />;
       default:
         return null;
     }
@@ -478,7 +426,7 @@ export default function MotorChatContainer() {
       'progressive_loader', 'vehicle_details_card',
       'ncb_reward', 'editable_summary', 'rejection_screen', 'plan_calculator',
       'plan_selector', 'plan_recommendation', 'out_of_pocket_addons', 'protect_everyone_addons',
-      'premium_breakdown', 'motor_celebration',
+      'premium_breakdown', 'motor_celebration', 'policy_tracker', 'app_download_cta',
     ].includes(step.widgetType);
   };
 
