@@ -7,7 +7,6 @@ import { useMotorStore } from '../../lib/motor/store';
 import { useThemeStore } from '../../lib/themeStore';
 import { useLanguageStore } from '../../lib/languageStore';
 import { loadSnapshot } from '../../lib/journeyPersist';
-import { useUserProfileStore } from '../../lib/userProfileStore';
 // COMMENTED OUT: Intro and entry screens — replaced by AuraMotorEntryNav
 // import MotorEntryScreen from '../../components/motor/MotorEntryScreen';
 // import MotorPrototypeIntro from '../../components/motor/MotorPrototypeIntro';
@@ -15,7 +14,7 @@ import AuraMotorEntryNav from '../../components/motor/aura/AuraMotorEntryNav';
 import MotorHeader from '../../components/motor/MotorHeader';
 import MotorChatContainer from '../../components/motor/MotorChatContainer';
 import { MotorExpertPanel, MotorAIChatPanel } from '../../components/motor/MotorPanels';
-import { VehicleType, MotorJourneyState, DashboardPolicy } from '../../lib/motor/types';
+import { VehicleType, MotorJourneyState } from '../../lib/motor/types';
 
 type Screen = 'explore' | 'chat';
 
@@ -167,26 +166,6 @@ function seedDemoState(vehicleType: VehicleType) {
 
 }
 
-function seedDemoPolicy(vehicleType: VehicleType) {
-  const isCar = vehicleType === 'car';
-  const lob = isCar ? 'car' as const : 'bike' as const;
-  const ps = useUserProfileStore.getState();
-  if (!ps.policies.some((p) => p.lob === lob && p.active)) {
-    ps.setProfile({ firstName: 'Rahul', isLoggedIn: true });
-    ps.addPolicy({
-      id: `${lob}_demo_${Date.now()}`,
-      lob,
-      policyNumber: `ACKO-M-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
-      label: `Comprehensive ${isCar ? 'Car' : 'Bike'} Insurance`,
-      active: true,
-      purchasedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-      premium: isCar ? 7500 : 2500,
-      premiumFrequency: 'yearly',
-      details: `${isCar ? 'Maruti Swift Dzire' : 'Royal Enfield Classic 350'} · ${isCar ? 'DL01XX1234' : 'KA05AB9876'}`,
-    });
-  }
-}
-
 function MotorJourneyInner() {
   const store = useMotorStore();
   const { updateState, resetJourney, setLanguage } = store;
@@ -206,17 +185,10 @@ function MotorJourneyInner() {
   useEffect(() => {
     const product = vehicleParam ?? 'car';
     const snap = resumeParam ? loadSnapshot(product) : null;
-    const screenParam = searchParams.get('screen');
 
     resetJourney();
 
-    if (screenParam === 'dashboard') {
-      const vt: VehicleType = vehicleParam ?? 'car';
-      seedDemoState(vt);
-      seedDemoPolicy(vt);
-      updateState({ vehicleType: vt, paymentComplete: true, journeyComplete: false, currentStepId: 'db.welcome', currentModule: 'dashboard' } as Partial<MotorJourneyState>);
-      setScreen('chat');
-    } else if (snap && snap.vehicleType) {
+    if (snap && snap.vehicleType) {
       seedDemoState(snap.vehicleType);
       updateState({
         vehicleType: snap.vehicleType,
@@ -241,26 +213,6 @@ function MotorJourneyInner() {
         currentModule: snap.currentStepId.split('.')[0].replace('_', '_') as any,
       } as Partial<MotorJourneyState>);
       setScreen('chat');
-    } else {
-      // Check if this is Kiran's multi-policy scenario
-      try {
-        const raw = typeof window !== 'undefined'
-          ? localStorage.getItem('acko_kiran_policies')
-          : null;
-        if (raw) {
-          const policies: DashboardPolicy[] = JSON.parse(raw);
-          if (policies.length > 0) {
-            updateState({
-              vehicleType: vehicleParam ?? 'car',
-              dashboardPolicies: policies,
-              paymentComplete: true,
-              currentStepId: 'db.policy_list',
-              currentModule: 'dashboard',
-            } as Partial<MotorJourneyState>);
-            setScreen('chat');
-          }
-        }
-      } catch { /* noop — stay on explore */ }
     }
 
     setHydrated(true);
@@ -289,24 +241,18 @@ function MotorJourneyInner() {
 
   const handleJumpTo = (stepId: string, vehicleType: VehicleType) => {
     resetJourney();
-    const isDashboardStep = stepId.startsWith('db.');
     const needsDemoState = stepId !== 'vehicle_type.select';
     if (needsDemoState) seedDemoState(vehicleType);
-    if (isDashboardStep) {
-      seedDemoPolicy(vehicleType);
-      updateState({ vehicleType, paymentComplete: true, journeyComplete: false, currentStepId: stepId, currentModule: 'dashboard' } as Partial<MotorJourneyState>);
-    } else {
-      const moduleMap: Record<string, string> = {
-        'vehicle_type.select': 'vehicle_type',
-        'registration.has_number': 'registration',
-        'registration.enter_number': 'registration',
-        'manual_entry.congratulations': 'manual_entry',
-        'quote.plan_selection': 'quote',
-        'addons.out_of_pocket': 'addons',
-        'review.premium_breakdown': 'review',
-      };
-      updateState({ vehicleType, currentStepId: stepId, currentModule: moduleMap[stepId] || 'vehicle_type' } as Partial<MotorJourneyState>);
-    }
+    const moduleMap: Record<string, string> = {
+      'vehicle_type.select': 'vehicle_type',
+      'registration.has_number': 'registration',
+      'registration.enter_number': 'registration',
+      'manual_entry.congratulations': 'manual_entry',
+      'quote.plan_selection': 'quote',
+      'addons.out_of_pocket': 'addons',
+      'review.premium_breakdown': 'review',
+    };
+    updateState({ vehicleType, currentStepId: stepId, currentModule: moduleMap[stepId] || 'vehicle_type' } as Partial<MotorJourneyState>);
     setScreen('chat');
   };
 

@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useMotorStore } from '../../lib/motor/store';
-import { useUserProfileStore } from '../../lib/userProfileStore';
 import { assetPath } from '../../lib/assetPath';
 
 const VEHICLE_IMAGES: Record<string, string> = {
@@ -109,32 +108,6 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
   const [confetti, setConfetti] = useState(true);
 
   useEffect(() => {
-    const motorState = useMotorStore.getState();
-    const profileStore = useUserProfileStore.getState();
-    const lob = motorState.vehicleType === 'bike' ? 'bike' as const : 'car' as const;
-    const hasPolicy = profileStore.policies.some((p) => p.lob === lob && p.active);
-    if (!hasPolicy) {
-      const name = motorState.ownerName || (motorState as any).userName;
-      if (name) {
-        profileStore.setProfile({ firstName: name, isLoggedIn: true });
-      }
-      const vehicleName = `${motorState.vehicleData?.make || ''} ${motorState.vehicleData?.model || ''}`.trim();
-      const planLabel = motorState.selectedPlanType === 'zero_dep' ? 'Zero Dep' : motorState.selectedPlanType === 'third_party' ? 'Third Party' : 'Comprehensive';
-      profileStore.addPolicy({
-        id: `${lob}_${Date.now()}`,
-        lob,
-        policyNumber: `ACKO-M-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
-        label: `${planLabel} ${lob === 'bike' ? 'Bike' : 'Car'} Insurance`,
-        active: true,
-        purchasedAt: new Date().toISOString(),
-        premium: motorState.totalPremium || 0,
-        premiumFrequency: 'yearly',
-        details: `${vehicleName}${motorState.registrationNumber ? ' · ' + motorState.registrationNumber.toUpperCase() : ''}`,
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     const timer = setTimeout(() => setConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, []);
@@ -195,43 +168,3 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
   );
 }
 
-// Dashboard CTA Widget
-export function DashboardCTA({ onSelect }: { onSelect: (choice: string) => void }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-      <button onClick={() => onSelect('dashboard')} className="w-full p-4 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-purple-400/50 rounded-xl text-left transition-all group">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-            <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-white mb-0.5">Go to Dashboard</p>
-            <p className="text-[11px] text-white/50">View policy details & manage claims</p>
-          </div>
-          <svg className="w-5 h-5 text-white/40 group-hover:text-white/70 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </div>
-      </button>
-
-      <button onClick={() => onSelect('download')} className="w-full p-4 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-purple-400/50 rounded-xl text-left transition-all group">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-            <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-white mb-0.5">Download Policy</p>
-            <p className="text-[11px] text-white/50">Get your policy document as PDF</p>
-          </div>
-          <svg className="w-5 h-5 text-white/40 group-hover:text-white/70 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </div>
-      </button>
-    </motion.div>
-  );
-}

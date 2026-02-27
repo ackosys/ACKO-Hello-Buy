@@ -334,7 +334,7 @@ const postPaymentSteps: ConversationStep[] = [
       };
     },
     processResponse: () => ({}),
-    getNextStep: () => 'pp.end',
+    getNextStep: () => 'pp.cancelled',
   },
 
   /* ─── Premium Update ─── */
@@ -426,36 +426,8 @@ const postPaymentSteps: ConversationStep[] = [
         botMessages: [t.ppScripts.policyIssuedMsg(name, planName)],
       };
     },
-    processResponse: () => ({}),
-    getNextStep: () => 'pp.dashboard_cta',
-  },
-
-  {
-    id: 'pp.dashboard_cta',
-    module: 'completion',
-    widgetType: 'selection_cards',
-    getScript: (_p, state) => {
-      const t = getT(state.language);
-      return {
-        botMessages: [t.ppScripts.whatNext],
-        options: [
-          { id: 'dashboard', label: t.ppScripts.goToDashboard, icon: 'shield' },
-          { id: 'download', label: t.ppScripts.downloadPolicy, icon: 'document' },
-        ],
-      };
-    },
-    processResponse: () => ({}),
-    getNextStep: () => 'pp.end',
-  },
-
-  /* ─── End (terminal) ─── */
-  {
-    id: 'pp.end',
-    module: 'completion',
-    widgetType: 'none',
-    getScript: () => ({ botMessages: [] }),
-    processResponse: () => ({}),
-    getNextStep: () => '',
+    processResponse: () => ({ journeyComplete: true }),
+    getNextStep: () => 'pp.policy_issued',
   },
 ];
 

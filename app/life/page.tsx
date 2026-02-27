@@ -138,21 +138,9 @@ function LifeJourneyInner() {
 
   useEffect(() => {
     const resume = searchParams.get('resume') === '1';
-    const screenParam = searchParams.get('screen');
     const snap = resume ? loadSnapshot('life') : null;
 
-    if (screenParam === 'dashboard') {
-      store.updateState({
-        currentStepId: 'life_db.welcome',
-        conversationHistory: [],
-        stepHistory: ['life_db.welcome'],
-        currentModule: 'dashboard',
-        journeyComplete: true,
-        paymentComplete: true,
-      } as any);
-      setScreen('chat');
-      setShowSplash(false);
-    } else if (snap) {
+    if (snap) {
       const resumeMessages = buildResumeMessages(snap);
       const initialHistory = resumeMessages.map((m, i) => ({
         ...m,
@@ -238,17 +226,6 @@ function LifeJourneyInner() {
             onJumpToFinancial={() => jumpToStep('life_financial')}
             onJumpToMedical={() => jumpToStep('life_medical_eval')}
             onJumpToUnderwriting={() => jumpToStep('life_underwriting')}
-            onJumpToDashboard={() => {
-              store.updateState({
-                currentStepId: 'life_db.welcome',
-                conversationHistory: [],
-                stepHistory: ['life_db.welcome'],
-                currentModule: 'dashboard',
-                journeyComplete: true,
-                paymentComplete: true,
-              } as any);
-              setScreen('chat');
-            }}
           />
         )}
 

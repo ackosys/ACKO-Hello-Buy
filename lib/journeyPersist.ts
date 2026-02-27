@@ -142,7 +142,6 @@ export const LIFE_SAVE_STEPS = new Set([
   'life_financial',
   'life_medical_eval',
   'life_underwriting',
-  'life_complete',
   'life_db.personal_submitted',
   'life_db.nominee_submitted',
   'life_db.coverage_submitted',
@@ -442,17 +441,6 @@ export function getDropOffDisplay(snap: JourneySnapshot): DropOffDisplay | null 
         route: '/life?resume=1',
         urgency: 'low',
         badge: 'Processing',
-      };
-    }
-    if (currentStepId === 'life_complete') {
-      const sub = [premStr, coverStr].filter(Boolean).join(' · ') || 'Term Life Plan · Active';
-      return {
-        title: displayName ? `${displayName}, your life policy is active!` : 'Your life policy is active!',
-        subtitle: sub,
-        ctaLabel: 'View policy',
-        route: '/life?screen=dashboard',
-        urgency: 'low',
-        badge: 'Policy active',
       };
     }
     if (currentStepId === 'life_db.personal_submitted') {

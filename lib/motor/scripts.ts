@@ -1,7 +1,5 @@
 import { MotorConversationStep, MotorJourneyState } from './types';
-import { getMotorDashboardStep } from './dashboardScripts';
 import { getT, getCurrentLang } from '../translations';
-import { useUserProfileStore, type PolicyLob } from '../userProfileStore';
 
 /* ═══════════════════════════════════════════════════════════════════
    ACKO Motor Insurance — Conversational Scripts
@@ -57,9 +55,7 @@ const registrationHasNumber: MotorConversationStep = {
   getScript: (state) => {
     const t = getT(state.language).motorScripts;
     const v = vLabel(state);
-    const motorLob: PolicyLob = state.vehicleType === 'bike' ? 'bike' : 'car';
-    const crossLobGreeting = useUserProfileStore.getState().getCrossLobGreeting(motorLob);
-    const greeting = crossLobGreeting || t.welcomeHi;
+    const greeting = t.welcomeHi;
     return {
       botMessages: [greeting, t.renewOrNew(v)],
       options: [
@@ -1327,63 +1323,8 @@ const paymentSuccess: MotorConversationStep = {
       ],
     };
   },
-  processResponse: () => ({}),
-  getNextStep: () => 'completion.dashboard',
-};
-
-const completionDashboard: MotorConversationStep = {
-  id: 'completion.dashboard',
-  module: 'completion',
-  widgetType: 'dashboard_cta',
-  getScript: () => ({
-    botMessages: [
-      `What would you like to do next?`,
-    ],
-  }),
-  processResponse: (response) => ({
-    paymentComplete: true,
-  }),
-  getNextStep: (response) => {
-    const choice = response?.choice || response;
-    if (choice === 'dashboard') return 'db.welcome';
-    return 'completion.download_confirm';
-  },
-};
-
-const completionDownloadConfirm: MotorConversationStep = {
-  id: 'completion.download_confirm',
-  module: 'completion',
-  widgetType: 'selection_cards',
-  getScript: () => ({
-    botMessages: [
-      `Your policy document is being downloaded. You'll find it in your device's downloads folder.`,
-      `Would you like to do anything else?`,
-    ],
-    options: [
-      { id: 'dashboard', label: 'Go to Dashboard', icon: 'policy', description: 'View policy details & manage claims' },
-      { id: 'done', label: 'I\'m all set', icon: 'check' },
-    ],
-  }),
-  processResponse: () => ({}),
-  getNextStep: (response) => {
-    if (response === 'dashboard') return 'db.welcome';
-    return 'completion.end';
-  },
-};
-
-const completionEnd: MotorConversationStep = {
-  id: 'completion.end',
-  module: 'completion',
-  widgetType: 'none',
-  getScript: () => ({
-    botMessages: [
-      `You're all set! If you need anything, you can always come back to your dashboard. Drive safe!`,
-    ],
-  }),
-  processResponse: () => ({
-    journeyComplete: true,
-  }),
-  getNextStep: () => 'completion.end',
+  processResponse: () => ({ journeyComplete: true }),
+  getNextStep: () => 'payment.success',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1500,19 +1441,11 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'review.premium_breakdown': reviewPremiumBreakdown,
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
-  'completion.dashboard': completionDashboard,
-  'completion.download_confirm': completionDownloadConfirm,
-  'completion.end': completionEnd,
   'acko_drive.browse_make': ackoDriveBrowseMake,
   'acko_drive.browse_model': ackoDriveBrowseModel,
   'acko_drive.browse_variant': ackoDriveBrowseVariant,
 };
 
 export function getMotorStep(stepId: string): MotorConversationStep | undefined {
-  // Check dashboard steps first
-  if (stepId.startsWith('db.')) {
-    return getMotorDashboardStep(stepId);
-  }
-  // Then check regular motor steps
   return MOTOR_STEPS[stepId];
 }

@@ -29,12 +29,8 @@ import {
   OutOfPocketAddons,
   ProtectEveryoneAddons,
   MotorTextInput,
-  DocumentUploadWidget,
-  SurveyorDetailsCard,
-  PolicyCardsWidget,
 } from './MotorWidgets';
-import { PremiumBreakdown, DashboardCTA } from './MotorFinalWidgets';
-import { SelfInspectionWidget } from './aura/AuraClaimsWidgets';
+import { PremiumBreakdown } from './MotorFinalWidgets';
 
 // Add MotorCelebration locally since it needs to be inline
 function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
@@ -388,34 +384,6 @@ export default function MotorChatContainer() {
       userLabel = 'Proceed to payment';
     } else if (step.widgetType === 'motor_celebration') {
       userLabel = '';
-    } else if (step.widgetType === 'dashboard_cta') {
-      userLabel = response.choice === 'dashboard' ? 'Go to Dashboard' : 'Download Policy';
-    } else if (step.widgetType === 'document_upload') {
-      const docsUploaded = [
-        response?.rcUploaded && 'RC',
-        response?.dlUploaded && 'DL',
-        response?.prevPolicyUploaded && 'Previous Policy',
-      ].filter(Boolean).join(', ');
-      userLabel = `Documents uploaded: ${docsUploaded}`;
-    } else if (step.widgetType === 'surveyor_assigned') {
-      userLabel = '';
-    } else if (step.widgetType === 'self_inspection') {
-      userLabel = 'Self inspection completed';
-    } else if (step.widgetType === 'policy_cards') {
-      if (response === 'new_policy') {
-        userLabel = 'Insure a new vehicle';
-      } else {
-        const [policyId, action] = String(response).split('::');
-        const policy = currentState.dashboardPolicies.find((p) => p.id === policyId);
-        const vehicle = policy ? `${policy.make} ${policy.model}` : policyId;
-        const actionLabels: Record<string, string> = {
-          manage: 'View & Manage',
-          renew: 'Renew now',
-          claim: 'Raise a Claim',
-          download: 'Download Documents',
-        };
-        userLabel = `${vehicle} — ${actionLabels[action] ?? action}`;
-      }
     }
 
     // Add user message (skip for loading states)
@@ -425,8 +393,7 @@ export default function MotorChatContainer() {
         content: userLabel,
         stepId: currentStepId,
         module: step.module,
-        // Policy list is a dashboard entry — editing it mid-journey doesn't make sense
-        editable: step.widgetType !== 'policy_cards',
+        editable: true,
       });
     }
 
@@ -498,16 +465,6 @@ export default function MotorChatContainer() {
         return <PremiumBreakdown onContinue={() => handleResponse({})} />;
       case 'motor_celebration':
         return <MotorCelebration onContinue={() => handleResponse({})} />;
-      case 'dashboard_cta':
-        return <DashboardCTA onSelect={(choice) => handleResponse({ choice })} />;
-      case 'document_upload':
-        return <DocumentUploadWidget onContinue={(result) => handleResponse(result)} />;
-      case 'surveyor_assigned':
-        return <SurveyorDetailsCard onContinue={() => handleResponse('acknowledged')} />;
-      case 'self_inspection':
-        return <SelfInspectionWidget onComplete={(result) => handleResponse(result)} />;
-      case 'policy_cards':
-        return <PolicyCardsWidget onSelect={handleResponse} />;
       default:
         return null;
     }
@@ -521,8 +478,7 @@ export default function MotorChatContainer() {
       'progressive_loader', 'vehicle_details_card',
       'ncb_reward', 'editable_summary', 'rejection_screen', 'plan_calculator',
       'plan_selector', 'plan_recommendation', 'out_of_pocket_addons', 'protect_everyone_addons',
-      'premium_breakdown', 'motor_celebration', 'dashboard_cta', 'document_upload',
-      'surveyor_assigned', 'self_inspection', 'policy_cards',
+      'premium_breakdown', 'motor_celebration',
     ].includes(step.widgetType);
   };
 

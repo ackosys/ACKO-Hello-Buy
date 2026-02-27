@@ -203,8 +203,6 @@ function HealthJourneyInner() {
   const handleJumpToCall = () => { seedDemoState(); setPostPaymentInitialPhase('voice_call'); setScreen('post_payment'); };
   const handleJumpToPostCallScenarios = () => { seedDemoState(); setPostPaymentInitialPhase('scenario_select'); setScreen('post_payment'); };
   const handleJumpToPostPayment = () => { seedDemoState(); setPostPaymentInitialPhase(undefined); setScreen('post_payment'); };
-  const handleJumpToDashboard = () => { seedDemoState(); seedDemoPolicy(); setScreen('dashboard'); };
-
   const dismissWelcome = useCallback(() => setShowWelcome(false), []);
 
   if (!hydrated) {
@@ -222,7 +220,7 @@ function HealthJourneyInner() {
 
       <AnimatePresence mode="wait">
         {screen === 'entry' && (
-          <EntryScreen key="entry" onSelect={handleEntrySelect} onJumpToPostPayment={handleJumpToPostPayment} onJumpToDashboard={handleJumpToDashboard} onJumpToCall={handleJumpToCall} onJumpToPostCallScenarios={handleJumpToPostCallScenarios} />
+          <EntryScreen key="entry" onSelect={handleEntrySelect} onJumpToPostPayment={handleJumpToPostPayment} onJumpToCall={handleJumpToCall} onJumpToPostCallScenarios={handleJumpToPostCallScenarios} />
         )}
         {screen === 'landing' && (
           <LandingPage key="landing" isExistingUser={isExistingUser ?? undefined} onGetStarted={() => setScreen('chat')} onChat={() => setScreen('chat')} onCall={() => openExpertPanel('entry')} />

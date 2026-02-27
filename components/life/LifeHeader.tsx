@@ -43,7 +43,7 @@ export default function LifeHeader() {
   const [showMenu, setShowMenu] = useState(false);
 
   const canGoBack = stepHistory.length > 1;
-  const isPostPayment = ['payment', 'ekyc', 'financial', 'medical', 'underwriting', 'dashboard'].includes(currentModule);
+  const isPostPayment = ['payment', 'ekyc', 'financial', 'medical', 'underwriting'].includes(currentModule);
   const currentStep = getLifeStep(currentStepId);
   const isNonNavigable = currentStep ? NON_NAVIGABLE_WIDGETS.has(currentStep.widgetType) : false;
   const showBackBtn = canGoBack && !isPostPayment && !isNonNavigable;

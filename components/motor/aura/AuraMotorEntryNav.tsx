@@ -154,56 +154,6 @@ export default function AuraMotorEntryNav({ initialVehicle = 'car', onStartJourn
           </div>
         </motion.div>
 
-        {/* ─── Section 3: Claims Journey ─── */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-8">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-7 h-7 rounded-full bg-white/15 text-white text-xs font-bold flex items-center justify-center border border-white/20">3</div>
-            <h2 className="text-white text-lg font-semibold">Claim Your {vehicle === 'car' ? 'Car' : 'Bike'}</h2>
-          </div>
-          <p className="text-purple-300/80 text-sm mb-3 ml-10">End-to-end claims flow — FNOL to settlement</p>
-          <div className="ml-10 space-y-2">
-            <NavButton
-              color="red"
-              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>}
-              label="Full claim flow (FNOL → Settlement)"
-              sublabel="File a claim from scratch — accident, theft, or third party"
-              onClick={() => jump('db.claim_intro')}
-            />
-            <NavButton
-              color="orange"
-              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" /></svg>}
-              label="Jump to damage assessment"
-              sublabel="Self-inspection or surveyor — skip FNOL"
-              onClick={() => jump('db.claim_inspection_type')}
-            />
-            <NavButton
-              color="violet"
-              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>}
-              label="Jump to settlement options"
-              sublabel="Instant payout, cashless repair, or reimbursement"
-              onClick={() => jump('db.claim_assessment_result')}
-            />
-          </div>
-        </motion.div>
-
-        {/* ─── Section 4: Policy Dashboard ─── */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mb-8">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-7 h-7 rounded-full bg-white/15 text-white text-xs font-bold flex items-center justify-center border border-white/20">4</div>
-            <h2 className="text-white text-lg font-semibold">Policy Dashboard</h2>
-          </div>
-          <p className="text-purple-300/80 text-sm mb-3 ml-10">Post-policy experience — claims, coverage, edits</p>
-          <div className="ml-10">
-            <NavButton
-              color="green"
-              icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>}
-              label="Claims, documents, edits & FAQ"
-              sublabel="Full dashboard with all post-policy actions"
-              onClick={() => jump('db.welcome')}
-            />
-          </div>
-        </motion.div>
-
         {/* Trust badges */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-auto flex items-center justify-center gap-5 text-purple-400/70 text-xs pt-4">
           <span className="flex items-center gap-1">

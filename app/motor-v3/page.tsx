@@ -199,29 +199,24 @@ function MotorV3JourneyInner() {
 
   const handleJumpTo = (stepId: string, vehicleType: VehicleType) => {
     resetJourney();
-    const isDashboardStep = stepId.startsWith('db.');
     const needsDemoState = stepId !== 'vehicle_type.select';
     if (needsDemoState) seedDemoState(vehicleType);
-    if (isDashboardStep) {
-      updateState({ vehicleType, paymentComplete: true, journeyComplete: false, currentStepId: stepId, currentModule: 'dashboard' } as Partial<MotorJourneyState>);
-    } else {
-      const moduleMap: Record<string, string> = {
-        'vehicle_type.select': 'vehicle_type',
-        'registration.has_number': 'registration',
-        'registration.enter_number': 'registration',
-        'manual_entry.congratulations': 'manual_entry',
-        'quote.plan_selection': 'quote',
-        'addons.out_of_pocket': 'addons',
-        'review.premium_breakdown': 'review',
-      };
-      const isBrandNewEntry = stepId === 'manual_entry.congratulations';
-      updateState({
-        vehicleType,
-        currentStepId: stepId,
-        currentModule: moduleMap[stepId] || 'vehicle_type',
-        ...(isBrandNewEntry ? { vehicleEntryType: 'brand_new' } : {}),
-      } as Partial<MotorJourneyState>);
-    }
+    const moduleMap: Record<string, string> = {
+      'vehicle_type.select': 'vehicle_type',
+      'registration.has_number': 'registration',
+      'registration.enter_number': 'registration',
+      'manual_entry.congratulations': 'manual_entry',
+      'quote.plan_selection': 'quote',
+      'addons.out_of_pocket': 'addons',
+      'review.premium_breakdown': 'review',
+    };
+    const isBrandNewEntry = stepId === 'manual_entry.congratulations';
+    updateState({
+      vehicleType,
+      currentStepId: stepId,
+      currentModule: moduleMap[stepId] || 'vehicle_type',
+      ...(isBrandNewEntry ? { vehicleEntryType: 'brand_new' } : {}),
+    } as Partial<MotorJourneyState>);
     setScreen('chat');
   };
 

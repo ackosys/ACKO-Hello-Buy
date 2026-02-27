@@ -878,10 +878,6 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
 
   // Intercept step responses for navigation + snapshot saving
   const handleStepResponse = (stepId: string, response: any): boolean => {
-    if (stepId === 'pp.dashboard_cta' && response === 'dashboard') {
-      onDashboard();
-      return true;
-    }
     if (stepId === 'pp.cancelled' && response === 'home') {
       onDashboard();
       return true;
@@ -947,12 +943,6 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
       voiceCallResolve('call_complete');
       setVoiceCallResolve(null);
     }
-  };
-
-  // Handle dashboard navigation from conversation
-  const handleDashboardCta = () => {
-    // The conversation step 'pp.dashboard_cta' will emit 'dashboard' response
-    // We intercept it here to navigate
   };
 
   // Header for the conversational flow

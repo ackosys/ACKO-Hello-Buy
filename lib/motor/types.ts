@@ -29,11 +29,7 @@ export type MotorModule =
   | 'addons'
   | 'owner_details'
   | 'review'
-  | 'payment'
-  | 'completion'
-  | 'dashboard'
-  | 'claims'
-  | 'edit_policy';
+  | 'payment';
 
 export type MotorWidgetType =
   | 'selection_cards'
@@ -62,19 +58,6 @@ export type MotorWidgetType =
   | 'protect_everyone_addons'
   | 'premium_breakdown'
   | 'motor_celebration'
-  | 'dashboard_cta'
-  | 'document_upload'
-  /* ── Claims ── */
-  | 'safety_condition_picker'
-  | 'damage_photo_capture'
-  | 'self_inspection'
-  | 'surveyor_assigned'
-  | 'settlement_offer'
-  | 'garage_selector_claim'
-  | 'reimbursement_upload'
-  | 'claim_heartbeat'
-  | 'claim_closure'
-  | 'policy_cards'
   | 'none';
 
 export interface VehicleData {
@@ -103,34 +86,6 @@ export interface ExpiredPolicyData {
   previousInsurer: string;
   requiresInspection: boolean;
   ncbAtRisk: boolean;
-}
-
-/* ── Dashboard: Claim Data (FNOL) ── */
-export interface MotorClaim {
-  id: string;
-  type: 'own_damage_accident' | 'own_damage_theft' | 'own_damage_accessories' | 'third_party';
-  date: string;
-  seriousInjuries: boolean | null;
-  wasDriverOwner: boolean | null;
-  driverName: string;
-  driverRelation: string;
-  description: string;
-  vehicleLocation: string;
-  safeToDriver: boolean | null;
-  needsTowing: boolean | null;
-  rcUploaded?: boolean;
-  dlUploaded?: boolean;
-  status: string;
-  submittedAt: number;
-}
-
-/* ── Dashboard: Edit Request ── */
-export interface MotorEditRequest {
-  id: string;
-  type: string;
-  summary: string;
-  status: string;
-  submittedAt: number;
 }
 
 export interface MotorJourneyState extends BaseJourneyState {
@@ -208,67 +163,12 @@ export interface MotorJourneyState extends BaseJourneyState {
   gst: number;
   totalPremium: number;
 
-  /* ── Dashboard: Claims (FNOL) ── */
-  dashboardSubmittedClaims: MotorClaim[];
-  dashboardClaimType: 'own_damage_accident' | 'own_damage_theft' | 'own_damage_accessories' | 'third_party' | '';
-  dashboardClaimSeriousInjuries: boolean | null;
-  dashboardClaimDate: string;
-  dashboardClaimWasDriverOwner: boolean | null;
-  dashboardClaimDriverName: string;
-  dashboardClaimDriverRelation: string;
-  dashboardClaimDescription: string;
-  dashboardClaimVehicleLocation: string;
-  dashboardClaimSafeToDriver: boolean | null;
-  dashboardClaimNeedsTowing: boolean | null;
-
-  /* ── Dashboard: Document Uploads (Claims) ── */
-  dashboardClaimRcUploaded: boolean;
-  dashboardClaimDlUploaded: boolean;
-  dashboardClaimPrevPolicyUploaded: boolean;
-  dashboardClaimDamagePhotosUploaded: boolean;
-  dashboardClaimFirUploaded: boolean;
-
-  /* ── Dashboard: Extended FNOL ── */
-  dashboardClaimDamagedParts: string[];
-  dashboardClaimSafetyConditions: string[];
-
-  /* ── Dashboard: Post-submission ── */
-  dashboardClaimInspectionType: 'self' | 'surveyor' | null;
-  dashboardClaimSettlementType: 'instant' | 'cashless' | 'reimbursement' | null;
-  dashboardClaimSelectedGarage: string;
-  dashboardClaimSettlementAmount: number;
-
-  /* ── Dashboard: Edits ── */
-  dashboardSubmittedEdits: MotorEditRequest[];
-  dashboardEditType: string;
-
-  /* ── Multi-policy dashboard ── */
-  dashboardPolicies: DashboardPolicy[];
-  activePolicyId: string | null;
-
   /* ── Entry Intent ── */
   motorIntent: MotorIntent | null;
   ackoDriveSelectedCar: { make: string; model: string; variant: string } | null;
 }
 
 export type MotorIntent = 'renew' | 'new_car' | 'acko_drive' | 'manage';
-
-export interface DashboardPolicy {
-  id: string;
-  vehicleType: 'car' | 'bike';
-  make: string;
-  model: string;
-  variant: string;
-  registrationNumber: string;
-  policyNumber: string;
-  plan: string;
-  planType: 'comprehensive' | 'zero_dep' | 'third_party';
-  premium: number;
-  idv: number;
-  expiryDate: string;   // ISO date string
-  ncbPercentage: NcbPercentage;
-  addOns: string[];
-}
 
 export interface MotorStepScript {
   botMessages: string[];
@@ -377,36 +277,6 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   netPremium: 0,
   gst: 0,
   totalPremium: 0,
-
-  /* Dashboard */
-  dashboardSubmittedClaims: [],
-  dashboardClaimType: '',
-  dashboardClaimSeriousInjuries: null,
-  dashboardClaimDate: '',
-  dashboardClaimWasDriverOwner: null,
-  dashboardClaimDriverName: '',
-  dashboardClaimDriverRelation: '',
-  dashboardClaimDescription: '',
-  dashboardClaimVehicleLocation: '',
-  dashboardClaimSafeToDriver: null,
-  dashboardClaimNeedsTowing: null,
-  dashboardClaimRcUploaded: false,
-  dashboardClaimDlUploaded: false,
-  dashboardClaimPrevPolicyUploaded: false,
-  dashboardClaimDamagePhotosUploaded: false,
-  dashboardClaimFirUploaded: false,
-  dashboardClaimDamagedParts: [],
-  dashboardClaimSafetyConditions: [],
-  dashboardClaimInspectionType: null,
-  dashboardClaimSettlementType: null,
-  dashboardClaimSelectedGarage: '',
-  dashboardClaimSettlementAmount: 0,
-  dashboardSubmittedEdits: [],
-  dashboardEditType: '',
-
-  /* Multi-policy dashboard */
-  dashboardPolicies: [],
-  activePolicyId: null,
 
   /* Entry intent */
   motorIntent: null,

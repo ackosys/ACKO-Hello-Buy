@@ -8,12 +8,11 @@ import Link from 'next/link';
 interface EntryScreenProps {
   onSelect: (isExistingUser: boolean) => void;
   onJumpToPostPayment?: () => void;
-  onJumpToDashboard?: () => void;
   onJumpToCall?: () => void;
   onJumpToPostCallScenarios?: () => void;
 }
 
-export default function EntryScreen({ onSelect, onJumpToPostPayment, onJumpToDashboard, onJumpToCall, onJumpToPostCallScenarios }: EntryScreenProps) {
+export default function EntryScreen({ onSelect, onJumpToPostPayment, onJumpToCall, onJumpToPostCallScenarios }: EntryScreenProps) {
   const t = useT();
   return (
     <motion.div
@@ -107,28 +106,6 @@ export default function EntryScreen({ onSelect, onJumpToPostPayment, onJumpToDas
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-xs font-medium">{t.entry.postCallOptions}</p>
-                </div>
-                <svg className="w-3.5 h-3.5 text-purple-400/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-              </button>
-            </div>
-          )}
-        </motion.div>
-
-        {/* ─── Section 4: Policy Dashboard ─── */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mb-8">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-full bg-white/15 text-white text-xs font-bold flex items-center justify-center border border-white/20">4</div>
-            <h2 className="text-white text-lg font-semibold">{t.entry.policyDashboard}</h2>
-          </div>
-          <p className="text-purple-300/80 text-sm mb-3 ml-10">{t.entry.policyDashboardSub}</p>
-          {onJumpToDashboard && (
-            <div className="ml-10">
-              <button onClick={onJumpToDashboard} className="w-full bg-white/6 hover:bg-white/12 border border-white/10 hover:border-white/25 rounded-xl p-3 flex items-center gap-3 transition-all active:scale-[0.98] text-left">
-                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-xs font-medium">{t.entry.policyDashboardOptions}</p>
                 </div>
                 <svg className="w-3.5 h-3.5 text-purple-400/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
               </button>

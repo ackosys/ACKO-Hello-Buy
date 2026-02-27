@@ -1317,11 +1317,10 @@ const lifeGentleUrgency: ConversationStep<LifeJourneyState> = {
     if (response === 'later') {
       return 'life_later_message';
     }
-    return 'life_complete';
+    return 'life_gentle_urgency';
   },
 };
 
-// NEW: Graceful exit message
 const lifeLaterMessage: ConversationStep<LifeJourneyState> = {
   id: 'life_later_message',
   module: 'review',
@@ -1341,32 +1340,7 @@ const lifeLaterMessage: ConversationStep<LifeJourneyState> = {
     ],
   }),
   processResponse: (_response, _state) => ({ journeyComplete: true }),
-  getNextStep: (_response, _state) => 'life_complete',
-};
-
-const lifeComplete: ConversationStep<LifeJourneyState> = {
-  id: 'life_complete',
-  module: 'review',
-  widgetType: 'none',
-  getScript: (persona, state) => ({
-    botMessages: [
-      `Great choice, ${userName(state)}! 🎉`,
-      ``,
-      `You're one step away from protecting your family's future.`,
-      ``,
-      `Before you proceed to payment:`,
-      `• Review your coverage amount`,
-      `• Check your premium`,
-      `• Make sure all information is correct`,
-      ``,
-      `If you need to change anything, just let us know.`,
-      `We're here to help.`,
-      ``,
-      `Ready to proceed?`,
-    ],
-  }),
-  processResponse: (_response, _state) => ({}),
-  getNextStep: (_response, _state) => 'life_complete',
+  getNextStep: (_response, _state) => 'life_later_message',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1425,7 +1399,6 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeClaimsExpectations,
   lifeGentleUrgency,
   lifeLaterMessage,
-  lifeComplete,
 ];
 
 export function getLifeStep(stepId: string): ConversationStep<LifeJourneyState> | undefined {

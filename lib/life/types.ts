@@ -35,8 +35,7 @@ export type LifeModule =
   | 'ekyc'                    // e-KYC verification
   | 'financial'               // Financial / income verification
   | 'medical'                 // Medical evaluation
-  | 'underwriting'            // Underwriting decision
-  | 'dashboard';              // Post-purchase policy dashboard
+  | 'underwriting';           // Underwriting decision
 
 // Life widget types
 export type LifeWidgetType =
