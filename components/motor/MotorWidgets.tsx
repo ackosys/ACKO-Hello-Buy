@@ -2,9 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Option } from '../../lib/core/types';
 import { assetPath } from '../../lib/assetPath';
 import { useMotorStore } from '../../lib/motor/store';
+import { useThemeStore } from '../../lib/themeStore';
 import { MotorJourneyState, NcbPercentage } from '../../lib/motor/types';
 import { getMotorAddOns } from '../../lib/motor/plans';
 import Image from 'next/image';
@@ -130,12 +132,28 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
 
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [showKycSheet, setShowKycSheet] = useState(false);
+  const theme = useThemeStore((s) => s.theme);
   const useGrid = options.length <= 4 && options.every(o => o.icon);
   const useLogoGrid = options.filter(o => o.logoUrl).length >= 3;
 
   const handleSelect = (id: string) => {
     setSelected(id);
+    if (id === 'start_kyc') {
+      setShowKycSheet(true);
+      return;
+    }
     setTimeout(() => onSelect(id), 250);
+  };
+
+  const [kycStage, setKycStage] = useState<'info' | 'verify'>('info');
+  const [kycIframeLoading, setKycIframeLoading] = useState(true);
+
+  const handleKycComplete = () => {
+    setShowKycSheet(false);
+    setKycStage('info');
+    setKycIframeLoading(true);
+    onSelect('start_kyc');
   };
 
   if (useGrid) {
@@ -258,44 +276,179 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => (
-        <motion.button
-          key={opt.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.04 }}
-          onClick={() => handleSelect(opt.id)}
-          className={`
-            text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-            ${selected === opt.id
-              ? 'border-purple-400 shadow-md shadow-purple-900/20'
-              : ''
-            }
-          `}
-          style={{
-            background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-            borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            {(opt.logoUrl || opt.icon) && (
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-                {opt.logoUrl ? (
-                  <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
-                ) : (
-                  <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-purple-300" />
-                )}
+    <>
+      <div className="grid grid-cols-1 gap-2.5 max-w-md">
+        {options.map((opt, i) => (
+          <motion.button
+            key={opt.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.04 }}
+            onClick={() => handleSelect(opt.id)}
+            className={`
+              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
+              ${selected === opt.id
+                ? 'border-purple-400 shadow-md shadow-purple-900/20'
+                : ''
+              }
+            `}
+            style={{
+              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
+              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              {(opt.logoUrl || opt.icon) && (
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
+                  {opt.logoUrl ? (
+                    <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
+                  ) : (
+                    <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-purple-300" />
+                  )}
+                </div>
+              )}
+              <div className="flex-1">
+                <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
+                {opt.description && <p className="text-[12px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>}
               </div>
-            )}
-            <div className="flex-1">
-              <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-              {opt.description && <p className="text-[12px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>}
             </div>
-          </div>
-        </motion.button>
-      ))}
-    </div>
+          </motion.button>
+        ))}
+      </div>
+
+      {typeof document !== 'undefined' && createPortal(
+        <div className={`motor-${theme}`}>
+        <AnimatePresence>
+          {showKycSheet && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowKycSheet(false)}
+            >
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md rounded-t-3xl flex flex-col"
+                style={{
+                  height: '95vh',
+                  background: 'var(--motor-glass-bg)',
+                  backdropFilter: 'blur(24px)',
+                  WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid var(--motor-border-strong)',
+                  borderBottom: 'none',
+                }}
+              >
+                {/* Header — same for both stages */}
+                <div className="px-5 pt-5 pb-4 flex-shrink-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-[22px] font-bold leading-tight" style={{ color: 'var(--motor-text)' }}>
+                        Complete KYC
+                      </p>
+                      <p className="text-[13px] mt-1.5 leading-snug" style={{ color: 'var(--motor-text-muted)' }}>
+                        {kycStage === 'info'
+                          ? 'HyperVerge, our reliable partner, will handle the KYC process for you with 100% security'
+                          : 'Complete the steps below to verify your identity and activate your policy'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => kycStage === 'verify' ? setKycStage('info') : setShowKycSheet(false)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
+                      style={{ background: 'var(--motor-surface-2, var(--motor-surface))' }}
+                    >
+                      <svg className="w-4 h-4" style={{ color: 'var(--motor-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {kycStage === 'info' ? (
+                  <>
+                    {/* Steps */}
+                    <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2">
+                      {[
+                        { step: '1', title: 'Verify your identity', desc: 'Upload PAN card or Aadhaar' },
+                        { step: '2', title: 'Take a quick selfie', desc: 'Face match for security' },
+                        { step: '3', title: 'Instant confirmation', desc: 'Approved in most cases' },
+                      ].map((item) => (
+                        <div key={item.step} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-500/20 border border-purple-400/30">
+                            <span className="text-[12px] font-bold text-purple-300">{item.step}</span>
+                          </div>
+                          <div>
+                            <p className="text-[14px] font-medium" style={{ color: 'var(--motor-text)' }}>{item.title}</p>
+                            <p className="text-[12px] mt-0.5" style={{ color: 'var(--motor-text-muted)' }}>{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTAs */}
+                    <div className="px-5 py-4 flex-shrink-0 space-y-2">
+                      <button
+                        onClick={() => { setKycStage('verify'); setKycIframeLoading(true); }}
+                        className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+                        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                      >
+                        Start Verification
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setShowKycSheet(false)}
+                        className="w-full py-2.5 text-[13px] transition-colors"
+                        style={{ color: 'var(--motor-text-muted)' }}
+                      >
+                        I&apos;ll do this later
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* iframe fills remaining space */}
+                    <div className="flex-1 relative overflow-hidden mx-4 rounded-2xl" style={{ border: '1px solid var(--motor-border)' }}>
+                      {kycIframeLoading && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'var(--motor-glass-bg)' }}>
+                          <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--motor-border-strong)', borderTopColor: 'transparent' }} />
+                          <p className="text-[12px]" style={{ color: 'var(--motor-text-muted)' }}>Loading…</p>
+                        </div>
+                      )}
+                      <iframe
+                        src="https://example.com"
+                        className="w-full h-full border-0"
+                        allow="camera; microphone; geolocation"
+                        title="KYC Verification"
+                        onLoad={() => setKycIframeLoading(false)}
+                      />
+                    </div>
+
+                    {/* Done CTA */}
+                    <div className="px-5 py-4 flex-shrink-0">
+                      <button
+                        onClick={handleKycComplete}
+                        className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
+                        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                      >
+                        I&apos;ve Completed Verification
+                      </button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -582,12 +735,19 @@ function getVehicleImage(make: string, vehicleType: string): string {
   return assetPath(map[make] || (vehicleType === 'bike' ? '/car-images/Splendor.png' : '/car-images/Swift.png'));
 }
 
-export function VehicleDetailsCard({ onConfirm }: { onConfirm: () => void }) {
+export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => void; onRetry: () => void }) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const v = state.vehicleData;
   const p = state.previousPolicy;
   const [confirmed, setConfirmed] = useState(false);
   const vehicleImg = getVehicleImage(v.make, state.vehicleType || 'car');
+  const isLight = state.theme === 'light';
+
+  const formatRegistration = (value: string) => {
+    const clean = value.replace(/\s+/g, '').toUpperCase();
+    const m = clean.match(/^([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{1,4})$/);
+    return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]}` : value;
+  };
 
   const handleConfirm = () => {
     setConfirmed(true);
@@ -600,11 +760,23 @@ export function VehicleDetailsCard({ onConfirm }: { onConfirm: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-sm"
     >
-      <div className="bg-white/8 border border-white/15 rounded-2xl overflow-hidden">
+      <div
+        className="rounded-xl overflow-hidden shadow-[0_4px_10px_-2px_rgba(54,53,76,0.08)]"
+        style={{
+          background: isLight ? '#FFFFFF' : 'var(--motor-surface)',
+          border: `1px solid ${isLight ? 'rgba(4,2,34,0.08)' : 'var(--motor-border)'}`,
+        }}
+      >
         {/* Vehicle Header */}
-        <div className="bg-gradient-to-r from-purple-500/20 to-purple-400/10 px-5 py-4 border-b border-white/10">
+        <div
+          className="px-4 py-4"
+          style={{ background: isLight ? '#EFE9FB' : 'rgba(168,85,247,0.16)' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden p-1">
+            <div
+              className="w-[72px] h-[72px] rounded-xl flex items-center justify-center overflow-hidden p-1"
+              style={{ background: '#FFFFFF' }}
+            >
               {vehicleImg ? (
                 <img src={vehicleImg} alt={`${v.make} ${v.model}`} className="w-full h-full object-contain" />
               ) : (
@@ -612,53 +784,63 @@ export function VehicleDetailsCard({ onConfirm }: { onConfirm: () => void }) {
               )}
             </div>
             <div>
-              <h3 className="text-[16px] font-bold text-white">{v.make} {v.model}</h3>
-              <p className="text-[12px] text-white/50">{v.variant} · {v.fuelType} · {v.registrationYear}</p>
+              <h3 className="text-[18px] font-semibold" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>
+                {v.make} {v.model}
+              </h3>
+              <p className="text-[12px] mt-1" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>
+                {v.variant} • {String(v.fuelType || '').toUpperCase()} • {v.registrationYear}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Details Grid */}
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[12px] text-white/40">Registration</span>
-            <span className="text-[13px] font-semibold text-white tracking-wider">{state.registrationNumber}</span>
+        {/* Details */}
+        <div className="px-4 py-4 space-y-4">
+          <div>
+            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Registration</p>
+            <p className="text-[14px] font-semibold mt-1 tracking-[0.01em]" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>
+              {formatRegistration(state.registrationNumber)}
+            </p>
           </div>
           {p.insurer && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-white/40">Current Insurer</span>
-              <span className="text-[13px] font-medium text-white/80">{p.insurer}</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Current Insurance</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.insurer}</p>
             </div>
           )}
           {p.expiryDate && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-white/40">Policy Expiry</span>
-              <span className="text-[13px] font-medium text-white/80">{p.expiryDate}</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Policy expiry</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.expiryDate}</p>
             </div>
           )}
           {p.ncbPercentage > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-white/40">NCB</span>
-              <span className="text-[13px] font-medium text-green-400">{p.ncbPercentage}%</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>NCB (No Claim Bonus)</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.ncbPercentage}%</p>
             </div>
           )}
+
+          <div className="pt-1">
+            <button
+              onClick={handleConfirm}
+              disabled={confirmed}
+              className="w-full h-12 rounded-lg text-[14px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-60"
+              style={{ background: isLight ? '#0A0A0F' : 'var(--motor-cta-bg)', color: '#FFFFFF' }}
+            >
+              {confirmed ? 'Confirmed' : 'This is correct'}
+            </button>
+
+            <button
+              onClick={onRetry}
+              className="mt-2 w-full h-10 text-[14px] font-medium transition-colors"
+              style={{ color: isLight ? '#191919' : 'var(--motor-text-muted)' }}
+            >
+              This is not my vehicle
+            </button>
+          </div>
         </div>
       </div>
-
-      <button
-        onClick={handleConfirm}
-        disabled={confirmed}
-        className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-60"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
-      >
-        {confirmed ? 'Confirmed' : 'Yes, this is correct'}
-      </button>
-
-      <button
-        className="mt-2 w-full py-2.5 text-[13px] text-white/50 hover:text-white/70 transition-colors"
-      >
-        This is not my vehicle
-      </button>
     </motion.div>
   );
 }
@@ -1255,8 +1437,7 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
 }) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const v = state.vehicleData;
-  const vType = state.vehicleType === 'bike' ? 'Bike' : 'Car';
-
+  const isLight = state.theme === 'light';
   const editable = !!onEditField;
 
   return (
@@ -1265,52 +1446,56 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-sm"
     >
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
-        <div className="px-5 py-3" style={{ background: 'var(--motor-selected-bg)', borderBottom: '1px solid var(--motor-border)' }}>
-          <h3 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Vehicle Summary</h3>
-        </div>
-        <div className="px-5 py-4 space-y-3">
-          <SummaryRow label="Vehicle Type" value={vType} />
-          {v.make && <SummaryRow label="Brand" value={v.make} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
-          {v.model && <SummaryRow label="Model" value={v.model} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
-          {v.variant && <SummaryRow label="Variant" value={v.variant} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
-          {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
-          {!isBrandNew && v.registrationYear && <SummaryRow label="Reg. Year" value={String(v.registrationYear)} />}
-          {!isBrandNew && state.registrationNumber && <SummaryRow label="Reg. Number" value={state.registrationNumber} />}
-          {!isBrandNew && state.policyStatus && <SummaryRow label="Policy Status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} />}
-          {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} highlight />}
-        </div>
-      </div>
-
-      <button
-        onClick={onConfirm}
-        className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+      <div
+        className="rounded-xl overflow-hidden shadow-[0_4px_10px_-2px_rgba(54,53,76,0.08)] p-4 space-y-4"
+        style={{
+          background: isLight ? '#FFFFFF' : 'var(--motor-surface)',
+          border: `1px solid ${isLight ? 'rgba(0,0,0,0.05)' : 'var(--motor-border)'}`,
+        }}
       >
-        View prices
-      </button>
+        <h3 className="text-[16px] font-semibold leading-[22px]" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>
+          Vehicle Summary
+        </h3>
+
+        {v.make && <SummaryRow label="Make" value={v.make} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
+        {v.model && <SummaryRow label="Model" value={v.model} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
+        {v.variant && <SummaryRow label="Variant" value={v.variant} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
+        {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
+        {!isBrandNew && state.registrationNumber && <SummaryRow label="Registration number" value={state.registrationNumber} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_number')} />}
+        {!isBrandNew && v.registrationYear && <SummaryRow label="Registration year" value={String(v.registrationYear)} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_year')} />}
+        {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} isLight={isLight} editable={editable} onEdit={() => onEditField?.('ncb')} />}
+        {!isBrandNew && state.policyStatus && <SummaryRow label="Policy status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} isLight={isLight} />}
+
+        <button
+          onClick={onConfirm}
+          className="w-full h-12 rounded-lg text-[16px] font-semibold transition-colors active:scale-[0.97]"
+          style={{ background: isLight ? '#0A0A0F' : 'var(--motor-cta-bg)', color: '#FFFFFF' }}
+        >
+          View Prices
+        </button>
+      </div>
     </motion.div>
   );
 }
 
 const PencilIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+  <svg className="w-4 h-4" fill="none" stroke="#1B73E8" viewBox="0 0 24 24" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
   </svg>
 );
 
-function SummaryRow({ label, value, highlight, editable, onEdit }: { label: string; value: string; highlight?: boolean; editable?: boolean; onEdit?: () => void }) {
+function SummaryRow({ label, value, isLight, highlight, editable, onEdit }: { label: string; value: string; isLight?: boolean; highlight?: boolean; editable?: boolean; onEdit?: () => void }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="text-[13px] font-medium" style={{ color: highlight ? '#22C55E' : 'var(--motor-text)' }}>{value}</span>
-        {editable && onEdit && (
-          <button onClick={onEdit} className="opacity-40 hover:opacity-80 transition-opacity p-0.5" style={{ color: 'var(--motor-text)' }}>
-            <PencilIcon />
-          </button>
-        )}
+    <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1">
+        <p className="text-[14px] leading-[20px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{label}</p>
+        <p className="text-[14px] font-medium leading-[20px] tracking-[-0.1px]" style={{ color: highlight ? '#22C55E' : (isLight ? '#040222' : 'var(--motor-text)') }}>{value}</p>
       </div>
+      {editable && onEdit && (
+        <button onClick={onEdit} className="p-1 transition-opacity hover:opacity-70">
+          <PencilIcon />
+        </button>
+      )}
     </div>
   );
 }
@@ -1975,7 +2160,7 @@ function PlanCard({
                 {subtitle && <p className="text-[11px] text-white/40 mt-0.5">{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
+                <span className="text-[10px] bg-purple-500/30 text-violet-700 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
                   {badge}
                 </span>
               )}

@@ -1252,7 +1252,7 @@ function PlanCard({
                 {subtitle && <p className="text-[11px] text-white/40 mt-0.5">{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
+                <span className="text-[10px] bg-purple-500/30 text-violet-700 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
                   {badge}
                 </span>
               )}

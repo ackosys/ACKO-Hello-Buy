@@ -27,78 +27,150 @@ const VEHICLE_IMAGES: Record<string, string> = {
 
 // Premium Breakdown Widget
 export function PremiumBreakdown({ onContinue }: { onContinue: () => void }) {
-  const { selectedPlan, selectedAddOns = [], vehicleData } = useMotorStore();
+  const { selectedPlan, selectedAddOns = [], vehicleData, idv, newNcbPercentage } = useMotorStore();
 
-  const basePremium = selectedPlan?.basePrice || 0;
-  const gstOnBase = selectedPlan?.gst || 0;
-  
   const addons = (selectedAddOns as any[]) || [];
-  const addonTotal = addons.reduce((sum, addon) => sum + (addon.price || 0), 0);
-  const gstOnAddons = Math.round(addonTotal * 0.18);
-  
-  const grandTotal = basePremium + gstOnBase + addonTotal + gstOnAddons;
+  const isThirdParty = selectedPlan?.type === 'third_party';
+  const isZeroDep = selectedPlan?.type === 'zero_dep';
+
+  const tpPremium: number = selectedPlan?.tpPremium || 0;
+  const odPremium: number = selectedPlan?.odPremium || 0;
+  const ncbDiscount: number = selectedPlan?.ncbDiscount || 0;
+  const addonTotal: number = addons.reduce((sum: number, a: any) => sum + (a.price || 0), 0);
+  const netPremium: number = selectedPlan?.basePrice || 0;
+  const gst: number = Math.round((netPremium + addonTotal) * 0.18);
+  const totalPremium: number = netPremium + addonTotal + gst;
+
+  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+  const fmtIdv = (n: number) => n >= 100000 ? `${(n / 100000).toFixed(1)} Lakh` : fmt(n);
+
+  const Divider = () => (
+    <div className="my-4" style={{ height: '1px', background: 'var(--motor-border)' }} />
+  );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-      <div className="bg-white/10 border border-purple-400/40 rounded-2xl p-5" style={{ boxShadow: '0 4px 24px rgba(168, 85, 247, 0.12), 0 1px 4px rgba(0,0,0,0.2)' }}>
-        <div className="flex items-center gap-3 pb-4 mb-4 border-b border-white/10">
-          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
-            <Image
-              src={assetPath(VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png')}
-              alt={`${vehicleData.make} ${vehicleData.model}`}
-              width={48}
-              height={48}
-              className="object-contain"
-            />
-          </div>
-          <div className="flex-1">
-            <p className="text-[14px] font-semibold text-white">{vehicleData.make} {vehicleData.model}</p>
-            <p className="text-[12px] text-white/50">{vehicleData.variant} • {vehicleData.registrationYear}</p>
-          </div>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      {/* Header — purple tinted, rounded top */}
+      <div
+        className="relative rounded-t-2xl px-4 pt-4 pb-5 overflow-hidden"
+        style={{ background: 'var(--motor-selected-bg)', border: '1px solid var(--motor-border)', borderBottom: 'none' }}
+      >
+        <div className="pr-24">
+          <p className="text-[16px] font-semibold" style={{ color: 'var(--motor-text)' }}>
+            {vehicleData.make} {vehicleData.model}
+          </p>
+          <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--motor-text-muted)' }}>
+            {selectedPlan?.name}
+            {vehicleData.variant ? ` · ${vehicleData.variant}` : ''}
+          </p>
+          {idv > 0 && (
+            <p className="text-[12px] mt-1.5" style={{ color: 'var(--motor-text-muted)' }}>
+              IDV :{' '}
+              <span className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>
+                {fmtIdv(idv)}
+              </span>
+            </p>
+          )}
         </div>
-
-        <div className="space-y-3 mb-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-[14px] font-semibold text-white">{selectedPlan?.name}</p>
-              <p className="text-[11px] text-white/50 mt-0.5">{selectedPlan?.description}</p>
-            </div>
-            <p className="text-[14px] font-bold text-white ml-4">₹{basePremium.toLocaleString()}</p>
-          </div>
-          <div className="flex justify-between text-[12px] text-white/60">
-            <span>GST (18%)</span>
-            <span>₹{gstOnBase.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {addons.length > 0 && (
-          <div className="border-t border-white/10 pt-4 mb-4">
-            <p className="text-[13px] font-semibold text-white/70 mb-3">Selected Add-ons ({addons.length})</p>
-            {addons.map((addon: any, i: number) => (
-              <div key={i} className="flex justify-between text-[12px] text-white/70 mb-2">
-                <span>{addon.id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
-                <span>₹{addon.price.toLocaleString()}</span>
-              </div>
-            ))}
-            <div className="flex justify-between text-[12px] text-white/60 mt-2">
-              <span>GST on add-ons (18%)</span>
-              <span>₹{gstOnAddons.toLocaleString()}</span>
-            </div>
-          </div>
-        )}
-
-        <div className="border-t-2 border-purple-400/30 pt-4 mt-4">
-          <div className="flex justify-between items-center">
-            <span className="text-[15px] font-bold text-white">Total Premium</span>
-            <span className="text-[24px] font-bold text-white">₹{grandTotal.toLocaleString()}</span>
-          </div>
-          <p className="text-[11px] text-white/40 mt-1">For 1 year policy term</p>
+        <div className="absolute right-3 top-3 w-[80px] h-[60px]">
+          <Image
+            src={assetPath(VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png')}
+            alt={vehicleData.model}
+            width={80}
+            height={60}
+            className="object-contain w-full h-full"
+          />
         </div>
       </div>
 
-      <button onClick={onContinue} className="w-full py-4 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
-        Proceed to Payment
-      </button>
+      {/* Body — detailed breakdown, rounded bottom */}
+      <div
+        className="rounded-b-2xl px-4 pt-4 pb-4"
+        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)', borderTop: 'none', boxShadow: '0px 4px 10px -2px rgba(54,53,76,0.08)' }}
+      >
+        {/* Base policy premium */}
+        <p className="text-[14px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>Base policy premium</p>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between text-[14px]">
+            <span style={{ color: 'var(--motor-text-muted)' }}>Third-party (TP) premium</span>
+            <span style={{ color: 'var(--motor-text-muted)' }}>{fmt(tpPremium)}</span>
+          </div>
+          {!isThirdParty && odPremium > 0 && (
+            <div className="flex items-center justify-between text-[14px]">
+              <span style={{ color: 'var(--motor-text-muted)' }}>
+                {isZeroDep ? 'Zero Depreciation (ZD) premium' : 'Own Damage (OD) premium'}
+              </span>
+              <span style={{ color: 'var(--motor-text-muted)' }}>{fmt(odPremium)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Add-on premium */}
+        {addons.length > 0 && (
+          <>
+            <Divider />
+            <p className="text-[14px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>Add-on premium</p>
+            <div className="space-y-2.5">
+              {addons.map((addon: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-[14px]">
+                  <span style={{ color: 'var(--motor-text-muted)' }}>
+                    {addon.id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </span>
+                  <span style={{ color: 'var(--motor-text-muted)' }}>{fmt(addon.price)}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Discounts */}
+        {ncbDiscount > 0 && (
+          <>
+            <Divider />
+            <p className="text-[14px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>Discounts</p>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between text-[14px]">
+                <span style={{ color: 'var(--motor-text-muted)' }}>
+                  NCB discount{newNcbPercentage ? ` (${newNcbPercentage}% of OD)` : ''}
+                </span>
+                <span className="font-medium" style={{ color: '#0FA457' }}>-{fmt(ncbDiscount)}</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        <Divider />
+
+        {/* Net, GST, Total */}
+        <div className="space-y-2.5 mb-4">
+          <div className="flex items-center justify-between text-[14px]">
+            <span style={{ color: 'var(--motor-text-muted)' }}>Net Premium</span>
+            <span style={{ color: 'var(--motor-text-muted)' }}>{fmt(netPremium)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[14px]">
+            <span style={{ color: 'var(--motor-text-muted)' }}>18% GST</span>
+            <span style={{ color: 'var(--motor-text-muted)' }}>{fmt(gst)}</span>
+          </div>
+        </div>
+
+        <Divider />
+
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>
+            Total{' '}
+            <span className="text-[12px] font-normal" style={{ color: 'var(--motor-text-muted)' }}>(Including GST)</span>
+          </p>
+          <p className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>{fmt(totalPremium)}</p>
+        </div>
+
+        <button
+          onClick={onContinue}
+          className="w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
+          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        >
+          Proceed to Payment
+        </button>
+      </div>
     </motion.div>
   );
 }
