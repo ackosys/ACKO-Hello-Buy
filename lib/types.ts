@@ -277,7 +277,7 @@ export interface JourneyState {
   dashboardClaimSettlementAmount: number;
 
   /* ── Theme ── */
-  theme: 'midnight' | 'dark' | 'light';
+  theme: 'dark' | 'light';
 }
 
 export interface ChatMessage {
@@ -362,5 +362,5 @@ export const INITIAL_STATE: JourneyState = {
   dashboardSubmittedClaims: [],
   dashboardSubmittedEdits: [],
   dashboardClaimSettlementAmount: 0,
-  theme: 'midnight',
+  theme: 'dark',
 };

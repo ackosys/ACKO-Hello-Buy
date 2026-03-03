@@ -302,7 +302,7 @@ export default function MotorChatContainer() {
     if (step.widgetType === 'progressive_loader') {
       userLabel = response === 'success' ? 'Vehicle found!' : 'Details not found';
     } else if (step.widgetType === 'vehicle_details_card') {
-      userLabel = 'Confirmed vehicle details';
+      userLabel = response === 'retry' ? 'This is not my vehicle' : 'Confirmed vehicle details';
     } else if (step.widgetType === 'ncb_reward') {
       userLabel = 'NCB reward applied!';
     } else if (step.widgetType === 'editable_summary') {
@@ -419,7 +419,12 @@ export default function MotorChatContainer() {
       case 'progressive_loader':
         return <ProgressiveLoader onComplete={handleResponse} />;
       case 'vehicle_details_card':
-        return <VehicleDetailsCard onConfirm={() => handleResponse('confirmed')} />;
+        return (
+          <VehicleDetailsCard
+            onConfirm={() => handleResponse('confirmed')}
+            onRetry={() => handleResponse('retry')}
+          />
+        );
       case 'brand_selector':
         return <BrandSelector onSelect={handleResponse} />;
       case 'model_selector':

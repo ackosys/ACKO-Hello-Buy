@@ -564,12 +564,19 @@ function getVehicleImage(make: string, vehicleType: string): string {
   return assetPath(map[make] || (vehicleType === 'bike' ? '/car-images/Splendor.png' : '/car-images/Swift.png'));
 }
 
-export function VehicleDetailsCard({ onConfirm }: { onConfirm: () => void }) {
+export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => void; onRetry: () => void }) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const v = state.vehicleData;
   const p = state.previousPolicy;
   const [confirmed, setConfirmed] = useState(false);
   const vehicleImg = getVehicleImage(v.make, state.vehicleType || 'car');
+  const isLight = state.theme === 'light';
+
+  const formatRegistration = (value: string) => {
+    const clean = value.replace(/\s+/g, '').toUpperCase();
+    const m = clean.match(/^([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{1,4})$/);
+    return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]}` : value;
+  };
 
   const handleConfirm = () => {
     setConfirmed(true);
@@ -582,61 +589,83 @@ export function VehicleDetailsCard({ onConfirm }: { onConfirm: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-sm"
     >
-      <div className="bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-2xl overflow-hidden">
+      <div
+        className="rounded-xl overflow-hidden shadow-[0_4px_10px_-2px_rgba(54,53,76,0.08)]"
+        style={{
+          background: isLight ? '#FFFFFF' : 'var(--aura-surface)',
+          border: `1px solid ${isLight ? 'rgba(4,2,34,0.08)' : 'var(--aura-border)'}`,
+        }}
+      >
         {/* Vehicle Header */}
-        <div className="bg-[var(--aura-surface-2)] px-5 py-4 border-b border-[var(--aura-border)]">
+        <div
+          className="px-4 py-4"
+          style={{ background: isLight ? '#EFE9FB' : 'var(--aura-surface-2)' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-xl bg-[var(--aura-surface)] flex items-center justify-center overflow-hidden p-1">
+            <div
+              className="w-[72px] h-[72px] rounded-xl flex items-center justify-center overflow-hidden p-1"
+              style={{ background: '#FFFFFF' }}
+            >
               <img src={vehicleImg} alt={`${v.make} ${v.model}`} className="w-full h-full object-contain" />
             </div>
             <div>
-              <h3 className="text-[16px] font-bold text-[var(--aura-text)]">{v.make} {v.model}</h3>
-              <p className="text-[12px] text-[var(--aura-text-muted)]">{v.variant} · {v.fuelType} · {v.registrationYear}</p>
+              <h3 className="text-[18px] font-semibold" style={{ color: isLight ? '#040222' : 'var(--aura-text)' }}>
+                {v.make} {v.model}
+              </h3>
+              <p className="text-[12px] mt-1" style={{ color: isLight ? '#5B5675' : 'var(--aura-text-muted)' }}>
+                {v.variant} • {String(v.fuelType || '').toUpperCase()} • {v.registrationYear}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Details Grid */}
-        <div className="px-5 py-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[12px] text-[var(--aura-text-subtle)]">Registration</span>
-            <span className="text-[13px] font-semibold text-[var(--aura-text)] tracking-wider">{state.registrationNumber}</span>
+        {/* Details */}
+        <div className="px-4 py-4 space-y-4">
+          <div>
+            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--aura-text-muted)' }}>Registration</p>
+            <p className="text-[14px] font-semibold mt-1 tracking-[0.01em]" style={{ color: isLight ? '#040222' : 'var(--aura-text)' }}>
+              {formatRegistration(state.registrationNumber)}
+            </p>
           </div>
           {p.insurer && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-[var(--aura-text-subtle)]">Current Insurer</span>
-              <span className="text-[13px] font-medium text-[var(--aura-text)]">{p.insurer}</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--aura-text-muted)' }}>Current Insurance</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--aura-text)' }}>{p.insurer}</p>
             </div>
           )}
           {p.expiryDate && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-[var(--aura-text-subtle)]">Policy Expiry</span>
-              <span className="text-[13px] font-medium text-[var(--aura-text)]">{p.expiryDate}</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--aura-text-muted)' }}>Policy expiry</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--aura-text)' }}>{p.expiryDate}</p>
             </div>
           )}
           {p.ncbPercentage > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-[var(--aura-text-subtle)]">NCB</span>
-              <span className="text-[13px] font-medium text-green-400">{p.ncbPercentage}%</span>
+            <div>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--aura-text-muted)' }}>NCB (No Claim Bonus)</p>
+              <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--aura-text)' }}>{p.ncbPercentage}%</p>
             </div>
           )}
+
+          <div className="pt-1">
+            <button
+              onClick={handleConfirm}
+              disabled={confirmed}
+              style={{ background: isLight ? '#0A0A0F' : 'var(--motor-cta-bg)', color: '#FFFFFF' }}
+              className="w-full h-12 rounded-lg text-[15px] font-semibold hover:opacity-90 transition-colors active:scale-[0.97] disabled:opacity-60"
+            >
+              {confirmed ? 'Confirmed' : 'This is correct'}
+            </button>
+
+            <button
+              onClick={onRetry}
+              className="mt-2 w-full h-10 text-[13px] font-medium transition-colors"
+              style={{ color: isLight ? '#191919' : 'var(--aura-text-muted)' }}
+            >
+              This is not my vehicle
+            </button>
+          </div>
         </div>
       </div>
-
-      <button
-        onClick={handleConfirm}
-        disabled={confirmed}
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
-        className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold hover:opacity-90 transition-colors active:scale-[0.97] disabled:opacity-60"
-      >
-        {confirmed ? 'Confirmed' : 'Yes, this is correct'}
-      </button>
-
-      <button
-        className="mt-2 w-full py-2.5 text-[13px] text-[var(--aura-text-muted)] hover:text-[var(--aura-text-muted)] transition-colors"
-      >
-        This is not my vehicle
-      </button>
     </motion.div>
   );
 }

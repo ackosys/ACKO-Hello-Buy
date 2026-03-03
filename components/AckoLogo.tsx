@@ -4,16 +4,15 @@
  * ACKO logo — serves official brand SVGs from /public/brand-logo/.
  *
  * Variants (map to theme):
- *  - "color"  → ACKO Logo Master: color icon + dark #2C2067 text   → light theme
- *  - "white"  → ACKO Logo with white text: color icon + white text → dark theme
- *  - "full-white" → ACKO Logo Full White: all white                → midnight theme
- *  - "black"  → ACKO Logo Full Black: all black                    → (utility)
- *  - "icon"   → inline purple icon mark, no wordmark               → chat avatar
+ *  - "color"      → ACKO Logo Master: color icon + dark #2C2067 text → light theme
+ *  - "white"      → ACKO Logo with white text: color icon + white text → dark theme
+ *  - "full-white" → ACKO Logo Full White: all white                   → purple/colored surfaces
+ *  - "black"      → ACKO Logo Full Black: all black                   → (utility)
+ *  - "icon"       → inline purple icon mark, no wordmark              → chat avatar
  *
  * Usage with themes:
- *  midnight  →  "full-white"
- *  dark      →  "white"
- *  light     →  "color"
+ *  dark   →  "white"
+ *  light  →  "color"
  */
 
 interface AckoLogoProps {

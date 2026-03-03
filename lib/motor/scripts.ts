@@ -152,7 +152,8 @@ const vehicleFetchFound: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: (_, state) => {
+  getNextStep: (response, state) => {
+    if (response === 'retry') return 'registration.enter_number';
     if (state.vehicleType === 'bike') return 'pre_quote.policy_status';
     return 'pre_quote.cng_check';
   },

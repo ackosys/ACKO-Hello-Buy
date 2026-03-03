@@ -110,10 +110,12 @@
 }
 
 /* ══════════════════════════════════════════════════
-   GLOBAL APP THEME — midnight (purple), dark, light
-   Applied via .app-midnight, .app-dark, .app-light on root
+   GLOBAL APP THEME — dark, light
+   Applied via .app-dark, .app-light on root
    ══════════════════════════════════════════════════ */
 
+/* .app-midnight theme removed — only dark and light are active */
+/*
 .app-midnight {
   --app-bg: #1C0B47;
   --app-surface: rgba(255,255,255,0.06);
@@ -152,6 +154,7 @@
   --app-tab-inactive: rgba(255,255,255,0.4);
   --app-divider: rgba(255,255,255,0.08);
 }
+*/
 
 .app-dark {
   --app-bg: #121214;
@@ -342,15 +345,16 @@
 }
 
 /* ══════════════════════════════════════════════════
-   MOTOR THEME — 3-way: midnight (purple), dark, light
+   MOTOR THEME — dark, light
    ══════════════════════════════════════════════════ */
 
-.motor-midnight,
 .motor-dark,
 .motor-light {
   font-family: var(--font-euclid), 'Euclid Circular B', system-ui, -apple-system, sans-serif;
 }
 
+/* .motor-midnight theme removed — only dark and light are active */
+/*
 .motor-midnight {
   --motor-bg: #1C0B47;
   --motor-surface: rgba(255,255,255,0.06);
@@ -385,6 +389,7 @@
   --motor-cta-hover: #6D28D9;
   --motor-cta-text: #FFFFFF;
 }
+*/
 
 .motor-dark {
   --motor-bg: #121214;

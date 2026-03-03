@@ -229,7 +229,7 @@ function MotorV3JourneyInner() {
   }
 
   return (
-    <div className={theme === 'light' ? 'aura-light' : theme === 'midnight' ? 'aura-dark' : 'aura-dark'}>
+    <div className={theme === 'light' ? 'aura-light' : 'aura-dark'}>
       <MotorExpertPanel />
       <MotorAIChatPanel />
 

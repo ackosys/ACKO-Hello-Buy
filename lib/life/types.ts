@@ -167,7 +167,7 @@ export interface LifeJourneyState extends BaseJourneyState {
   };
 
   /* ── Theme ── */
-  theme: 'midnight' | 'dark' | 'light';
+  theme: 'dark' | 'light';
 }
 
 // Transparent breakdown of how coverage was calculated
@@ -249,5 +249,5 @@ export const LIFE_INITIAL_STATE: LifeJourneyState = {
   medicalComplete: false,
   
   intentSignals: {},
-  theme: 'midnight',
+  theme: 'dark',
 };
