@@ -96,6 +96,18 @@ export interface LifeQuote {
   yearlyPremium: number;
 }
 
+// Marital status options
+export type MaritalStatus = 'married' | 'single' | 'separated_divorced' | 'widowed' | '';
+
+// Residential status
+export type ResidentialStatus = 'resident' | 'nri' | '';
+
+// Education level
+export type EducationLevel = 'below_10th' | 'ssc_10th' | 'hsc_12th' | 'diploma_graduate' | '';
+
+// Buying intent stage
+export type BuyingIntent = 'exploring' | 'few_months' | 'very_soon' | '';
+
 // Life Journey State — extends BaseJourneyState
 export interface LifeJourneyState extends BaseJourneyState {
   // Basic Information
@@ -105,8 +117,16 @@ export interface LifeJourneyState extends BaseJourneyState {
   age: number;
   phone: string;
   pinCode: string;
+  maritalStatus: MaritalStatus;
+  residentialStatus: ResidentialStatus;
   smokingStatus: SmokingStatus;
   annualIncome: number;
+
+  // Lifestyle
+  educationLevel: EducationLevel;
+
+  // Need Assessment
+  buyingIntent: BuyingIntent;
   
   // Financial obligations (for coverage calculation)
   outstandingLoans: number;      // Total outstanding loans (home + car + education + personal)
@@ -167,7 +187,7 @@ export interface LifeJourneyState extends BaseJourneyState {
   };
 
   /* ── Theme ── */
-  theme: 'dark' | 'light';
+  theme: 'midnight' | 'dark' | 'light';
 }
 
 // Transparent breakdown of how coverage was calculated
@@ -205,8 +225,12 @@ export const LIFE_INITIAL_STATE: LifeJourneyState = {
   dateOfBirth: '',
   age: 0,
   pinCode: '',
+  maritalStatus: '',
+  residentialStatus: '',
   smokingStatus: 'never',
   annualIncome: 0,
+  educationLevel: '',
+  buyingIntent: '',
   
   // Financial obligations
   outstandingLoans: 0,
@@ -249,5 +273,5 @@ export const LIFE_INITIAL_STATE: LifeJourneyState = {
   medicalComplete: false,
   
   intentSignals: {},
-  theme: 'dark',
+  theme: 'midnight',
 };

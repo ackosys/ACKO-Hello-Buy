@@ -4,15 +4,18 @@
  */
 
 import type { ConversationStep, Option } from '../core/types';
-import type { LifeJourneyState, LifeModule, LifePersonaType, LifeRider } from './types';
+import type { LifeJourneyState, LifeModule, LifePersonaType, LifeRider, MaritalStatus, ResidentialStatus, EducationLevel, BuyingIntent } from './types';
 import { LIFE_PERSONA_CONFIG } from './personas';
 import { getT } from '../translations';
 import { useUserProfileStore } from '../userProfileStore';
 
-// Helper to get user name
 function userName(state: LifeJourneyState): string {
-  // Since we don't ask for name anymore, this will likely return 'there' or empty string
-  return state.name || state.userName || 'there';
+  return state.name || state.userName || '';
+}
+
+function greet(state: LifeJourneyState): string {
+  const n = userName(state);
+  return n ? n.split(' ')[0] : '';
 }
 
 // Helper to calculate age from DOB
@@ -129,7 +132,7 @@ const lifeIntro: ConversationStep<LifeJourneyState> = {
   id: 'life_intro',
   module: 'basic_info',
   widgetType: 'none',
-  getScript: (persona, state) => {
+  getScript: (_persona, state) => {
     const t = getT(state.language).lifeScripts;
     const messages: string[] = [];
 
@@ -139,19 +142,50 @@ const lifeIntro: ConversationStep<LifeJourneyState> = {
     } else {
       messages.push(t.hiGreeting);
     }
-    
-    if (persona === 'protector') {
-      messages.push(t.introProtector, t.introProtectorQ, t.introProtectorSub);
-    } else if (persona === 'growth_seeker') {
-      messages.push(t.introGrowth, t.introGrowthQ, t.introGrowthSub);
-    } else {
-      messages.push(t.introPassive);
-    }
-    
+
+    messages.push(
+      t.introUsp,
+      t.introUspDetails,
+    );
+
     return { botMessages: messages };
   },
   processResponse: (_response, _state) => ({}),
-  getNextStep: (_response, _state) => 'life_path_choice',
+  getNextStep: (_response, _state) => 'life_ask_name',
+};
+
+const lifeAskName: ConversationStep<LifeJourneyState> = {
+  id: 'life_ask_name',
+  module: 'basic_info',
+  widgetType: 'text_input',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `Before we begin, what's your first name?`,
+    ],
+    placeholder: 'Your first name',
+    inputType: 'text',
+  }),
+  processResponse: (response, _state) => {
+    const value = String(response).trim();
+    return { name: value, userName: value };
+  },
+  getNextStep: (_response, _state) => 'life_name_ack',
+};
+
+const lifeNameAck: ConversationStep<LifeJourneyState> = {
+  id: 'life_name_ack',
+  module: 'basic_info',
+  widgetType: 'none',
+  getScript: (_persona, state) => {
+    const name = greet(state);
+    return {
+      botMessages: [
+        `Nice to meet you, ${name}! Let's find the right coverage for you.`,
+      ],
+    };
+  },
+  processResponse: (_response, _state) => ({}),
+  getNextStep: (_response, _state) => 'life_basic_gender',
 };
 
 // Path choice — "I know my coverage" vs "Help me decide"
@@ -636,16 +670,37 @@ const lifeBasicGender: ConversationStep<LifeJourneyState> = {
   module: 'basic_info',
   widgetType: 'selection_cards',
   getScript: (_persona, state) => {
-    const t = getT(state.language).lifeScripts;
+    const name = greet(state);
     return {
-      botMessages: [t.genderQ],
+      botMessages: [
+        name ? `${name}, what's your gender?` : `What's your gender?`,
+        `Premiums differ by gender — women typically pay less due to longer life expectancy.`,
+      ],
       options: [
-        { id: 'male', label: t.optMale },
-        { id: 'female', label: t.optFemale },
+        { id: 'male', label: 'Male' },
+        { id: 'female', label: 'Female' },
       ],
     };
   },
   processResponse: (response, _state) => ({ gender: response as 'male' | 'female' }),
+  getNextStep: (response, _state) => {
+    if (response === 'female') {
+      return 'life_female_nudge';
+    }
+    return 'life_basic_dob';
+  },
+};
+
+const lifeFemaleNudge: ConversationStep<LifeJourneyState> = {
+  id: 'life_female_nudge',
+  module: 'basic_info',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [
+      `Did you know? Women typically pay less for life insurance due to their longer life expectancy.`,
+    ],
+  }),
+  processResponse: (_response, _state) => ({}),
   getNextStep: (_response, _state) => 'life_basic_dob',
 };
 
@@ -654,7 +709,10 @@ const lifeBasicDob: ConversationStep<LifeJourneyState> = {
   module: 'basic_info',
   widgetType: 'date_picker',
   getScript: (_persona, state) => ({
-    botMessages: [getT(state.language).lifeScripts.dobQ],
+    botMessages: [
+      `What's your date of birth?`,
+      `Age is the biggest factor in premium pricing — the younger you start, the less you pay.`,
+    ],
     placeholder: 'Select date of birth',
   }),
   processResponse: (response, _state) => {
@@ -665,7 +723,7 @@ const lifeBasicDob: ConversationStep<LifeJourneyState> = {
     if (state.age < 18 || state.age > 65) {
       return 'life_age_ineligible';
     }
-    return 'life_basic_pincode';
+    return 'life_marital_status';
   },
 };
 
@@ -686,19 +744,47 @@ const lifeAgeIneligible: ConversationStep<LifeJourneyState> = {
   getNextStep: (_response, _state) => 'life_intro', // Restart journey
 };
 
-const lifeBasicPhone: ConversationStep<LifeJourneyState> = {
-  id: 'life_basic_phone',
+/* ── New steps per spec: Marital Status, Residential Status, Name+Phone ── */
+
+const lifeMaritalStatus: ConversationStep<LifeJourneyState> = {
+  id: 'life_marital_status',
   module: 'basic_info',
-  widgetType: 'text_input',
-  getScript: (persona, state) => ({
+  widgetType: 'selection_cards',
+  getScript: (_persona, state) => ({
     botMessages: [
-      `Great! Now, what's your phone number?`,
-      `We'll use this to send you policy updates and quotes.`,
+      `Are you married?`,
+      `Your marital status helps us understand who depends on you financially.`,
     ],
-    placeholder: 'Enter 10-digit mobile number',
-    inputType: 'tel',
+    options: [
+      { id: 'married', label: 'Yes' },
+      { id: 'single', label: 'No' },
+      { id: 'separated_divorced', label: 'I am separated or divorced' },
+      { id: 'widowed', label: 'I am widowed' },
+    ],
   }),
-  processResponse: (response, _state) => ({ phone: String(response) }),
+  processResponse: (response, _state) => ({
+    maritalStatus: response as MaritalStatus,
+  }),
+  getNextStep: (_response, _state) => 'life_financial_dependents',
+};
+
+const lifeResidentialStatus: ConversationStep<LifeJourneyState> = {
+  id: 'life_residential_status',
+  module: 'basic_info',
+  widgetType: 'selection_cards',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `Are you an Indian resident?`,
+      `Residency status affects plan eligibility and regulatory requirements.`,
+    ],
+    options: [
+      { id: 'resident', label: 'Yes' },
+      { id: 'nri', label: 'No' },
+    ],
+  }),
+  processResponse: (response, _state) => ({
+    residentialStatus: response as ResidentialStatus,
+  }),
   getNextStep: (_response, _state) => 'life_basic_pincode',
 };
 
@@ -706,87 +792,163 @@ const lifeBasicPincode: ConversationStep<LifeJourneyState> = {
   id: 'life_basic_pincode',
   module: 'basic_info',
   widgetType: 'text_input',
-  getScript: (persona, state) => ({
+  getScript: (_persona, _state) => ({
     botMessages: [
       `What's your pin code?`,
-      `This helps us provide location-specific information.`,
+      `Location helps us check serviceability and tailor your plan.`,
     ],
     placeholder: 'Enter 6-digit pin code',
     inputType: 'text',
   }),
   processResponse: (response, _state) => ({ pinCode: String(response) }),
-  getNextStep: (_response, _state) => 'life_basic_habits',
+  getNextStep: (_response, _state) => 'life_education',
+};
+
+const lifeNamePhone: ConversationStep<LifeJourneyState> = {
+  id: 'life_name_phone',
+  module: 'basic_info',
+  widgetType: 'text_input',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `Great! Just check your name before proceeding.`,
+    ],
+    placeholder: 'Your full name',
+    inputType: 'text',
+  }),
+  processResponse: (response, _state) => {
+    const value = String(response);
+    return { name: value, userName: value };
+  },
+  getNextStep: (_response, _state) => 'life_education',
 };
 
 const lifeBasicHabits: ConversationStep<LifeJourneyState> = {
   id: 'life_basic_habits',
-  module: 'basic_info',
+  module: 'lifestyle',
   widgetType: 'selection_cards',
   getScript: (_persona, _state) => ({
     botMessages: [
-      `Do you smoke or consume alcohol?`,
-      `This helps us assess risk and calculate accurate premiums.`,
+      `Have you smoked or consumed tobacco in the last 12 months?`,
+      `Tobacco use directly impacts premium pricing — non-smokers typically pay significantly less.`,
     ],
     options: [
-      { id: 'none', label: 'No, neither' },
-      { id: 'smoke_only', label: 'I smoke / use tobacco' },
-      { id: 'drink_only', label: 'I drink alcohol' },
-      { id: 'both', label: 'Both' },
+      { id: 'no', label: "No, I haven't" },
+      { id: 'yes', label: 'Yes, I have' },
     ],
   }),
   processResponse: (response, _state) => ({
-    smokingStatus: (response === 'smoke_only' || response === 'both') ? 'current' as const : 'never' as const,
-    alcoholConsumption: (response === 'drink_only' || response === 'both') ? 'occasional' as const : 'never' as const,
+    smokingStatus: response === 'yes' ? 'current' as const : 'never' as const,
   }),
-  getNextStep: (_response, _state) => 'life_basic_income',
+  getNextStep: (_response, _state) => 'life_need_recommendation',
+};
+
+/* ── Stage 4: Need Assessment — Recommendation + Buying Intent ── */
+
+const lifeNeedRecommendation: ConversationStep<LifeJourneyState> = {
+  id: 'life_need_recommendation',
+  module: 'quote',
+  widgetType: 'coverage_card',
+  getScript: (_persona, state) => {
+    const { recommended, breakdown } = calculateRecommendedCoverage(state);
+    const policyTerm = calculatePolicyTerm(state.age);
+    const coversTill = state.age + policyTerm;
+
+    const formatAmt = (n: number) => {
+      if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
+      if (n >= 100000) return `₹${(n / 100000).toFixed(0)}L`;
+      return `₹${n.toLocaleString('en-IN')}`;
+    };
+
+    const rangeMin = Math.round(recommended * 0.8 / 2500000) * 2500000;
+    const rangeMax = Math.round(recommended * 1.2 / 2500000) * 2500000;
+    const multiplierUsed = breakdown.multiplierUsed || 12;
+
+    const breakdownItems: { label: string; value: string }[] = [
+      { label: 'Income replacement', value: formatAmt(breakdown.incomeReplacement) },
+    ];
+    if (breakdown.loanCoverage > 0) {
+      breakdownItems.push({ label: 'Outstanding loans', value: formatAmt(breakdown.loanCoverage) });
+    }
+    if (breakdown.childEducationFund > 0) {
+      breakdownItems.push({ label: "Children's future needs", value: formatAmt(breakdown.childEducationFund) });
+    }
+    breakdownItems.push({ label: 'Emergency buffer', value: formatAmt(breakdown.emergencyBuffer) });
+    if (breakdown.existingCover > 0) {
+      breakdownItems.push({ label: 'Existing cover (deducted)', value: `-${formatAmt(breakdown.existingCover)}` });
+    }
+
+    const name = greet(state);
+    return {
+      botMessages: [
+        name ? `${name}, here's your recommended term life cover` : `Here's your recommended term life cover`,
+        `Your coverage is approximately ${Math.round(multiplierUsed)}–${Math.round(multiplierUsed + 5)}x your annual income — ideal for your family to maintain their lifestyle.`,
+        `This plan is flexible — you can adjust your coverage up or down anytime.`,
+        `We're suggesting cover until age ${coversTill}, based on your dependents and distance from retirement.`,
+      ],
+      coverageAmount: `${formatAmt(rangeMin)} – ${formatAmt(rangeMax)}`,
+      policyTerm: `${policyTerm} years`,
+      coversTillAge: coversTill,
+      breakdownItems,
+    };
+  },
+  processResponse: (_response, state) => {
+    const { recommended, breakdown } = calculateRecommendedCoverage(state);
+    const policyTerm = calculatePolicyTerm(state.age);
+    return {
+      currentModule: 'quote' as LifeModule,
+      recommendedCoverage: recommended,
+      selectedCoverage: recommended,
+      coverageBreakdown: breakdown,
+      selectedTerm: policyTerm,
+    };
+  },
+  getNextStep: (_response, _state) => 'life_buying_intent',
+};
+
+const lifeBuyingIntent: ConversationStep<LifeJourneyState> = {
+  id: 'life_buying_intent',
+  module: 'quote',
+  widgetType: 'selection_cards',
+  getScript: (_persona, state) => {
+    const name = state.name || state.userName || '';
+    return {
+      botMessages: [
+        name
+          ? `One last thing, ${name.split(' ')[0]}. Let us know how far along you are in your life insurance journey.`
+          : `One last thing. Let us know how far along you are in your life insurance journey.`,
+      ],
+      options: [
+        { id: 'exploring', label: "I'm just exploring options" },
+        { id: 'few_months', label: "I'm planning to buy in the next few months" },
+        { id: 'very_soon', label: "I'm planning to buy a policy very soon" },
+      ],
+    };
+  },
+  processResponse: (response, _state) => ({
+    buyingIntent: response as BuyingIntent,
+  }),
+  getNextStep: (_response, _state) => 'life_quote_display',
 };
 
 const lifeBasicIncome: ConversationStep<LifeJourneyState> = {
   id: 'life_basic_income',
-  module: 'basic_info',
+  module: 'lifestyle',
   widgetType: 'number_input',
-  getScript: (persona, state) => {
-    const personaConfig = LIFE_PERSONA_CONFIG[persona as LifePersonaType];
-    const messages: string[] = [
-      `What's your annual income?`,
-    ];
-    
-    // Persona-specific income question messaging
-    if (persona === 'protector') {
-      messages.push(
-        `This helps us recommend the right coverage amount for your family's needs.`,
-        `Your coverage should ideally be 10-15 times your annual income.`
-      );
-    } else if (persona === 'growth_seeker') {
-      messages.push(
-        `This helps us calculate how much coverage you need — and how much you can invest separately.`,
-        `We'll show you: coverage cost vs. investment potential.`
-      );
-    } else { // passive_aware
-      messages.push(
-        `This helps us recommend the right coverage — we'll do the math for you.`
-      );
-    }
-    
-    return {
-      botMessages: messages,
-      placeholder: 'Enter annual income (₹)',
-      inputType: 'number',
-      min: 100000,
-      max: 100000000,
-    };
+  getScript: (_persona, state) => ({
+    botMessages: [
+      `What is your average monthly income?`,
+      `Your income is the basis for calculating how much coverage your family would need — an approximate figure works.`,
+    ],
+    placeholder: 'Monthly income (₹)',
+    inputType: 'number',
+    min: 10000,
+    max: 10000000,
+  }),
+  processResponse: (response, _state) => {
+    const monthlyIncome = parseInt(String(response)) || 0;
+    return { annualIncome: monthlyIncome * 12 };
   },
-  processResponse: (response, state) => {
-    const income = parseInt(String(response)) || 0;
-    return { annualIncome: income };
-  },
-  getNextStep: (response, state) => {
-    const responseStr = String(response).toLowerCase();
-    if (responseStr.includes('return') || responseStr.includes('ulip') || responseStr.includes('investment')) {
-      return 'life_growth_seeker_education';
-    }
-    return 'life_financial_dependents';
-  },
+  getNextStep: (_response, _state) => 'life_basic_habits',
 };
 
 // Education step for Growth Seekers (inserted dynamically)
@@ -832,9 +994,10 @@ const lifeFinancialDependents: ConversationStep<LifeJourneyState> = {
   id: 'life_financial_dependents',
   module: 'basic_info',
   widgetType: 'multi_select',
-  getScript: (persona, state) => ({
+  getScript: (_persona, state) => ({
     botMessages: [
-      `Who depend on you financially?`,
+      `Who depends on you financially?`,
+      `Your dependents are the people your coverage needs to protect — this is the core of your plan.`,
     ],
     options: [
       { id: 'spouse', label: 'Spouse' },
@@ -856,7 +1019,7 @@ const lifeFinancialDependents: ConversationStep<LifeJourneyState> = {
     if (selected.includes('kids')) {
       return 'life_financial_children';
     }
-    return 'life_financial_loans';
+    return 'life_residential_status';
   },
 };
 
@@ -864,10 +1027,10 @@ const lifeFinancialChildren: ConversationStep<LifeJourneyState> = {
   id: 'life_financial_children',
   module: 'basic_info',
   widgetType: 'selection_cards',
-  getScript: (persona, state) => ({
+  getScript: (_persona, _state) => ({
     botMessages: [
       `How many kids do you have?`,
-      `Their education and future needs are a big part of coverage planning.`,
+      `Their education and future needs are a big part of planning the right coverage.`,
     ],
     options: [
       { id: '1', label: '1 child' },
@@ -879,7 +1042,7 @@ const lifeFinancialChildren: ConversationStep<LifeJourneyState> = {
     const count = response === '3+' ? 3 : parseInt(response) || 1;
     return { numberOfChildren: count };
   },
-  getNextStep: (_response, _state) => 'life_financial_youngest_child',
+  getNextStep: (_response, _state) => 'life_residential_status',
 };
 
 const lifeFinancialYoungestChild: ConversationStep<LifeJourneyState> = {
@@ -899,7 +1062,7 @@ const lifeFinancialYoungestChild: ConversationStep<LifeJourneyState> = {
   processResponse: (response, _state) => ({
     youngestChildAge: parseInt(String(response)) || 0,
   }),
-  getNextStep: (_response, _state) => 'life_financial_loans',
+  getNextStep: (_response, _state) => 'life_residential_status',
 };
 
 const lifeFinancialLoans: ConversationStep<LifeJourneyState> = {
@@ -1038,37 +1201,59 @@ const lifeBasicSummary: ConversationStep<LifeJourneyState> = {
    MODULE: LIFESTYLE — Occupation, Medical History
    ═══════════════════════════════════════════════ */
 
+const lifeEducation: ConversationStep<LifeJourneyState> = {
+  id: 'life_education',
+  module: 'lifestyle',
+  widgetType: 'selection_cards',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `What's your highest education level?`,
+      `Education level is one of the factors insurers use during underwriting.`,
+    ],
+    options: [
+      { id: 'below_10th', label: 'Below 10th class' },
+      { id: 'ssc_10th', label: 'SSC / 10th class' },
+      { id: 'hsc_12th', label: 'HSC / 12th class' },
+      { id: 'diploma_graduate', label: 'Diploma / Graduate and above' },
+    ],
+  }),
+  processResponse: (response, _state) => ({
+    educationLevel: response as EducationLevel,
+  }),
+  getNextStep: (_response, _state) => 'life_lifestyle_occupation',
+};
+
 const lifeLifestyleOccupation: ConversationStep<LifeJourneyState> = {
   id: 'life_lifestyle_occupation',
   module: 'lifestyle',
   widgetType: 'selection_cards',
-  getScript: (persona, state) => ({
+  getScript: (_persona, _state) => ({
     botMessages: [
       `What do you do for a living?`,
+      `Your occupation helps us assess risk profile and recommend the right plan.`,
     ],
     options: [
       { id: 'salaried', label: 'Salaried', description: 'I work for an organisation' },
       { id: 'self_employed', label: 'Self-employed', description: 'I work as a freelancer/contractor' },
       { id: 'business_owner', label: 'Business owner', description: 'I run a registered business' },
-      { id: 'not_earning', label: "I don't earn", description: 'I am student, homemaker or retired' },
+      { id: 'not_earning', label: "I don't earn", description: 'I am a student, a homemaker or retired.' },
     ],
   }),
   processResponse: (response, _state) => {
     const risk: 'low' | 'medium' | 'high' = 'low';
     return { occupation: String(response), occupationRisk: risk };
   },
-  getNextStep: (_response, _state) => 'life_lifestyle_summary',
+  getNextStep: (_response, _state) => 'life_basic_income',
 };
 
 const lifeLifestyleMedical: ConversationStep<LifeJourneyState> = {
   id: 'life_lifestyle_medical',
   module: 'lifestyle',
   widgetType: 'yes_no',
-  getScript: (persona, state) => ({
+  getScript: (_persona, _state) => ({
     botMessages: [
       `Do you have any pre-existing medical conditions?`,
-      `This includes conditions like diabetes, hypertension, heart disease, or any chronic illnesses.`,
-      `Honest disclosure ensures accurate underwriting.`,
+      `Honest disclosure helps us offer accurate pricing and avoids issues at claim time.`,
     ],
     options: [
       { id: 'yes', label: 'Yes' },
@@ -1508,11 +1693,11 @@ const lifeEnd: ConversationStep<LifeJourneyState> = {
    ═══════════════════════════════════════════════ */
 
 export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
-  // Intro and path choice
+  // Stage 1 entry
   lifeIntro,
-  lifePathChoice,
 
-  // Guided path: eligibility check
+  // Legacy / alternate paths (kept for backward compat / saved sessions)
+  lifePathChoice,
   lifeShouldBuyCheck,
   lifeNoDependentsAgeCheck,
   lifeYoungRecommendation,
@@ -1520,8 +1705,11 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeNoNeedExplanation,
   lifeExploreOtherLobs,
   lifeNeedDiscussion,
+  lifeEducationWhatIs,
+  lifeCommonMyths,
+  lifeMythsDetailed,
 
-  // Direct quote path
+  // Direct quote path (legacy)
   lifeDqGender,
   lifeDqDob,
   lifeDqPincode,
@@ -1529,37 +1717,53 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeDqIncome,
   lifeDqOccupation,
   lifeDqCoverageInput,
-  
-  // Guided path: basic information
+
+  // Name collection (upfront)
+  lifeAskName,
+  lifeNameAck,
+
+  // Stage 2 — Basic Information (spec flow)
   lifeBasicGender,
+  lifeFemaleNudge,
   lifeBasicDob,
   lifeAgeIneligible,
-  lifeBasicPincode,
-  lifeBasicHabits,
-  lifeBasicIncome,
-  lifeGrowthSeekerEducation,
-  
-  // Guided path: financial obligations
+  lifeMaritalStatus,
   lifeFinancialDependents,
   lifeFinancialChildren,
   lifeFinancialYoungestChild,
+  lifeResidentialStatus,
+  lifeBasicPincode,
+  lifeNamePhone,
+
+  // Stage 3 — Lifestyle (spec flow)
+  lifeEducation,
+  lifeLifestyleOccupation,
+  lifeBasicIncome,
+  lifeBasicHabits,
+
+  // Stage 4 — Need Assessment (spec flow)
+  lifeNeedRecommendation,
+  lifeBuyingIntent,
+
+  // Legacy financial obligations (kept for backward compat)
   lifeFinancialLoans,
   lifeFinancialMonthlyExpenses,
   lifeFinancialExistingCover,
   lifeBasicSummary,
-  
-  // Guided path: lifestyle
-  lifeLifestyleOccupation,
+  lifeGrowthSeekerEducation,
+  lifeLifestyleMedical,
   lifeLifestyleSummary,
-  
-  // Shared: quote and add-ons
+
+  // Stage 5 — Quote
   lifeQuoteDisplay,
+
+  // Stage 6 — Add-ons
   lifeAddonsIntro,
   lifeAddonsAccidentalDeath,
   lifeAddonsCriticalIllness,
   lifeAddonsDisability,
-  
-  // Shared: review and post-purchase
+
+  // Stage 7 — Review & Payment
   lifeReview,
   lifePayment,
   lifeEkyc,
