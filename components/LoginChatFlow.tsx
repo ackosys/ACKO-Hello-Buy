@@ -569,7 +569,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
       )}
 
       {/* Chat area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-6 pb-24" style={{ background: 'var(--app-bg)' }}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-6 pb-6" style={{ background: 'var(--app-bg)' }}>
 
         {/* Q1 */}
         <BotBubble>Hello! What would you like us to call you?</BotBubble>
@@ -660,29 +660,6 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           )}
         </AnimatePresence>
 
-        {/* LOB chips — for new users (with or without Pwilo) */}
-        <AnimatePresence>
-          {contentStep >= 3 && postLoginState && (postLoginState === 'new_user' || postLoginState.startsWith('new_user_pwilo')) && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col gap-3 mb-4"
-            >
-              <VehicleTypeChip
-                label="I have an existing car"
-                sub="Renew or get a new policy"
-                delay={0.05}
-                onClick={() => onSuccess('insure_existing')}
-              />
-              <VehicleTypeChip
-                label="Brand new car"
-                sub="Just bought or about to buy"
-                delay={0.15}
-                onClick={() => onSuccess('insure_new')}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* "Or need insurance for another car?" — for all non-new-user states */}
         <AnimatePresence>
@@ -734,6 +711,30 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
             >
               Continue
             </button>
+          </motion.div>
+        )}
+
+        {step === 'post_login' && contentStep >= 3 && postLoginState && (postLoginState === 'new_user' || postLoginState.startsWith('new_user_pwilo')) && (
+          <motion.div
+            key="lob-chips"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="shrink-0 px-4 pb-8 pt-3 flex flex-col gap-3"
+            style={{ borderTop: '1px solid var(--motor-border, var(--app-border))' }}
+          >
+            <VehicleTypeChip
+              label="I have an existing car"
+              sub="Renew or get a new policy"
+              delay={0.05}
+              onClick={() => onSuccess('insure_existing')}
+            />
+            <VehicleTypeChip
+              label="Brand new car"
+              sub="Just bought or about to buy"
+              delay={0.15}
+              onClick={() => onSuccess('insure_new')}
+            />
           </motion.div>
         )}
 
