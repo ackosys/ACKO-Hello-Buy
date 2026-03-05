@@ -9,6 +9,7 @@ import { detectPostLoginState, buildPoliciesForState } from '../lib/mockUsers';
 import type { PostLoginState } from '../lib/mockUsers';
 
 const VALID_OTP = '0000';
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export type LoginIntent = 'insure_existing' | 'insure_new' | 'continue_quote' | 'insure_another';
 
@@ -38,7 +39,7 @@ const MOCK_TWO_VEHICLES: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
   {
@@ -48,7 +49,7 @@ const MOCK_TWO_VEHICLES: MockPolicy[] = [
     regNumber: 'KA05 AB 9876',
     planType: 'Comprehensive plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/Nexon.png',
+    imageUrl: `${BASE}/car-images/Nexon.png`,
     lob: 'bike',
   },
 ];
@@ -62,7 +63,7 @@ const MOCK_ONE_POLICY: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
 ];
@@ -76,7 +77,7 @@ const MOCK_HEALTH_VEHICLE: MockPolicy[] = [
     regNumber: '₹5L cover · 4 members',
     planType: 'Comprehensive health plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/offerings/health-card.png',
+    imageUrl: `${BASE}/offerings/health-card.png`,
     lob: 'health',
   },
   {
@@ -86,7 +87,7 @@ const MOCK_HEALTH_VEHICLE: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
 ];
@@ -105,21 +106,21 @@ const MOCK_PWILO_CAR: MockPwilo = {
   lob: 'car',
   title: 'Continue insuring your Tata Harrier',
   subtitle: 'KA01 AB 1234',
-  imageUrl: '/car-images/harrier.png',
+  imageUrl: `${BASE}/car-images/harrier.png`,
 };
 
 const MOCK_PWILO_HEALTH: MockPwilo = {
   lob: 'health',
   title: 'Continue your health plan',
   subtitle: 'Family floater · ₹5L cover',
-  imageUrl: '/offerings/health-card.png',
+  imageUrl: `${BASE}/offerings/health-card.png`,
 };
 
 const MOCK_PWILO_LIFE: MockPwilo = {
   lob: 'life',
   title: 'Continue your life cover',
   subtitle: 'Term plan · ₹1Cr cover',
-  imageUrl: '/offerings/life-card.png',
+  imageUrl: `${BASE}/offerings/life-card.png`,
 };
 
 function getPwilo(state: PostLoginState): MockPwilo | null {

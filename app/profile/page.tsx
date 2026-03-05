@@ -11,6 +11,8 @@ import { useLanguageStore } from '../../lib/languageStore';
 import { useJourneyStore } from '../../lib/store';
 import type { Language } from '../../lib/types';
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const PROFILE_POLICIES = [
   {
     id: '1',
@@ -19,7 +21,7 @@ const PROFILE_POLICIES = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
   },
   {
     id: '2',
@@ -28,7 +30,7 @@ const PROFILE_POLICIES = [
     regNumber: 'KA01 AB 3243',
     planType: 'Comprehensive plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/Nexon.png',
+    imageUrl: `${BASE}/car-images/Nexon.png`,
   },
 ];
 

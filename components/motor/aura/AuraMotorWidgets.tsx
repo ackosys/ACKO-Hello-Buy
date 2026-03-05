@@ -1,5 +1,7 @@
 'use client';
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { Option } from '../../../lib/core/types';
@@ -527,41 +529,41 @@ export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'succes
    ═══════════════════════════════════════════════ */
 
 const VEHICLE_IMAGE_MAP: Record<string, string> = {
-  'Maruti Suzuki': '/car-images/Swift.png',
-  'Hyundai': '/car-images/Venue.png',
-  'Tata': '/car-images/Nexon.png',
-  'Kia': '/car-images/Verna.png',
-  'Mahindra': '/car-images/XUV700.png',
-  'Toyota': '/car-images/Toyota.png',
-  'Honda': '/car-images/Citroen.png',
-  'MG': '/car-images/MG comet.png',
-  'Volkswagen': '/car-images/Citroen.png',
-  'Skoda': '/car-images/Verna.png',
-  'BMW': '/car-images/harrier.png',
-  'Audi': '/car-images/harrier.png',
-  'Mercedes-Benz': '/car-images/harrier.png',
-  'Jeep': '/car-images/XUV700.png',
-  'Renault': '/car-images/Citroen.png',
-  'Nissan': '/car-images/Venue.png',
+  'Maruti Suzuki': `${BASE}/car-images/Swift.png`,
+  'Hyundai': `${BASE}/car-images/Venue.png`,
+  'Tata': `${BASE}/car-images/Nexon.png`,
+  'Kia': `${BASE}/car-images/Verna.png`,
+  'Mahindra': `${BASE}/car-images/XUV700.png`,
+  'Toyota': `${BASE}/car-images/Toyota.png`,
+  'Honda': `${BASE}/car-images/Citroen.png`,
+  'MG': `${BASE}/car-images/MG comet.png`,
+  'Volkswagen': `${BASE}/car-images/Citroen.png`,
+  'Skoda': `${BASE}/car-images/Verna.png`,
+  'BMW': `${BASE}/car-images/harrier.png`,
+  'Audi': `${BASE}/car-images/harrier.png`,
+  'Mercedes-Benz': `${BASE}/car-images/harrier.png`,
+  'Jeep': `${BASE}/car-images/XUV700.png`,
+  'Renault': `${BASE}/car-images/Citroen.png`,
+  'Nissan': `${BASE}/car-images/Venue.png`,
 };
 
 const BIKE_IMAGE_MAP: Record<string, string> = {
-  'Hero': '/car-images/Splendor.png',
-  'Honda': '/car-images/Activa.png',
-  'Bajaj': '/car-images/Pulsar.png',
-  'TVS': '/car-images/CT 100.png',
-  'Royal Enfield': '/car-images/KTM.png',
-  'Yamaha': '/car-images/Pulsar.png',
-  'Suzuki': '/car-images/Activa.png',
-  'KTM': '/car-images/KTM.png',
-  'Kawasaki': '/car-images/kawasaki.png',
-  'Ola': '/car-images/Activa.png',
-  'Ather': '/car-images/Activa.png',
+  'Hero': `${BASE}/car-images/Splendor.png`,
+  'Honda': `${BASE}/car-images/Activa.png`,
+  'Bajaj': `${BASE}/car-images/Pulsar.png`,
+  'TVS': `${BASE}/car-images/CT 100.png`,
+  'Royal Enfield': `${BASE}/car-images/KTM.png`,
+  'Yamaha': `${BASE}/car-images/Pulsar.png`,
+  'Suzuki': `${BASE}/car-images/Activa.png`,
+  'KTM': `${BASE}/car-images/KTM.png`,
+  'Kawasaki': `${BASE}/car-images/kawasaki.png`,
+  'Ola': `${BASE}/car-images/Activa.png`,
+  'Ather': `${BASE}/car-images/Activa.png`,
 };
 
 function getVehicleImage(make: string, vehicleType: string): string {
   const map = vehicleType === 'bike' ? BIKE_IMAGE_MAP : VEHICLE_IMAGE_MAP;
-  return assetPath(map[make] || (vehicleType === 'bike' ? '/car-images/Splendor.png' : '/car-images/Swift.png'));
+  return assetPath(map[make] || (vehicleType === 'bike' ? `${BASE}/car-images/Splendor.png` : `${BASE}/car-images/Swift.png`));
 }
 
 export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => void; onRetry: () => void }) {
@@ -687,37 +689,37 @@ const BIKE_BRANDS = [
 ];
 
 const BRAND_LOGO_MAP: Record<string, string> = {
-  'Maruti Suzuki': '/logos/Suzuki.svg',
-  'Hyundai': '/logos/Hyundai.svg',
-  'Tata': '/logos/TATA.svg',
-  'Kia': '/logos/Kia.svg',
-  'Mahindra': '/logos/Mahindra.svg',
-  'Toyota': '/logos/TATA.svg',
-  'Honda': '/logos/Honda.svg',
-  'MG': '/logos/MG.svg',
-  'Volkswagen': '/logos/Volvo.svg',
-  'Skoda': '/logos/Opel.svg',
-  'Renault': '/logos/Renault.svg',
-  'Nissan': '/logos/Mitsubishi.svg',
-  'Jeep': '/logos/Jeep.svg',
-  'Mercedes-Benz': '/logos/Mercedez.svg',
-  'BMW': '/logos/BMW.svg',
-  'Audi': '/logos/Audi.svg',
-  'Hero': '/logos/Hero.svg',
-  'Bajaj': '/logos/Bajaj.svg',
-  'TVS': '/logos/TVS.svg',
-  'Royal Enfield': '/logos/Royal Enfield.svg',
-  'Yamaha': '/logos/Suzuki.svg',
-  'Suzuki': '/logos/Suzuki.svg',
-  'KTM': '/logos/BMW.svg',
-  'Kawasaki': '/logos/Honda.svg',
-  'Jawa': '/logos/Mahindra.svg',
-  'Ola': '/logos/ola.svg',
-  'Ather': '/logos/Ather.svg',
-  'Revolt': '/logos/Revolt.svg',
-  'Aprilia': '/logos/Ferrari.svg',
-  'Benelli': '/logos/Ferrari.svg',
-  'BMW Motorrad': '/logos/BMW.svg',
+  'Maruti Suzuki': `${BASE}/logos/Suzuki.svg`,
+  'Hyundai': `${BASE}/logos/Hyundai.svg`,
+  'Tata': `${BASE}/logos/TATA.svg`,
+  'Kia': `${BASE}/logos/Kia.svg`,
+  'Mahindra': `${BASE}/logos/Mahindra.svg`,
+  'Toyota': `${BASE}/logos/TATA.svg`,
+  'Honda': `${BASE}/logos/Honda.svg`,
+  'MG': `${BASE}/logos/MG.svg`,
+  'Volkswagen': `${BASE}/logos/Volvo.svg`,
+  'Skoda': `${BASE}/logos/Opel.svg`,
+  'Renault': `${BASE}/logos/Renault.svg`,
+  'Nissan': `${BASE}/logos/Mitsubishi.svg`,
+  'Jeep': `${BASE}/logos/Jeep.svg`,
+  'Mercedes-Benz': `${BASE}/logos/Mercedez.svg`,
+  'BMW': `${BASE}/logos/BMW.svg`,
+  'Audi': `${BASE}/logos/Audi.svg`,
+  'Hero': `${BASE}/logos/Hero.svg`,
+  'Bajaj': `${BASE}/logos/Bajaj.svg`,
+  'TVS': `${BASE}/logos/TVS.svg`,
+  'Royal Enfield': `${BASE}/logos/Royal Enfield.svg`,
+  'Yamaha': `${BASE}/logos/Suzuki.svg`,
+  'Suzuki': `${BASE}/logos/Suzuki.svg`,
+  'KTM': `${BASE}/logos/BMW.svg`,
+  'Kawasaki': `${BASE}/logos/Honda.svg`,
+  'Jawa': `${BASE}/logos/Mahindra.svg`,
+  'Ola': `${BASE}/logos/ola.svg`,
+  'Ather': `${BASE}/logos/Ather.svg`,
+  'Revolt': `${BASE}/logos/Revolt.svg`,
+  'Aprilia': `${BASE}/logos/Ferrari.svg`,
+  'Benelli': `${BASE}/logos/Ferrari.svg`,
+  'BMW Motorrad': `${BASE}/logos/BMW.svg`,
 };
 
 export function BrandSelector({ onSelect }: { onSelect: (brand: string) => void }) {

@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 import { Option } from '../../lib/core/types';
 import { assetPath } from '../../lib/assetPath';
 import { useMotorStore } from '../../lib/motor/store';
@@ -698,35 +700,35 @@ export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'succes
    ═══════════════════════════════════════════════ */
 
 const VEHICLE_IMAGE_MAP: Record<string, string> = {
-  'Maruti Suzuki': '/car-images/Swift.png',
-  'Hyundai': '/car-images/Venue.png',
-  'Tata': '/car-images/Nexon.png',
-  'Kia': '/car-images/Verna.png',
-  'Mahindra': '/car-images/XUV700.png',
-  'Toyota': '/car-images/Toyota.png',
-  'Honda': '/car-images/Citroen.png',
-  'MG': '/car-images/MG comet.png',
-  'Volkswagen': '/car-images/Citroen.png',
-  'Skoda': '/car-images/Verna.png',
-  'BMW': '/car-images/harrier.png',
-  'Audi': '/car-images/harrier.png',
-  'Mercedes-Benz': '/car-images/harrier.png',
-  'Jeep': '/car-images/XUV700.png',
-  'Renault': '/car-images/Citroen.png',
-  'Nissan': '/car-images/Venue.png',
+  'Maruti Suzuki': `${BASE}/car-images/Swift.png`,
+  'Hyundai': `${BASE}/car-images/Venue.png`,
+  'Tata': `${BASE}/car-images/Nexon.png`,
+  'Kia': `${BASE}/car-images/Verna.png`,
+  'Mahindra': `${BASE}/car-images/XUV700.png`,
+  'Toyota': `${BASE}/car-images/Toyota.png`,
+  'Honda': `${BASE}/car-images/Citroen.png`,
+  'MG': `${BASE}/car-images/MG comet.png`,
+  'Volkswagen': `${BASE}/car-images/Citroen.png`,
+  'Skoda': `${BASE}/car-images/Verna.png`,
+  'BMW': `${BASE}/car-images/harrier.png`,
+  'Audi': `${BASE}/car-images/harrier.png`,
+  'Mercedes-Benz': `${BASE}/car-images/harrier.png`,
+  'Jeep': `${BASE}/car-images/XUV700.png`,
+  'Renault': `${BASE}/car-images/Citroen.png`,
+  'Nissan': `${BASE}/car-images/Venue.png`,
 };
 
 const BIKE_IMAGE_MAP: Record<string, string> = {
-  'Hero': '/car-images/Splendor.png',
-  'Honda': '/car-images/Activa.png',
-  'Bajaj': '/car-images/Pulsar.png',
-  'TVS': '/car-images/CT 100.png',
-  'Royal Enfield': '/car-images/KTM.png',
-  'Yamaha': '/car-images/Pulsar.png',
-  'Suzuki': '/car-images/Activa.png',
-  'KTM': '/car-images/KTM.png',
-  'Kawasaki': '/car-images/kawasaki.png',
-  'Ola': '/car-images/Activa.png',
+  'Hero': `${BASE}/car-images/Splendor.png`,
+  'Honda': `${BASE}/car-images/Activa.png`,
+  'Bajaj': `${BASE}/car-images/Pulsar.png`,
+  'TVS': `${BASE}/car-images/CT 100.png`,
+  'Royal Enfield': `${BASE}/car-images/KTM.png`,
+  'Yamaha': `${BASE}/car-images/Pulsar.png`,
+  'Suzuki': `${BASE}/car-images/Activa.png`,
+  'KTM': `${BASE}/car-images/KTM.png`,
+  'Kawasaki': `${BASE}/car-images/kawasaki.png`,
+  'Ola': `${BASE}/car-images/Activa.png`,
   'Ather': '/car-images/Activa.png',
 };
 

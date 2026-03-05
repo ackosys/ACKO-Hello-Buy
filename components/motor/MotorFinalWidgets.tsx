@@ -1,5 +1,7 @@
 'use client';
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
@@ -7,22 +9,22 @@ import { useMotorStore } from '../../lib/motor/store';
 import { assetPath } from '../../lib/assetPath';
 
 const VEHICLE_IMAGES: Record<string, string> = {
-  'Maruti Suzuki': '/car-images/Swift.png',
-  'Hyundai': '/car-images/Venue.png',
-  'Tata': '/car-images/Nexon.png',
-  'Kia': '/car-images/Verna.png',
-  'Mahindra': '/car-images/XUV700.png',
-  'Toyota': '/car-images/Toyota.png',
-  'Honda': '/car-images/Citroen.png',
-  'MG': '/car-images/MG comet.png',
-  'Volkswagen': '/car-images/Citroen.png',
-  'Renault': '/car-images/Citroen.png',
-  'BMW': '/car-images/harrier.png',
-  'Hero': '/car-images/Splendor.png',
-  'Bajaj': '/car-images/Pulsar.png',
-  'TVS': '/car-images/CT 100.png',
-  'Royal Enfield': '/car-images/KTM.png',
-  'Yamaha': '/car-images/Pulsar.png',
+  'Maruti Suzuki': `${BASE}/car-images/Swift.png`,
+  'Hyundai': `${BASE}/car-images/Venue.png`,
+  'Tata': `${BASE}/car-images/Nexon.png`,
+  'Kia': `${BASE}/car-images/Verna.png`,
+  'Mahindra': `${BASE}/car-images/XUV700.png`,
+  'Toyota': `${BASE}/car-images/Toyota.png`,
+  'Honda': `${BASE}/car-images/Citroen.png`,
+  'MG': `${BASE}/car-images/MG comet.png`,
+  'Volkswagen': `${BASE}/car-images/Citroen.png`,
+  'Renault': `${BASE}/car-images/Citroen.png`,
+  'BMW': `${BASE}/car-images/harrier.png`,
+  'Hero': `${BASE}/car-images/Splendor.png`,
+  'Bajaj': `${BASE}/car-images/Pulsar.png`,
+  'TVS': `${BASE}/car-images/CT 100.png`,
+  'Royal Enfield': `${BASE}/car-images/KTM.png`,
+  'Yamaha': `${BASE}/car-images/Pulsar.png`,
 };
 
 // Premium Breakdown Widget
@@ -74,7 +76,7 @@ export function PremiumBreakdown({ onContinue }: { onContinue: () => void }) {
         </div>
         <div className="absolute right-3 top-3 w-[80px] h-[60px]">
           <Image
-            src={assetPath(VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png')}
+            src={assetPath(VEHICLE_IMAGES[vehicleData.make] || `${BASE}/car-images/Swift.png`)}
             alt={vehicleData.model}
             width={80}
             height={60}
@@ -304,7 +306,7 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
   const [showDetails, setShowDetails] = useState(false);
   const { vehicleData, policyNumber } = useMotorStore();
   const vehicleName = `${vehicleData.make} ${vehicleData.model}`.trim();
-  const vehicleImage = VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png';
+  const vehicleImage = VEHICLE_IMAGES[vehicleData.make] || `${BASE}/car-images/Swift.png`;
 
   const confetti = useMemo(() =>
     Array.from({ length: 30 }).map(() => ({
@@ -413,7 +415,7 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
 export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
   const { vehicleData, policyNumber } = useMotorStore();
   const vehicleName = `${vehicleData.make} ${vehicleData.model}`.trim();
-  const vehicleImage = VEHICLE_IMAGES[vehicleData.make] || '/car-images/Swift.png';
+  const vehicleImage = VEHICLE_IMAGES[vehicleData.make] || `${BASE}/car-images/Swift.png`;
 
   const steps = [
     { label: 'Payment received', status: 'done' as const, detail: 'Just now' },
