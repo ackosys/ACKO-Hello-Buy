@@ -113,7 +113,7 @@ export default function LifeHeader() {
     <header className="sticky top-0 z-30" style={{ background: 'var(--app-header-bg)', borderBottom: '1px solid var(--app-border)' }}>
       <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {showBackBtn ? (
+          {showBackBtn && (
             <button
               onClick={goBack}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95"
@@ -124,11 +124,10 @@ export default function LifeHeader() {
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
-          ) : (
-            <Link href="/">
-              <AckoLogo variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-5" />
-            </Link>
           )}
+          <Link href="/">
+            <AckoLogo variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-5" />
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
