@@ -331,34 +331,11 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
   const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
   const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
 
-  // Health icon — family/people
-  const HealthIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="5.5" cy="4" r="2" stroke="#4b4b4b" strokeWidth="1.2"/>
-      <circle cx="10.5" cy="4" r="2" stroke="#4b4b4b" strokeWidth="1.2"/>
-      <path d="M1 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M10.5 9c2 0 3.5 1.2 3.5 3.5" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round"/>
-    </svg>
-  );
-
-  // Life icon — heart
-  const LifeIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M8 13.5S2 9.5 2 5.5a3 3 0 016 0 3 3 0 016 0c0 4-6 8-6 8z" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-
-  // Vehicles icon — car + bike (using the asset)
-  const VehiclesIcon = () => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={`${BASE}/icons/car-and-bike.svg`} alt="vehicles" width={16} height={16} style={{ opacity: 0.6 }} />
-  );
-
   const pills = [
-    healthCount > 0 && { label: 'Health', count: healthCount, urgent: healthUrgent, icon: <HealthIcon /> },
-    lifeCount > 0 && { label: 'Life', count: lifeCount, urgent: lifeUrgent, icon: <LifeIcon /> },
-    vehicleCount > 0 && { label: 'Vehicles', count: vehicleCount, urgent: vehicleUrgent, icon: <VehiclesIcon /> },
-  ].filter(Boolean) as { label: string; count: number; urgent: boolean; icon: React.ReactNode }[];
+    healthCount > 0 && { label: 'Health', count: healthCount, urgent: healthUrgent, iconSrc: `${BASE}/icons/family.svg` },
+    lifeCount > 0 && { label: 'Life', count: lifeCount, urgent: lifeUrgent, iconSrc: `${BASE}/icons/life.svg` },
+    vehicleCount > 0 && { label: 'Vehicles', count: vehicleCount, urgent: vehicleUrgent, iconSrc: `${BASE}/icons/vehicles.svg` },
+  ].filter(Boolean) as { label: string; count: number; urgent: boolean; iconSrc: string }[];
 
   return (
     <motion.div
@@ -389,7 +366,8 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
         {pills.map(pill => (
           <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
             style={{ background: 'var(--app-surface-2)' }}>
-            {pill.icon}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pill.iconSrc} alt={pill.label} width={16} height={16} style={{ opacity: 0.7 }} />
             <span className="text-[10px] leading-[14px]" style={{ color: 'var(--app-text-muted)' }}>{pill.label}</span>
             {/* Count badge */}
             <div className="w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-semibold leading-none"
