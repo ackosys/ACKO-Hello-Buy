@@ -323,19 +323,19 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
   const { policies } = useUserProfileStore();
   const activePolicies = policies.filter(p => p.active);
 
-  const vehicleCount = activePolicies.filter(p => p.lob === 'car' || p.lob === 'bike').length;
-  const healthCount = activePolicies.filter(p => p.lob === 'health').length;
-  const lifeCount = activePolicies.filter(p => p.lob === 'life').length;
+  const vehicleCount = activePolicies.some(p => p.lob === 'car' || p.lob === 'bike');
+  const healthCount = activePolicies.some(p => p.lob === 'health');
+  const lifeCount = activePolicies.some(p => p.lob === 'life');
 
   const vehicleUrgent = activePolicies.some(p => (p.lob === 'car' || p.lob === 'bike') && p.urgent);
   const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
   const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
 
   const pills = [
-    healthCount > 0 && { label: 'Health', count: healthCount, urgent: healthUrgent, iconSrc: `${BASE}/icons/family.svg` },
-    lifeCount > 0 && { label: 'Life', count: lifeCount, urgent: lifeUrgent, iconSrc: `${BASE}/icons/life.svg` },
-    vehicleCount > 0 && { label: 'Vehicles', count: vehicleCount, urgent: vehicleUrgent, iconSrc: `${BASE}/icons/vehicles.svg` },
-  ].filter(Boolean) as { label: string; count: number; urgent: boolean; iconSrc: string }[];
+    healthCount && { label: 'Health', urgent: healthUrgent, iconSrc: `${BASE}/icons/family.svg` },
+    lifeCount && { label: 'Life', urgent: lifeUrgent, iconSrc: `${BASE}/icons/life.svg` },
+    vehicleCount && { label: 'Vehicles', urgent: vehicleUrgent, iconSrc: `${BASE}/icons/vehicles.svg` },
+  ].filter(Boolean) as { label: string; urgent: boolean; iconSrc: string }[];
 
   return (
     <motion.div
@@ -361,7 +361,7 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
         </p>
       </div>
 
-      {/* Category pills with count badges */}
+      {/* Category pills — red dot only for renewal/urgent */}
       <div className="flex gap-1.5 flex-wrap mb-4">
         {pills.map(pill => (
           <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
@@ -369,18 +369,16 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pill.iconSrc} alt={pill.label} width={16} height={16} style={{ opacity: 0.7 }} />
             <span className="text-[10px] leading-[14px]" style={{ color: 'var(--app-text-muted)' }}>{pill.label}</span>
-            {/* Count badge */}
-            <div className="w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-semibold leading-none"
-              style={{ background: pill.urgent ? '#D83D37' : '#6841e6', color: 'white' }}>
-              {pill.count}
-            </div>
+            {pill.urgent && (
+              <div className="absolute w-2 h-2 rounded-full" style={{ background: '#D83D37', top: '-1px', right: '-1px' }} />
+            )}
           </div>
         ))}
       </div>
 
-      {/* Circle arrow */}
-      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      {/* Circle arrow — 24×24px */}
+      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
           <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
