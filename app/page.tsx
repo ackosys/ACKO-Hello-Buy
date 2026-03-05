@@ -403,22 +403,22 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
       </div>
 
       {/* Circle arrow */}
-      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#6841e6' }}>
+      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
       {/* Policy document illustration — bottom right */}
       <div className="absolute bottom-0 right-0 w-16 h-14 overflow-hidden pointer-events-none">
         <svg width="64" height="56" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="18" y="8" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.12"/>
-          <rect x="22" y="4" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.18"/>
-          <rect x="26" y="0" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.25"/>
+          <rect x="18" y="8" width="32" height="40" rx="4" fill="#6841e6" opacity="0.12"/>
+          <rect x="22" y="4" width="32" height="40" rx="4" fill="#6841e6" opacity="0.18"/>
+          <rect x="26" y="0" width="32" height="40" rx="4" fill="#6841e6" opacity="0.25"/>
           <rect x="28" y="2" width="28" height="36" rx="3" fill="white" opacity="0.9"/>
-          <rect x="31" y="8" width="18" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.5"/>
-          <rect x="31" y="13" width="14" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.3"/>
-          <rect x="31" y="18" width="16" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.3"/>
+          <rect x="31" y="8" width="18" height="2" rx="1" fill="#6841e6" opacity="0.5"/>
+          <rect x="31" y="13" width="14" height="2" rx="1" fill="#6841e6" opacity="0.3"/>
+          <rect x="31" y="18" width="16" height="2" rx="1" fill="#6841e6" opacity="0.3"/>
         </svg>
       </div>
     </motion.div>
