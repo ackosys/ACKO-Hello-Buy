@@ -12,6 +12,7 @@ interface LifeEntryScreenProps {
   onJumpToFinancial: () => void;
   onJumpToMedical: () => void;
   onJumpToUnderwriting: () => void;
+  onJumpToDashboard?: () => void;
 }
 
 function StepCard({ onClick, icon, title, subtitle, iconBg }: {
@@ -46,6 +47,7 @@ export default function LifeEntryScreen({
   onJumpToFinancial,
   onJumpToMedical,
   onJumpToUnderwriting,
+  onJumpToDashboard,
 }: LifeEntryScreenProps) {
   const { theme } = useThemeStore();
   const t = useT();

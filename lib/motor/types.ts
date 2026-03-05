@@ -196,6 +196,23 @@ export interface MotorJourneyState extends BaseJourneyState {
 
 export type MotorIntent = 'renew' | 'new_car' | 'acko_drive' | 'manage';
 
+export interface DashboardPolicy {
+  id: string;
+  vehicleType: 'car' | 'bike';
+  make: string;
+  model: string;
+  variant: string;
+  registrationNumber: string;
+  policyNumber: string;
+  plan: string;
+  planType: 'comprehensive' | 'zero_dep' | 'third_party';
+  premium: number;
+  idv: number;
+  expiryDate: string;
+  ncbPercentage: NcbPercentage;
+  addOns: string[];
+}
+
 export interface MotorStepScript {
   botMessages: string[];
   subText?: string;
