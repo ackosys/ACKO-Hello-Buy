@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { useJourneyStore } from '../lib/store';
-
-const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 import LanguageSelector from '../components/LanguageSelector';
 import AckoLogo from '../components/AckoLogo';
 import PolicyActionScreen, { type PolicyStatusInfo } from '../components/global/PolicyActionScreen';
@@ -284,17 +281,8 @@ function HeaderPill({
   );
 }
 
-/* ── Hero Greeting with Lottie animated ACKO logo ── */
+/* ── Hero Greeting with transparent-bg webm logo ── */
 function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
-  const [animationData, setAnimationData] = useState<object | null>(null);
-
-  useEffect(() => {
-    fetch(`${BASE}/offerings/logo-animation.json`)
-      .then(res => res.json())
-      .then(data => setAnimationData(data))
-      .catch(() => {});
-  }, []);
-
   return (
     <motion.div
       className="flex flex-col items-center gap-2 px-6 pt-8 pb-10"
@@ -303,21 +291,24 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <div className="w-[84px] h-[84px] mb-1">
-        {animationData ? (
-          <Lottie animationData={animationData} loop autoplay style={{ width: 84, height: 84 }} />
-        ) : (
-          <div className="w-full h-full rounded-full" style={{ background: '#4e29bb' }} />
-        )}
+        <video
+          src={`${BASE}/offerings/logo-animation.webm`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ width: 84, height: 84, objectFit: 'contain' }}
+        />
       </div>
       <div className="text-center">
         <h1
-          className="text-[20px] font-semibold tracking-[-0.1px] leading-[28px]"
+          className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
           style={{ color: 'var(--app-text)' }}
         >
-          {firstName ? `Hello ${firstName},` : 'Hello,'}
+          {firstName ? `Hello ${firstName}` : 'Hello'}
         </h1>
         <p
-          className="text-[20px] leading-[20px] mt-0.5"
+          className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
           style={{ color: 'var(--app-text-muted)' }}
         >
           {subtitle || 'What insurance are you interested in?'}
@@ -332,37 +323,42 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
   const { policies } = useUserProfileStore();
   const activePolicies = policies.filter(p => p.active);
 
-  // Group into display categories
-  const hasVehicle = activePolicies.some(p => p.lob === 'car' || p.lob === 'bike');
-  const hasHealth = activePolicies.some(p => p.lob === 'health');
-  const hasLife = activePolicies.some(p => p.lob === 'life');
+  const vehicleCount = activePolicies.filter(p => p.lob === 'car' || p.lob === 'bike').length;
+  const healthCount = activePolicies.filter(p => p.lob === 'health').length;
+  const lifeCount = activePolicies.filter(p => p.lob === 'life').length;
 
   const vehicleUrgent = activePolicies.some(p => (p.lob === 'car' || p.lob === 'bike') && p.urgent);
   const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
   const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
 
+  // Health icon — family/people
+  const HealthIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="5.5" cy="4" r="2" stroke="#4b4b4b" strokeWidth="1.2"/>
+      <circle cx="10.5" cy="4" r="2" stroke="#4b4b4b" strokeWidth="1.2"/>
+      <path d="M1 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M10.5 9c2 0 3.5 1.2 3.5 3.5" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+
+  // Life icon — heart
+  const LifeIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 13.5S2 9.5 2 5.5a3 3 0 016 0 3 3 0 016 0c0 4-6 8-6 8z" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  // Vehicles icon — car + bike (using the asset)
+  const VehiclesIcon = () => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`${BASE}/icons/car-and-bike.svg`} alt="vehicles" width={16} height={16} style={{ opacity: 0.6 }} />
+  );
+
   const pills = [
-    hasHealth && { label: 'Health', urgent: healthUrgent, icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 14s-5.5-3.5-5.5-7.5a3.5 3.5 0 017 0 3.5 3.5 0 017 0C16.5 10.5 8 14 8 14z" fill="none" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="6" cy="5" r="2" fill="none" stroke="#4b4b4b" strokeWidth="1.2"/>
-        <circle cx="10" cy="5" r="2" fill="none" stroke="#4b4b4b" strokeWidth="1.2"/>
-      </svg>
-    )},
-    hasLife && { label: 'Life', urgent: lifeUrgent, icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 13.5S2 9.5 2 5.5a3 3 0 016 0 3 3 0 016 0c0 4-6 8-6 8z" fill="none" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )},
-    hasVehicle && { label: 'Vehicles', urgent: vehicleUrgent, icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M2.5 9.5h11M3.5 6l1-3h7l1 3" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-        <rect x="2" y="6" width="12" height="5" rx="1.5" stroke="#4b4b4b" strokeWidth="1.2"/>
-        <circle cx="5" cy="11.5" r="1.2" fill="#4b4b4b"/>
-        <circle cx="11" cy="11.5" r="1.2" fill="#4b4b4b"/>
-      </svg>
-    )},
-  ].filter(Boolean) as { label: string; urgent: boolean; icon: React.ReactNode }[];
+    healthCount > 0 && { label: 'Health', count: healthCount, urgent: healthUrgent, icon: <HealthIcon /> },
+    lifeCount > 0 && { label: 'Life', count: lifeCount, urgent: lifeUrgent, icon: <LifeIcon /> },
+    vehicleCount > 0 && { label: 'Vehicles', count: vehicleCount, urgent: vehicleUrgent, icon: <VehiclesIcon /> },
+  ].filter(Boolean) as { label: string; count: number; urgent: boolean; icon: React.ReactNode }[];
 
   return (
     <motion.div
@@ -378,7 +374,7 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       whileTap={{ scale: 0.98 }}
     >
-      {/* Header row */}
+      {/* Header */}
       <div className="flex flex-col gap-1 mb-4">
         <h3 className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--app-text)' }}>
           Manage my policies
@@ -388,38 +384,33 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
         </p>
       </div>
 
-      {/* Category pills */}
+      {/* Category pills with count badges */}
       <div className="flex gap-1.5 flex-wrap mb-4">
         {pills.map(pill => (
           <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
             style={{ background: 'var(--app-surface-2)' }}>
             {pill.icon}
-            <span className="text-[10px] leading-[14px]" style={{ color: '#4b4b4b' }}>{pill.label}</span>
-            {pill.urgent && (
-              <div className="absolute w-2 h-2 rounded-full" style={{ background: '#D83D37', top: '-1px', right: '-1px' }} />
-            )}
+            <span className="text-[10px] leading-[14px]" style={{ color: 'var(--app-text-muted)' }}>{pill.label}</span>
+            {/* Count badge */}
+            <div className="w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-semibold leading-none"
+              style={{ background: pill.urgent ? '#D83D37' : '#6841e6', color: 'white' }}>
+              {pill.count}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Circle arrow */}
-      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
-      {/* Policy document illustration — bottom right */}
-      <div className="absolute bottom-0 right-0 w-16 h-14 overflow-hidden pointer-events-none">
-        <svg width="64" height="56" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="18" y="8" width="32" height="40" rx="4" fill="#6841e6" opacity="0.12"/>
-          <rect x="22" y="4" width="32" height="40" rx="4" fill="#6841e6" opacity="0.18"/>
-          <rect x="26" y="0" width="32" height="40" rx="4" fill="#6841e6" opacity="0.25"/>
-          <rect x="28" y="2" width="28" height="36" rx="3" fill="white" opacity="0.9"/>
-          <rect x="31" y="8" width="18" height="2" rx="1" fill="#6841e6" opacity="0.5"/>
-          <rect x="31" y="13" width="14" height="2" rx="1" fill="#6841e6" opacity="0.3"/>
-          <rect x="31" y="18" width="16" height="2" rx="1" fill="#6841e6" opacity="0.3"/>
-        </svg>
+      {/* Policies illustration — bottom right */}
+      <div className="absolute bottom-0 right-0 w-[72px] h-[72px] pointer-events-none">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${BASE}/offerings/policies-card.svg`} alt="" className="w-full h-full object-contain object-bottom-right" draggable={false} />
       </div>
     </motion.div>
   );
@@ -977,7 +968,7 @@ function GlobalHomepageInner() {
 
               <HeroGreeting
                 firstName={firstName}
-                subtitle={isLoggedIn && hasActivePolicies ? 'What would you like to do?' : undefined}
+                subtitle={isLoggedIn && hasActivePolicies ? 'Good to see you again.\nWhat would you like to do?' : undefined}
               />
 
               {/* Manage my policies — only for logged-in users with policies */}
@@ -989,9 +980,12 @@ function GlobalHomepageInner() {
 
               {/* Section divider — only when manage card is shown */}
               {isLoggedIn && hasActivePolicies && (
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--app-text-muted)' }}>
+                <div className="px-4 pt-5 pb-2 text-center">
+                  <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
                     Explore another insurance
+                  </p>
+                  <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+                    Find the right cover for your needs
                   </p>
                 </div>
               )}
