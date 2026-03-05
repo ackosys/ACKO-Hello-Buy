@@ -453,7 +453,7 @@ function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () =
 /* ── Main component ── */
 export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginChatFlowProps) {
   const router = useRouter();
-  const { setProfile } = useUserProfileStore();
+  const { setProfile, addPolicy, policies } = useUserProfileStore();
 
   const [step, setStep] = useState<'q1' | 'q2' | 'q3' | 'post_login'>('q1');
   const [showTyping, setShowTyping] = useState(false);
@@ -493,7 +493,24 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
     if (val === VALID_OTP) {
       setOtpError(false);
       const state = detectPostLoginState(phone);
-      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true });
+      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+
+      // Seed policies into store so home page "Manage my policies" card can read them
+      const mockPolicies = getPoliciesForState(state);
+      mockPolicies.forEach((mp, i) => {
+        const lob = mp.lob ?? 'car';
+        addPolicy({
+          id: `login_${lob}_${i}`,
+          lob,
+          policyNumber: `ACKO-${lob.toUpperCase()}-${new Date().getFullYear()}-${10000 + i}`,
+          label: `${mp.make} ${mp.model}`,
+          active: true,
+          purchasedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+          details: mp.regNumber,
+          urgent: i === 0, // first policy always has an urgent action (renewal due) for demo
+        });
+      });
+
       setOtpEchoed(true);
       setPostLoginState(state);
       setShowTyping(true);

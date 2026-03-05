@@ -285,7 +285,7 @@ function HeaderPill({
 }
 
 /* ── Hero Greeting with Lottie animated ACKO logo ── */
-function HeroGreeting({ firstName }: { firstName: string }) {
+function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
   const [animationData, setAnimationData] = useState<object | null>(null);
 
   useEffect(() => {
@@ -320,8 +320,106 @@ function HeroGreeting({ firstName }: { firstName: string }) {
           className="text-[20px] leading-[20px] mt-0.5"
           style={{ color: 'var(--app-text-muted)' }}
         >
-          What insurance are you interested in?
+          {subtitle || 'What insurance are you interested in?'}
         </p>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Manage My Policies Card ── */
+function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
+  const { policies } = useUserProfileStore();
+  const activePolicies = policies.filter(p => p.active);
+
+  // Group into display categories
+  const hasVehicle = activePolicies.some(p => p.lob === 'car' || p.lob === 'bike');
+  const hasHealth = activePolicies.some(p => p.lob === 'health');
+  const hasLife = activePolicies.some(p => p.lob === 'life');
+
+  const vehicleUrgent = activePolicies.some(p => (p.lob === 'car' || p.lob === 'bike') && p.urgent);
+  const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
+  const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
+
+  const pills = [
+    hasHealth && { label: 'Health', urgent: healthUrgent, icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 14s-5.5-3.5-5.5-7.5a3.5 3.5 0 017 0 3.5 3.5 0 017 0C16.5 10.5 8 14 8 14z" fill="none" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6" cy="5" r="2" fill="none" stroke="#4b4b4b" strokeWidth="1.2"/>
+        <circle cx="10" cy="5" r="2" fill="none" stroke="#4b4b4b" strokeWidth="1.2"/>
+      </svg>
+    )},
+    hasLife && { label: 'Life', urgent: lifeUrgent, icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 13.5S2 9.5 2 5.5a3 3 0 016 0 3 3 0 016 0c0 4-6 8-6 8z" fill="none" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )},
+    hasVehicle && { label: 'Vehicles', urgent: vehicleUrgent, icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M2.5 9.5h11M3.5 6l1-3h7l1 3" stroke="#4b4b4b" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <rect x="2" y="6" width="12" height="5" rx="1.5" stroke="#4b4b4b" strokeWidth="1.2"/>
+        <circle cx="5" cy="11.5" r="1.2" fill="#4b4b4b"/>
+        <circle cx="11" cy="11.5" r="1.2" fill="#4b4b4b"/>
+      </svg>
+    )},
+  ].filter(Boolean) as { label: string; urgent: boolean; icon: React.ReactNode }[];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1 }}
+      className="relative overflow-hidden rounded-3xl cursor-pointer"
+      style={{
+        background: 'var(--app-surface)',
+        border: '1px solid var(--app-border)',
+        padding: '20px',
+      }}
+      onClick={onClick}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* Header row */}
+      <div className="flex flex-col gap-1 mb-4">
+        <h3 className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--app-text)' }}>
+          Manage my policies
+        </h3>
+        <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>
+          View, renew, claim, download docs
+        </p>
+      </div>
+
+      {/* Category pills */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        {pills.map(pill => (
+          <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
+            style={{ background: 'var(--app-surface-2)' }}>
+            {pill.icon}
+            <span className="text-[10px] leading-[14px]" style={{ color: '#4b4b4b' }}>{pill.label}</span>
+            {pill.urgent && (
+              <div className="absolute w-2 h-2 rounded-full" style={{ background: '#D83D37', top: '-1px', right: '-1px' }} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Circle arrow */}
+      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: '#6841e6' }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* Policy document illustration — bottom right */}
+      <div className="absolute bottom-0 right-0 w-16 h-14 overflow-hidden pointer-events-none">
+        <svg width="64" height="56" viewBox="0 0 64 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="18" y="8" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.12"/>
+          <rect x="22" y="4" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.18"/>
+          <rect x="26" y="0" width="32" height="40" rx="4" fill="var(--app-accent, #6841e6)" opacity="0.25"/>
+          <rect x="28" y="2" width="28" height="36" rx="3" fill="white" opacity="0.9"/>
+          <rect x="31" y="8" width="18" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.5"/>
+          <rect x="31" y="13" width="14" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.3"/>
+          <rect x="31" y="18" width="16" height="2" rx="1" fill="var(--app-accent, #6841e6)" opacity="0.3"/>
+        </svg>
       </div>
     </motion.div>
   );
@@ -750,7 +848,8 @@ function GlobalHomepageInner() {
   const [showMenu, setShowMenu] = useState(false);
 
   const overrides = useLobSnapshots();
-  const { firstName, isLoggedIn } = useUserProfileStore();
+  const { firstName, isLoggedIn, policies } = useUserProfileStore();
+  const hasActivePolicies = policies.some(p => p.active);
 
   const handleLanguageCycle = useCallback(() => {
     const idx = LANG_ORDER.indexOf(language as Language);
@@ -876,7 +975,26 @@ function GlobalHomepageInner() {
                 langLabel={LANG_LABELS[language as string] || language}
               />
 
-              <HeroGreeting firstName={firstName} />
+              <HeroGreeting
+                firstName={firstName}
+                subtitle={isLoggedIn ? 'What would you like to do?' : undefined}
+              />
+
+              {/* Manage my policies — only for logged-in users with policies */}
+              {isLoggedIn && hasActivePolicies && (
+                <div className="px-4 mb-1">
+                  <ManagePoliciesCard onClick={() => router.push('/profile')} />
+                </div>
+              )}
+
+              {/* Section divider — only when manage card is shown */}
+              {isLoggedIn && hasActivePolicies && (
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--app-text-muted)' }}>
+                    Explore another insurance
+                  </p>
+                </div>
+              )}
 
               {/* LOB Cards */}
               <div className="px-4 space-y-3">
