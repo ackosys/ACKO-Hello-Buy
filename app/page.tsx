@@ -383,11 +383,15 @@ function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
         </svg>
       </div>
 
-      {/* Policies illustration — bottom right */}
-      <div className="absolute bottom-0 right-0 w-[72px] h-[72px] pointer-events-none">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE}/offerings/policies-card.svg`} alt="" className="w-full h-full object-contain object-bottom-right" draggable={false} />
-      </div>
+      {/* Policies illustration — anchored to bottom-right corner */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${BASE}/offerings/policies-card.svg`}
+        alt=""
+        draggable={false}
+        className="pointer-events-none"
+        style={{ position: 'absolute', bottom: 0, right: 0, width: 100, height: 100, objectFit: 'contain', objectPosition: 'bottom right' }}
+      />
     </motion.div>
   );
 }
