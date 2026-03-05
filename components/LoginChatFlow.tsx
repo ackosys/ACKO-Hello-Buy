@@ -5,35 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUserProfileStore } from '../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../lib/mockUsers';
+import type { PostLoginState } from '../lib/mockUsers';
 
 const VALID_OTP = '0000';
-
-// Phone → user state mapping (prototype simulation)
-type PostLoginState =
-  | 'new_user'
-  | 'new_user_pwilo_car'
-  | 'new_user_pwilo_health'
-  | 'new_user_pwilo_life'
-  | 'one_policy'
-  | 'two_policies_health_vehicle'
-  | 'two_policies_vehicles'
-  | 'one_policy_pwilo_car'
-  | 'one_policy_pwilo_health'
-  | 'one_policy_pwilo_life';
-
-function detectPostLoginState(phone: string): PostLoginState {
-  if (phone === '9876543210') return 'new_user';
-  if (phone === '9876543211') return 'new_user_pwilo_car';
-  if (phone === '9876543212') return 'one_policy';
-  if (phone === '9876543213') return 'two_policies_health_vehicle';
-  if (phone === '9876543214') return 'two_policies_vehicles';
-  if (phone === '9876543215') return 'one_policy_pwilo_car';
-  if (phone === '9876543216') return 'new_user_pwilo_health';
-  if (phone === '9876543217') return 'new_user_pwilo_life';
-  if (phone === '9876543218') return 'one_policy_pwilo_health';
-  if (phone === '9876543219') return 'one_policy_pwilo_life';
-  return 'new_user';
-}
 
 export type LoginIntent = 'insure_existing' | 'insure_new' | 'continue_quote' | 'insure_another';
 
@@ -496,20 +471,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
       setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
 
       // Seed policies into store so home page "Manage my policies" card can read them
-      const mockPolicies = getPoliciesForState(state);
-      mockPolicies.forEach((mp, i) => {
-        const lob = mp.lob ?? 'car';
-        addPolicy({
-          id: `login_${lob}_${i}`,
-          lob,
-          policyNumber: `ACKO-${lob.toUpperCase()}-${new Date().getFullYear()}-${10000 + i}`,
-          label: `${mp.make} ${mp.model}`,
-          active: true,
-          purchasedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          details: mp.regNumber,
-          urgent: i === 0, // first policy always has an urgent action (renewal due) for demo
-        });
-      });
+      buildPoliciesForState(state).forEach(p => addPolicy(p));
 
       setOtpEchoed(true);
       setPostLoginState(state);

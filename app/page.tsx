@@ -977,7 +977,7 @@ function GlobalHomepageInner() {
 
               <HeroGreeting
                 firstName={firstName}
-                subtitle={isLoggedIn ? 'What would you like to do?' : undefined}
+                subtitle={isLoggedIn && hasActivePolicies ? 'What would you like to do?' : undefined}
               />
 
               {/* Manage my policies — only for logged-in users with policies */}

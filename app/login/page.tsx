@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import AckoLogo from '../../components/AckoLogo';
 import { useUserProfileStore } from '../../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
 import { useThemeStore } from '../../lib/themeStore';
 import dynamic from 'next/dynamic';
 
@@ -117,7 +118,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextRoute = searchParams.get('next') || '/';
-  const { setProfile, isLoggedIn } = useUserProfileStore();
+  const { setProfile, addPolicy, isLoggedIn } = useUserProfileStore();
   const { theme } = useThemeStore();
   const isLight = theme === 'light';
 
@@ -142,7 +143,9 @@ function LoginContent() {
   const handleOtp = (val: string) => {
     if (val === VALID_OTP) {
       setOtpError(false);
-      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true });
+      const state = detectPostLoginState(phone);
+      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+      buildPoliciesForState(state).forEach(p => addPolicy(p));
       setStep(3);
       setTimeout(() => router.replace('/'), 1200);
     } else {
