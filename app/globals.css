@@ -157,23 +157,28 @@
 */
 
 .app-dark {
-  --app-bg: #121214;
-  --app-surface: #1E1E22;
-  --app-surface-2: #2D2D35;
-  --app-surface-hover: #3D3D45;
-  --app-text: #FFFFFF;
-  --app-text-muted: #94A3B8;
-  --app-text-subtle: #64748B;
-  --app-border: rgba(255,255,255,0.05);
-  --app-border-strong: rgba(255,255,255,0.1);
+  --app-bg: #0f0f10;
+  --app-surface: #191919;
+  --app-surface-2: #141414;
+  --app-surface-hover: #222222;
+  --app-text: rgba(255,255,255,0.88);
+  --app-text-muted: rgba(255,255,255,0.56);
+  --app-text-subtle: rgba(255,255,255,0.36);
+  --app-border: rgba(255,255,255,0.07);
+  --app-border-strong: rgba(255,255,255,0.12);
+  --app-stats-accent: #ac93ff;
+  --app-cta-bg: #fbfbfb;
+  --app-cta-text: #141414;
+  --app-pill-bg: #121212;
+  --app-pill-shadow: rgba(0,0,0,0.2);
   --app-shadow: rgba(0,0,0,0.3);
   --app-glass-bg: rgba(30,30,34,0.92);
   --app-overlay-bg: rgba(255,255,255,0.08);
-  --app-chat-gradient: linear-gradient(180deg, #121214 0%, #18181B 40%, #121214 100%);
-  --app-home-gradient: linear-gradient(135deg, #0D0D0F 0%, #18181B 30%, #1E1E22 60%, #2D2D35 100%);
-  --app-header-bg: #121214;
-  --app-user-bubble-bg: #FFFFFF;
-  --app-user-bubble-text: #1C0B47;
+  --app-chat-gradient: linear-gradient(180deg, #0f0f10 0%, #19191a 40%, #0f0f10 100%);
+  --app-home-gradient: #0f0f10;
+  --app-header-bg: #121212;
+  --app-user-bubble-bg: linear-gradient(0deg, #5920C5 0%, #7C47E1 100%);
+  --app-user-bubble-text: #FFFFFF;
   --app-bot-text: #F8FAFC;
   --app-input-bg: rgba(255,255,255,0.05);
   --app-input-border: rgba(255,255,255,0.1);
@@ -193,24 +198,48 @@
   --app-tab-bg: rgba(255,255,255,0.06);
   --app-tab-inactive: rgba(255,255,255,0.4);
   --app-divider: rgba(255,255,255,0.08);
+  --circle-arrow-bg: #242324;
+  --circle-arrow-icon: #FFFFFF;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: #19191a;
+  --btn-secondary-border: #6841e6;
+  --btn-secondary-text: #fbfbfb;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
+  --btn-inverted-bg: #141414;
+  --btn-inverted-text: #fbfbfb;
+  --btn-inverted-shadow: inset 0px 2px 4px rgba(255,255,255,0.04);
+  --btn-ghost-text: #7a62f0;
+  --btn-link-text: #3b82f6;
+  --btn-disabled-bg: #242324;
+  --btn-disabled-text: #605f63;
+  --btn-danger-bg: #7f1d1d;
+  --btn-danger-text: #fecaca;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
 }
 
 .app-light {
-  --app-bg: #EDE9FA;
+  --app-bg: #F5F5F5;
   --app-surface: #FFFFFF;
-  --app-surface-2: #F3F0FC;
-  --app-surface-hover: #E8E3F5;
-  --app-text: #111827;
-  --app-text-muted: #6B7280;
-  --app-text-subtle: #9CA3AF;
+  --app-surface-2: #FBFBFB;
+  --app-surface-hover: #F0F0F0;
+  --app-text: rgba(0,0,0,0.88);
+  --app-text-muted: rgba(0,0,0,0.56);
+  --app-text-subtle: rgba(0,0,0,0.36);
   --app-border: rgba(0,0,0,0.06);
-  --app-border-strong: rgba(0,0,0,0.1);
+  --app-border-strong: rgba(0,0,0,0.12);
+  --app-stats-accent: #ac93ff;
+  --app-cta-bg: #141414;
+  --app-cta-text: #fbfbfb;
+  --app-pill-bg: #f5f5f5;
+  --app-pill-shadow: rgba(0,0,0,0.02);
   --app-shadow: rgba(0,0,0,0.06);
   --app-glass-bg: rgba(255,255,255,0.95);
   --app-overlay-bg: rgba(0,0,0,0.04);
-  --app-chat-gradient: linear-gradient(180deg, #EDE9FA 0%, #E4DEFF 40%, #EDE9FA 100%);
-  --app-home-gradient: #EDE9FA;
-  --app-header-bg: #EDE9FA;
+  --app-chat-gradient: linear-gradient(180deg, #F5F5F5 0%, #FFFFFF 40%, #F5F5F5 100%);
+  --app-home-gradient: #F5F5F5;
+  --app-header-bg: #f5f5f5;
   --app-user-bubble-bg: linear-gradient(0deg, #5920C5 0%, #7C47E1 100%);
   --app-user-bubble-text: #FFFFFF;
   --app-bot-text: #1C0B47;
@@ -232,6 +261,25 @@
   --app-tab-bg: rgba(0,0,0,0.04);
   --app-tab-inactive: rgba(0,0,0,0.4);
   --app-divider: rgba(0,0,0,0.06);
+  --circle-arrow-bg: #FFFFFF;
+  --circle-arrow-icon: #141414;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: #f5f3ff;
+  --btn-secondary-border: #bdb8fa;
+  --btn-secondary-text: #582fd2;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.28);
+  --btn-inverted-bg: #f5f5f5;
+  --btn-inverted-text: #582fd2;
+  --btn-inverted-shadow: none;
+  --btn-ghost-text: #6841e6;
+  --btn-link-text: #2563eb;
+  --btn-disabled-bg: #f5f5f5;
+  --btn-disabled-text: #8f8e92;
+  --btn-danger-bg: #fee2e2;
+  --btn-danger-text: #dc2626;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.28);
 }
 
 /* Light theme text overrides for Life/Health (matching motor-light approach) */
@@ -267,6 +315,9 @@
 .app-light .bg-white\/\[0\.03\] { background-color: var(--app-surface) !important; }
 .app-light .bg-white\/\[0\.06\] { background-color: var(--app-surface-2) !important; }
 .app-light .bg-white\/5 { background-color: var(--app-surface) !important; }
+
+/* ── Award badge dark-mode inversion ── */
+.app-dark .award-badge { filter: invert(1); }
 
 /* ── Typing animation ── */
 @keyframes typing {
@@ -392,10 +443,11 @@
 */
 
 .motor-dark {
+  --app-bg: #0f0f10;
   --motor-bg: #121214;
-  --motor-surface: #1E1E22;
-  --motor-surface-2: #2D2D35;
-  --motor-surface-hover: #3D3D45;
+  --motor-surface: #191919;
+  --motor-surface-2: #141414;
+  --motor-surface-hover: #222222;
   --motor-text: #FFFFFF;
   --motor-text-muted: #94A3B8;
   --motor-text-subtle: #64748B;
@@ -415,8 +467,8 @@
   --motor-input-border: rgba(255,255,255,0.1);
   --motor-input-text: #FFFFFF;
   --motor-input-placeholder: rgba(255,255,255,0.3);
-  --motor-user-bubble-bg: #FFFFFF;
-  --motor-user-bubble-text: #1C0B47;
+  --motor-user-bubble-bg: linear-gradient(0deg, #5920C5 0%, #7C47E1 100%);
+  --motor-user-bubble-text: #FFFFFF;
   --motor-progress-gradient: linear-gradient(90deg, #A855F7, #C084FC);
   --motor-plan-rec-header-bg: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.06));
   --motor-plan-rec-badge: #C084FC;
@@ -424,13 +476,31 @@
   --motor-cta-bg: #7C3AED;
   --motor-cta-hover: #6D28D9;
   --motor-cta-text: #FFFFFF;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: #19191a;
+  --btn-secondary-border: #6841e6;
+  --btn-secondary-text: #fbfbfb;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
+  --btn-inverted-bg: #141414;
+  --btn-inverted-text: #fbfbfb;
+  --btn-inverted-shadow: inset 0px 2px 4px rgba(255,255,255,0.04);
+  --btn-ghost-text: #7a62f0;
+  --btn-link-text: #3b82f6;
+  --btn-disabled-bg: #242324;
+  --btn-disabled-text: #605f63;
+  --btn-danger-bg: #7f1d1d;
+  --btn-danger-text: #fecaca;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
 }
 
 .motor-light {
+  --app-bg: #F5F5F5;
   --motor-bg: #F8F7FC;
   --motor-surface: #FFFFFF;
-  --motor-surface-2: #FFFFFF;
-  --motor-surface-hover: #F3F1FA;
+  --motor-surface-2: #FBFBFB;
+  --motor-surface-hover: #F0F0F0;
   --motor-text: #1C0B47;
   --motor-text-muted: #4B5563;
   --motor-text-subtle: #6B7280;
@@ -459,6 +529,23 @@
   --motor-cta-bg: #6D28D9;
   --motor-cta-hover: #5B21B6;
   --motor-cta-text: #FFFFFF;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: #f5f3ff;
+  --btn-secondary-border: #bdb8fa;
+  --btn-secondary-text: #582fd2;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.28);
+  --btn-inverted-bg: #f5f5f5;
+  --btn-inverted-text: #582fd2;
+  --btn-inverted-shadow: none;
+  --btn-ghost-text: #6841e6;
+  --btn-link-text: #2563eb;
+  --btn-disabled-bg: #f5f5f5;
+  --btn-disabled-text: #8f8e92;
+  --btn-danger-bg: #fee2e2;
+  --btn-danger-text: #dc2626;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.28);
 }
 
 /* ══════════════════════════════════════════════════

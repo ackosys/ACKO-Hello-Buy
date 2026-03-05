@@ -1304,7 +1304,13 @@ function PlanCard({
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 bg-white/10 border border-white/20 rounded-xl text-[13px] font-semibold text-white hover:bg-white/15 transition-colors"
+              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              style={{
+                background: 'var(--motor-bg)',
+                color: 'var(--motor-text)',
+                border: '1px solid var(--motor-border-strong)',
+                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+              }}
             >
               {isComprehensive ? 'Explore plan' : 'Select this plan'}
             </button>
