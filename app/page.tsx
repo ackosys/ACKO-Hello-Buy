@@ -318,6 +318,123 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
   );
 }
 
+/* ── Policies Bottom Sheet ── */
+function PoliciesBottomSheet({ isOpen, onClose, theme, onViewProfile }: {
+  isOpen: boolean;
+  onClose: () => void;
+  theme: string;
+  onViewProfile: () => void;
+}) {
+  const { policies } = useUserProfileStore();
+  const activePolicies = policies.filter(p => p.active);
+
+  const LOB_LABELS: Record<string, string> = {
+    car: 'Car Insurance', bike: 'Bike Insurance',
+    health: 'Health Insurance', life: 'Life Insurance',
+  };
+  const LOB_ICON: Record<string, string> = {
+    car: `${BASE}/icons/vehicles.svg`, bike: `${BASE}/icons/vehicles.svg`,
+    health: `${BASE}/icons/family.svg`, life: `${BASE}/icons/life.svg`,
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className={`app-${theme} fixed inset-0 z-[9998]`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          {/* Backdrop */}
+          <motion.div
+            key="sheet-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            onClick={onClose}
+          />
+          {/* Sheet */}
+          <motion.div
+            key="sheet-panel"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="relative z-[1] rounded-t-3xl"
+            style={{ background: 'var(--app-surface)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2 shrink-0">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--app-border-strong)' }} />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 pt-1 pb-4 shrink-0">
+              <h2 className="text-[20px] font-semibold leading-[28px]" style={{ color: 'var(--app-text)' }}>
+                My policies
+              </h2>
+              <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+                {activePolicies.length} active {activePolicies.length === 1 ? 'policy' : 'policies'}
+              </p>
+            </div>
+
+            <div className="w-full h-px shrink-0" style={{ background: 'var(--app-border)' }} />
+
+            {/* Policy list */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {activePolicies.map((policy, idx) => (
+                <motion.div
+                  key={policy.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex items-center gap-3 p-4 rounded-2xl"
+                  style={{ background: 'var(--app-surface-2)', border: '1px solid var(--app-border)' }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--app-surface)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={LOB_ICON[policy.lob] || LOB_ICON.car} alt={policy.lob} width={20} height={20} style={{ opacity: 0.7 }} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-semibold leading-[20px] truncate" style={{ color: 'var(--app-text)' }}>
+                      {policy.label}
+                    </p>
+                    {policy.details && (
+                      <p className="text-[12px] leading-[16px] mt-0.5 truncate" style={{ color: 'var(--app-text-muted)' }}>
+                        {policy.details}
+                      </p>
+                    )}
+                    <p className="text-[11px] leading-[14px] mt-0.5" style={{ color: 'var(--app-text-subtle)' }}>
+                      {LOB_LABELS[policy.lob] || policy.lob}
+                    </p>
+                  </div>
+
+                  {policy.urgent && (
+                    <div className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                      style={{ background: 'rgba(216,61,55,0.1)', color: '#D83D37' }}>
+                      Renew
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Footer CTA */}
+            <div className="px-5 pb-8 pt-3 shrink-0" style={{ borderTop: '1px solid var(--app-border)' }}>
+              <button
+                onClick={() => { onClose(); onViewProfile(); }}
+                className="w-full h-[52px] rounded-2xl text-[15px] font-semibold"
+                style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+              >
+                View all in profile
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ── Manage My Policies Card ── */
 function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
   const { policies } = useUserProfileStore();
@@ -817,6 +934,7 @@ function GlobalHomepageInner() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedLobId, setSelectedLobId] = useState<LobId | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPoliciesSheet, setShowPoliciesSheet] = useState(false);
 
   const overrides = useLobSnapshots();
   const { firstName, isLoggedIn, policies } = useUserProfileStore();
@@ -953,14 +1071,14 @@ function GlobalHomepageInner() {
 
               {/* Manage my policies — only for logged-in users with policies */}
               {isLoggedIn && hasActivePolicies && (
-                <div className="px-4 mb-1">
-                  <ManagePoliciesCard onClick={() => router.push('/profile')} />
+                <div className="px-4 mb-10">
+                  <ManagePoliciesCard onClick={() => setShowPoliciesSheet(true)} />
                 </div>
               )}
 
               {/* Section divider — only when manage card is shown */}
               {isLoggedIn && hasActivePolicies && (
-                <div className="px-4 pt-5 pb-2 text-center">
+                <div className="px-4 pb-8 text-center">
                   <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
                     Explore another insurance
                   </p>
@@ -1026,6 +1144,14 @@ function GlobalHomepageInner() {
           );
         })()}
       </AnimatePresence>
+
+      {/* Policies bottom sheet — outside AnimatePresence so it layers on top */}
+      <PoliciesBottomSheet
+        isOpen={showPoliciesSheet}
+        onClose={() => setShowPoliciesSheet(false)}
+        theme={theme}
+        onViewProfile={() => router.push('/profile')}
+      />
     </div>
   );
 }
