@@ -1277,7 +1277,7 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
       <button
         onClick={handleSelect}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         {t.widgets.continueWith(plan.name)}
       </button>
@@ -1542,7 +1542,7 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
       <button
         onClick={onConfirm}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         {t.widgets.looksGood}
       </button>
@@ -1817,7 +1817,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
         onClick={handleNext}
         disabled={!currentValid}
         className="mt-4 w-full py-3 rounded-xl text-[15px] font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         {isLast ? t.widgets.calculatePremium : t.common.continue}
       </button>

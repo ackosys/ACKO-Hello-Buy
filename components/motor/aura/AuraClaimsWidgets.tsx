@@ -65,7 +65,7 @@ export function SafetyConditionPicker({ onContinue }: { onContinue: (conditions:
       <button
         onClick={() => onContinue(selected)}
         className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         {selected.length > 0 ? `Confirm ${selected.length} condition${selected.length > 1 ? 's' : ''}` : 'None of these apply'}
       </button>
@@ -160,7 +160,7 @@ export function DamagePhotoCapture({ onContinue }: { onContinue: (result: { phot
         onClick={() => onContinue({ photosUploaded: canProceed })}
         disabled={!canProceed}
         className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97] disabled:opacity-40"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         {canProceed ? `Continue with ${uploaded.size} photo${uploaded.size > 1 ? 's' : ''}` : 'Upload at least 1 photo'}
       </button>
@@ -299,7 +299,7 @@ export function SelfInspectionWidget({ onComplete }: { onComplete: (result: any)
         <button
           onClick={() => onComplete({ inspectionDone: true, admissibilityScore, damagedPanels: DAMAGED_PANELS })}
           className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97]"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           Proceed to settlement
         </button>
@@ -405,7 +405,7 @@ export function SelfInspectionWidget({ onComplete }: { onComplete: (result: any)
           onClick={handleCapture}
           disabled={capturing || captured.has(currentStep)}
           className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -592,7 +592,7 @@ export function ClaimHeartbeat({ onContinue, claimType }: { onContinue: () => vo
       <button
         onClick={onContinue}
         className="w-full py-3.5 rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97]"
-        style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)', color: 'var(--aura-text)' }}
+        style={{ background: 'var(--btn-secondary-bg)', border: '1px solid var(--btn-secondary-border)', color: 'var(--btn-secondary-text)', boxShadow: 'var(--btn-secondary-shadow)' }}
       >
         Back to Dashboard
       </button>
@@ -664,7 +664,7 @@ export function SettlementOffer({ onAccept, onDecline }: { onAccept: (amount: nu
         <button
           onClick={onDecline}
           className="flex-1 py-3 rounded-xl font-semibold text-[14px] transition-all active:scale-95"
-          style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)', color: 'var(--aura-text)' }}
+          style={{ background: 'var(--btn-secondary-bg)', border: '1px solid var(--btn-secondary-border)', color: 'var(--btn-secondary-text)', boxShadow: 'var(--btn-secondary-shadow)' }}
         >
           Decline
         </button>
@@ -672,7 +672,7 @@ export function SettlementOffer({ onAccept, onDecline }: { onAccept: (amount: nu
           onClick={handleAccept}
           disabled={accepted}
           className="flex-[2] py-3 rounded-xl font-semibold text-[14px] text-white transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           {accepted ? (
             <>
@@ -840,7 +840,7 @@ export function ReimbursementUpload({ onContinue }: { onContinue: (result: { inv
         onClick={() => onContinue({ invoiceUploaded })}
         disabled={!invoiceUploaded || !amount}
         className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97] disabled:opacity-40"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Submit for reimbursement
       </button>
@@ -912,7 +912,7 @@ export function ClaimClosure({ onContinue }: { onContinue: () => void }) {
       <button
         onClick={onContinue}
         className="w-full py-3.5 rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Back to Dashboard
       </button>

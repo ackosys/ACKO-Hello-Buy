@@ -97,7 +97,7 @@ export function PremiumBreakdown({ onContinue }: { onContinue: () => void }) {
       <button
         onClick={onContinue}
         className="w-full py-4 rounded-xl text-[15px] font-bold hover:opacity-90 transition-opacity active:scale-[0.98] shadow-lg shadow-black/30"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Proceed to Payment
       </button>
@@ -193,7 +193,7 @@ export function PaymentGateway({ onComplete }: { onComplete: () => void }) {
                 onClick={handlePay}
                 disabled={!selectedMethod}
                 className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-30"
-                style={{ background: selectedMethod ? 'var(--motor-cta-bg, linear-gradient(135deg, #528FF0, #3b6fd4))' : '#528FF0' }}
+                style={{ background: selectedMethod ? 'var(--btn-primary-bg)' : '#528FF0', color: selectedMethod ? 'var(--btn-primary-text)' : '#FFFFFF', boxShadow: selectedMethod ? 'var(--btn-primary-shadow)' : undefined }}
               >
                 Pay ₹{grandTotal.toLocaleString()}
               </button>
@@ -366,7 +366,7 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
 
       {showDetails && onContinue && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+          <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
             Continue
           </button>
         </motion.div>
@@ -434,7 +434,7 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
         </div>
       </div>
     </div>
-    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
       Got it, continue
     </button>
     </motion.div>
@@ -501,7 +501,7 @@ export function NpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; fe
             className="w-full rounded-xl p-3 text-[13px] resize-none h-20 focus:outline-none"
             style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)', color: 'var(--aura-text)' }}
           />
-          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
             Submit Feedback
           </button>
         </motion.div>
@@ -562,7 +562,7 @@ export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
         </div>
       </div>
 
-      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
         Done
       </button>
     </motion.div>

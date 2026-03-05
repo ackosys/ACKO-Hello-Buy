@@ -394,7 +394,7 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                       <button
                         onClick={() => { setKycStage('verify'); setKycIframeLoading(true); }}
                         className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center gap-2"
-                        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                       >
                         Start Verification
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -434,7 +434,7 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                       <button
                         onClick={handleKycComplete}
                         className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-                        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                       >
                         I&apos;ve Completed Verification
                       </button>
@@ -512,7 +512,7 @@ export function VehicleRegInput({ placeholder, onSubmit }: { placeholder?: strin
       <button
         onClick={handleSubmit}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Find my {useMotorStore.getState().vehicleType === 'bike' ? 'bike' : 'car'}
       </button>
@@ -575,7 +575,7 @@ export function MotorTextInput({
       <button
         onClick={handleSubmit}
         className="mt-3 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Continue
       </button>
@@ -826,7 +826,7 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
               onClick={handleConfirm}
               disabled={confirmed}
               className="w-full h-12 rounded-lg text-[14px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-60"
-              style={{ background: isLight ? '#0A0A0F' : 'var(--motor-cta-bg)', color: '#FFFFFF' }}
+              style={{ background: isLight ? '#0A0A0F' : 'var(--btn-primary-bg)', color: '#FFFFFF', boxShadow: isLight ? undefined : 'var(--btn-primary-shadow)' }}
             >
               {confirmed ? 'Confirmed' : 'This is correct'}
             </button>
@@ -1106,7 +1106,7 @@ export function VariantSelector({ onSelect }: { onSelect: (variant: string) => v
             }}
             className="flex-1 py-2 rounded-lg text-[12px] font-semibold transition-all"
             style={activeFuel === fuel
-              ? { background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }
+              ? { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }
               : { color: 'var(--motor-text-muted)' }
             }
           >
@@ -1216,7 +1216,7 @@ export function YearSelector({ onSelect }: { onSelect: (year: string) => void })
             onClick={() => handleYearSelect(year)}
             className="py-2.5 rounded-lg text-center transition-all duration-200 active:scale-[0.95]"
             style={selectedYear === year
-              ? { background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)', fontWeight: 700 }
+              ? { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)', fontWeight: 700 }
               : { background: 'var(--motor-surface)', border: '1px solid var(--motor-border)', color: 'var(--motor-text-muted)' }
             }
           >
@@ -1231,7 +1231,7 @@ export function YearSelector({ onSelect }: { onSelect: (year: string) => void })
           animate={{ opacity: 1, y: 0 }}
           onClick={handleSubmit}
           className="mt-3 w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           Continue with {selectedYear}{selectedMonth ? ` · ${selectedMonth}` : ''}
         </motion.button>
@@ -1336,7 +1336,7 @@ export function NcbReward({ onContinue }: { onContinue: () => void }) {
       <button
         onClick={onContinue}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
         Continue
       </button>
@@ -1469,7 +1469,7 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
         <button
           onClick={onConfirm}
           className="w-full h-12 rounded-lg text-[16px] font-semibold transition-colors active:scale-[0.97]"
-          style={{ background: isLight ? '#0A0A0F' : 'var(--motor-cta-bg)', color: '#FFFFFF' }}
+          style={{ background: isLight ? '#0A0A0F' : 'var(--btn-primary-bg)', color: '#FFFFFF', boxShadow: isLight ? undefined : 'var(--btn-primary-shadow)' }}
         >
           View Prices
         </button>
@@ -1768,7 +1768,7 @@ function IDVSliderSheet({
         <button
           onClick={() => onApply(value)}
           className="w-full py-3.5 active:scale-[0.98] font-semibold rounded-2xl text-[15px] transition-all"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           Confirm IDV ₹{fmt(value)}
         </button>
@@ -2077,8 +2077,8 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
 function PlanCardSkeleton() {
   return (
     <div
-      className="rounded-2xl overflow-hidden border border-purple-400/40 bg-white/10 p-4 animate-pulse"
-      style={{ boxShadow: '0 4px 24px rgba(168, 85, 247, 0.12), 0 1px 4px rgba(0,0,0,0.2)' }}
+      className="rounded-2xl overflow-hidden p-4 animate-pulse"
+      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
     >
       {/* Title + badge row */}
       <div className="flex items-start justify-between mb-3">
@@ -2148,8 +2148,8 @@ function PlanCard({
       <motion.div
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/10 border border-purple-400/40 rounded-2xl overflow-hidden transition-all duration-200"
-        style={{ boxShadow: '0 4px 24px rgba(168, 85, 247, 0.12), 0 1px 4px rgba(0,0,0,0.2)' }}
+        className="rounded-2xl overflow-hidden transition-all duration-200"
+        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
       >
         {/* Header */}
         <div className="p-4">
@@ -2212,7 +2212,13 @@ function PlanCard({
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 bg-white/10 border border-white/20 rounded-xl text-[13px] font-semibold text-white hover:bg-white/15 transition-colors"
+              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              style={{
+                background: 'var(--motor-bg)',
+                color: 'var(--motor-text)',
+                border: '1px solid var(--motor-border-strong)',
+                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+              }}
             >
               {isComprehensive ? 'Explore plan' : 'Select this plan'}
             </button>
@@ -2392,7 +2398,7 @@ function PlanCard({
                 <button
                   onClick={onSelect}
                   className="w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]"
-                  style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                  style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                 >
                   Select this plan
                 </button>
@@ -2651,7 +2657,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
           <button
             onClick={handleSelect}
             className="w-full py-3 rounded-xl text-[14px] font-semibold transition-all active:scale-[0.97]"
-            style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
           >
             Select {planLabel} Plan
           </button>
@@ -2823,7 +2829,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
 
         <div className="flex gap-3 mt-4">
           <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>Continue</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
         </div>
         <p className="text-[11px] text-white/40 text-center mt-2">Next: Additional covers to reduce medical expenses</p>
       </motion.div>
@@ -3037,7 +3043,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
 
         <div className="flex gap-3 mt-4">
           <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>Continue</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
         </div>
       </motion.div>
 
@@ -3325,7 +3331,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
               ? 'active:scale-[0.97]'
               : 'bg-white/10 text-white/30 cursor-not-allowed'
           }`}
-          style={canProceed ? { background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' } : {}}
+          style={canProceed ? { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' } : {}}
         >
           {canProceed ? 'Proceed \u2192' : `Upload ${!rcUploaded ? 'RC' : 'DL'} to continue`}
         </button>

@@ -166,7 +166,7 @@ export function PremiumBreakdown({ onContinue }: { onContinue: () => void }) {
         <button
           onClick={onContinue}
           className="w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-          style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+          style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
         >
           Proceed to Payment
         </button>
@@ -400,7 +400,7 @@ export function MotorCelebration({ onContinue }: { onContinue?: () => void }) {
 
       {showDetails && onContinue && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+          <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
             Continue
           </button>
         </motion.div>
@@ -467,7 +467,7 @@ export function PolicyTracker({ onContinue }: { onContinue: () => void }) {
         </div>
       </div>
     </div>
-    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+    <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
       Got it, continue
     </button>
     </motion.div>
@@ -529,7 +529,7 @@ export function NpsFeedback({ onSubmit }: { onSubmit: (data: { score: number; fe
             placeholder="Any suggestions? (optional)"
             className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-[13px] text-white placeholder:text-white/30 resize-none h-20 focus:outline-none focus:border-purple-400/40"
           />
-          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+          <button onClick={handleSubmit} className="w-full py-3 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
             Submit Feedback
           </button>
         </motion.div>
@@ -590,7 +590,7 @@ export function AppDownloadCta({ onComplete }: { onComplete: () => void }) {
         </div>
       </div>
 
-      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}>
+      <button onClick={onComplete} className="w-full py-3.5 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>
         Done
       </button>
     </motion.div>

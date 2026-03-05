@@ -124,10 +124,11 @@ function IntentChip({
       className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
       style={{
         background: accent
-          ? 'var(--app-accent, #7C3AED)'
+          ? 'var(--btn-primary-bg)'
           : 'var(--app-surface, rgba(255,255,255,0.06))',
         border: `1.5px solid ${accent ? 'transparent' : 'var(--app-border, rgba(255,255,255,0.12))'}`,
-        color: accent ? '#fff' : 'var(--app-text)',
+        color: accent ? 'var(--btn-primary-text)' : 'var(--app-text)',
+        boxShadow: accent ? 'var(--btn-primary-shadow)' : undefined,
       }}
     >
       <span className="text-xl shrink-0">{icon}</span>

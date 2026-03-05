@@ -632,7 +632,7 @@ export default function AuraMotorChatContainer() {
                   <button
                     onClick={confirmEdit}
                     className="flex-1 py-2.5 rounded-xl text-[14px] font-medium text-white transition-colors"
-                    style={{ background: 'var(--motor-cta-bg)', color: 'var(--motor-cta-text)' }}
+                    style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                   >
                     Edit answer
                   </button>

@@ -15,10 +15,11 @@ import { ExpertPanel, AIChatPanel } from '../../components/Panels';
 import PostPaymentJourney from '../../components/PostPaymentJourney';
 import Dashboard from '../../components/Dashboard';
 import AckoLogo from '../../components/AckoLogo';
+import LoginChatFlow from '../../components/LoginChatFlow';
 import { useT } from '../../lib/translations';
 import type { PostPaymentScenario } from '../../lib/types';
 
-type Screen = 'entry' | 'landing' | 'chat' | 'post_payment' | 'dashboard';
+type Screen = 'login' | 'entry' | 'landing' | 'chat' | 'post_payment' | 'dashboard';
 
 /* ═══════════════════════════════════════════════════════
    Welcome Overlay — 3s auto-dismiss transition on top of entry
@@ -84,6 +85,7 @@ function HealthJourneyInner() {
   const { updateState, resetJourney } = useJourneyStore();
   const paymentComplete = useJourneyStore(s => s.paymentComplete);
   const isExistingUser = useJourneyStore(s => s.isExistingAckoUser);
+  const { isLoggedIn } = useUserProfileStore();
   const [screen, setScreen] = useState<Screen>('entry');
   const [showWelcome, setShowWelcome] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -177,6 +179,9 @@ function HealthJourneyInner() {
     }
 
     setHydrated(true);
+
+    // Gate: show login flow first if not logged in
+    if (!isLoggedIn) setScreen('login');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -203,6 +208,8 @@ function HealthJourneyInner() {
   const handleJumpToCall = () => { seedDemoState(); setPostPaymentInitialPhase('voice_call'); setScreen('post_payment'); };
   const handleJumpToPostCallScenarios = () => { seedDemoState(); setPostPaymentInitialPhase('scenario_select'); setScreen('post_payment'); };
   const handleJumpToPostPayment = () => { seedDemoState(); setPostPaymentInitialPhase(undefined); setScreen('post_payment'); };
+  const handleJumpToDashboard = () => { seedDemoState(); seedDemoPolicy(); setScreen('dashboard'); };
+
   const dismissWelcome = useCallback(() => setShowWelcome(false), []);
 
   if (!hydrated) {
@@ -219,8 +226,16 @@ function HealthJourneyInner() {
       <AIChatPanel />
 
       <AnimatePresence mode="wait">
+        {screen === 'login' && (
+          <div key="login" className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--app-bg)' }}>
+            <LoginChatFlow
+              onSuccess={() => setScreen('entry')}
+              onBack={() => window.history.back()}
+            />
+          </div>
+        )}
         {screen === 'entry' && (
-          <EntryScreen key="entry" onSelect={handleEntrySelect} onJumpToPostPayment={handleJumpToPostPayment} onJumpToCall={handleJumpToCall} onJumpToPostCallScenarios={handleJumpToPostCallScenarios} />
+          <EntryScreen key="entry" onSelect={handleEntrySelect} onJumpToPostPayment={handleJumpToPostPayment} onJumpToDashboard={handleJumpToDashboard} onJumpToCall={handleJumpToCall} onJumpToPostCallScenarios={handleJumpToPostCallScenarios} />
         )}
         {screen === 'landing' && (
           <LandingPage key="landing" isExistingUser={isExistingUser ?? undefined} onGetStarted={() => setScreen('chat')} onChat={() => setScreen('chat')} onCall={() => openExpertPanel('entry')} />
