@@ -12,7 +12,7 @@ import MotorHelloEntry from '../../components/motor/MotorHelloEntry';
 import MotorHeader from '../../components/motor/MotorHeader';
 import MotorChatContainer from '../../components/motor/MotorChatContainer';
 import { MotorExpertPanel, MotorAIChatPanel } from '../../components/motor/MotorPanels';
-import { VehicleType, MotorJourneyState, DashboardPolicy, MotorIntent } from '../../lib/motor/types';
+import { VehicleType, MotorJourneyState, MotorIntent } from '../../lib/motor/types';
 import LoginChatFlow from '../../components/LoginChatFlow';
 // LoginIntent type is used implicitly via the onSuccess callback
 
@@ -251,7 +251,7 @@ function MotorJourneyInner() {
           ? localStorage.getItem('acko_kiran_policies')
           : null;
         if (raw) {
-          const policies: DashboardPolicy[] = JSON.parse(raw);
+          const policies: Record<string, unknown>[] = JSON.parse(raw);
           if (policies.length > 0) {
             updateState({
               vehicleType: vehicleParam ?? 'car',

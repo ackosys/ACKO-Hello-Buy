@@ -84,6 +84,10 @@ export const hi: T = {
     heroSubtitle: 'आपके परिवार के लिए व्यापक हेल्थ प्लान। कोई जटिल शब्द नहीं, कोई दबाव नहीं — बस ईमानदार सुझाव।',
     familyTrust: '5 लाख+ परिवार ACKO पर भरोसा करते हैं',
     getStarted: 'शुरू करें',
+    usp100Bills: '100% Hospital Bill coverage',
+    usp100BillsSub: 'We pay the full hospital bill — no room rent caps, no sub-limits.',
+    claimStatPolicyAdvisory: '95%',
+    claimStatPolicyAdvisorySub: 'customers rated our policy advisory 5/5',
     uspTitle1: '14,000+ अस्पतालों में कैशलेस',
     uspSub1: 'अंदर जाएं, ACKO कार्ड दिखाएं, बाहर आएं। हम सीधे अस्पताल को भुगतान करते हैं।',
     uspTitle2: '60 मिनट में क्लेम सेटल',
@@ -227,6 +231,7 @@ export const hi: T = {
     uspRestoreDesc: 'सम इंश्योर्ड अपने आप रीफिल होता है',
     uspInflation: 'इन्फ्लेशन प्रोटेक्ट',
     uspInflationDesc: 'हर साल SI में 10% वृद्धि, बिना अतिरिक्त खर्च',
+    termsAndConditions: 'Terms & Conditions',
   },
 
   plans: {
@@ -286,6 +291,7 @@ export const hi: T = {
     stroke: 'स्ट्रोक',
     organTransplant: 'अंग प्रत्यारोपण',
     noneAbove: 'इनमें से कोई नहीं',
+    hospitalBills100: '100% Hospital Bills paid',
   },
 
   help: {
@@ -776,6 +782,8 @@ export const hi: T = {
     afternoon: 'दोपहर (12 से 4 बजे)',
     evening: 'शाम (4 से 7 बजे)',
     completionMsg: (name: string) => `${name}, सब तैयार है! आपका हेल्थ इवैल्यूएशन शेड्यूल हो गया है। पूरा होने पर आपकी पॉलिसी लाइव हो जाएगी।`,
+    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
+    coverageReplyOnlyParents: 'Parents only',
   },
 
   ppScripts: {

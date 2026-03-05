@@ -8,11 +8,12 @@ import Link from 'next/link';
 interface EntryScreenProps {
   onSelect: (isExistingUser: boolean) => void;
   onJumpToPostPayment?: () => void;
+  onJumpToDashboard?: () => void;
   onJumpToCall?: () => void;
   onJumpToPostCallScenarios?: () => void;
 }
 
-export default function EntryScreen({ onSelect, onJumpToPostPayment, onJumpToCall, onJumpToPostCallScenarios }: EntryScreenProps) {
+export default function EntryScreen({ onSelect, onJumpToPostPayment, onJumpToDashboard, onJumpToCall, onJumpToPostCallScenarios }: EntryScreenProps) {
   const t = useT();
   return (
     <motion.div

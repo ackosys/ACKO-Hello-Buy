@@ -69,6 +69,10 @@ export const hinglish: T = {
     heroSubtitle: 'Aapke family ke liye comprehensive health plans. Koi jargon nahi, koi pressure nahi — sirf honest recommendations.',
     familyTrust: '5 lakh+ families ACKO pe trust karti hain',
     getStarted: 'Shuru karein',
+    usp100Bills: '100% Hospital Bill coverage',
+    usp100BillsSub: 'We pay the full hospital bill — no room rent caps, no sub-limits.',
+    claimStatPolicyAdvisory: '95%',
+    claimStatPolicyAdvisorySub: 'customers rated our policy advisory 5/5',
     uspTitle1: '14,000+ hospitals mein cashless',
     uspSub1: 'Andar jaayein, ACKO card dikhaayein, bahar aayein. Hum seedha hospital ko pay karte hain.',
     uspTitle2: '60 min mein claims settle',
@@ -212,6 +216,7 @@ export const hinglish: T = {
     uspRestoreDesc: 'Sum insured automatically refill hota hai',
     uspInflation: 'Inflation Protect',
     uspInflationDesc: 'Har saal SI mein 10% badhotri, bina extra cost ke',
+    termsAndConditions: 'Terms & Conditions',
   },
 
   plans: {
@@ -271,6 +276,7 @@ export const hinglish: T = {
     stroke: 'Stroke',
     organTransplant: 'Organ transplant',
     noneAbove: 'Inme se koi nahi',
+    hospitalBills100: '100% Hospital Bills paid',
   },
 
   help: {
@@ -761,6 +767,8 @@ export const hinglish: T = {
     afternoon: 'Dopahar (12pm - 4pm)',
     evening: 'Shaam (4pm - 7pm)',
     completionMsg: (name: string) => `${name}, sab ready hai! Aapka health evaluation schedule ho gaya hai. Complete hone pe aapki policy live ho jayegi.`,
+    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
+    coverageReplyOnlyParents: 'Parents only',
   },
 
   ppScripts: {

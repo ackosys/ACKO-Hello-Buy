@@ -69,6 +69,10 @@ export const kn: T = {
     heroSubtitle: 'ನಿಮ್ಮ ಕುಟುಂಬಕ್ಕೆ ಸಮಗ್ರ ಆರೋಗ್ಯ ಯೋಜನೆಗಳು. ಯಾವುದೇ ಜಾರ್ಗನ್ ಇಲ್ಲ, ಯಾವುದೇ ಒತ್ತಡವಿಲ್ಲ — ಕೇವಲ ಪ್ರಾಮಾಣಿಕ ಶಿಫಾರಸುಗಳು.',
     familyTrust: '5 ಲಕ್ಷ+ ಕುಟುಂಬಗಳು ACKO ಅನ್ನು ನಂಬುತ್ತವೆ',
     getStarted: 'ಪ್ರಾರಂಭಿಸಿ',
+    usp100Bills: '100% Hospital Bill coverage',
+    usp100BillsSub: 'We pay the full hospital bill — no room rent caps, no sub-limits.',
+    claimStatPolicyAdvisory: '95%',
+    claimStatPolicyAdvisorySub: 'customers rated our policy advisory 5/5',
     uspTitle1: '14,000+ ಆಸ್ಪತ್ರೆಗಳಲ್ಲಿ ಕ್ಯಾಶ್‌ಲೆಸ್',
     uspSub1: 'ಒಳಗೆ ಹೋಗಿ, ACKO ಕಾರ್ಡ್ ತೋರಿಸಿ, ಹೊರಗೆ ಬನ್ನಿ. ನಾವು ನೇರವಾಗಿ ಆಸ್ಪತ್ರೆಗೆ ಪಾವತಿಸುತ್ತೇವೆ.',
     uspTitle2: '60 ನಿಮಿಷದಲ್ಲಿ ಕ್ಲೇಮ್ ಇತ್ಯರ್ಥ',
@@ -208,6 +212,7 @@ export const kn: T = {
     uspRestoreDesc: 'ವಿಮಾ ಮೊತ್ತ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಮರುಭರ್ತಿಯಾಗುತ್ತದೆ',
     uspInflation: 'ಹಣದುಬ್ಬರ ರಕ್ಷಣೆ',
     uspInflationDesc: 'ಪ್ರತಿ ವರ್ಷ SI 10% ಹೆಚ್ಚಳ, ಹೆಚ್ಚುವರಿ ವೆಚ್ಚವಿಲ್ಲ',
+    termsAndConditions: 'Terms & Conditions',
   },
 
   plans: {
@@ -255,6 +260,7 @@ export const kn: T = {
     asthma: 'ಅಸ್ತಮಾ', pcos: 'PCOS', cataract: 'ಕಣ್ಣಿನ ಪೊರೆ', arthritis: 'ಸಂಧಿವಾತ',
     cancer: 'ಕ್ಯಾನ್ಸರ್', heartDisease: 'ಹೃದಯಾಘಾತ / ಹೃದ್ರೋಗ', stroke: 'ಪಾರ್ಶ್ವವಾಯು',
     organTransplant: 'ಅಂಗ ಕಸಿ', noneAbove: 'ಇವುಗಳಲ್ಲಿ ಯಾವುದೂ ಇಲ್ಲ',
+    hospitalBills100: '100% Hospital Bills paid',
   },
 
   help: {
@@ -717,6 +723,8 @@ export const kn: T = {
     homeVisitQ: 'ಮನೆ ಭೇಟಿಗೆ ಯಾವಾಗ ಅನುಕೂಲ?',
     morning: 'ಬೆಳಿಗ್ಗೆ (9 ರಿಂದ 12)', afternoon: 'ಮಧ್ಯಾಹ್ನ (12 ರಿಂದ 4)', evening: 'ಸಂಜೆ (4 ರಿಂದ 7)',
     completionMsg: (name: string) => `${name}, ಎಲ್ಲ ಸಿದ್ಧ! ನಿಮ್ಮ ಆರೋಗ್ಯ ಮೌಲ್ಯಮಾಪನ ನಿಗದಿಯಾಗಿದೆ. ಪೂರ್ಣಗೊಂಡ ನಂತರ ನಿಮ್ಮ ಪಾಲಿಸಿ ಸಕ್ರಿಯವಾಗುತ್ತದೆ.`,
+    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
+    coverageReplyOnlyParents: 'Parents only',
   },
 
   ppScripts: {
