@@ -105,6 +105,9 @@ export interface ExpiredPolicyData {
 }
 
 export interface MotorJourneyState extends BaseJourneyState {
+  /* ── Snapshot tracking ── */
+  journeyId: string;
+
   /* ── Theme ── */
   theme: 'dark' | 'light';
 
@@ -233,6 +236,7 @@ export interface MotorConversationStep {
 
 export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   /* Base */
+  journeyId: '',
   language: 'en',
   userName: '',
   phone: '',

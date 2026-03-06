@@ -12,6 +12,7 @@ import { useThemeStore } from '../lib/themeStore';
 import { useLanguageStore } from '../lib/languageStore';
 import {
   loadSnapshot,
+  loadProductSnapshots,
   getDropOffDisplay,
   clearAllSnapshots,
   type ProductKey,
@@ -51,6 +52,8 @@ const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्�
 const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
 
 interface LobOverride {
+  journeyId: string;
+  lobId: LobId;
   badge: string;
   title: string;
   subtitle: string;
@@ -58,53 +61,115 @@ interface LobOverride {
   urgency: 'high' | 'medium' | 'low';
   ctaLabel: string;
   statusInfo?: PolicyStatusInfo | null;
+  imageUrl?: string;
 }
 
-function computeSnapshots(): Partial<Record<LobId, LobOverride>> {
-  const result: Partial<Record<LobId, LobOverride>> = {};
+const PWILO_MODEL_IMAGE: Record<string, string> = {
+  'Swift': `${BASE}/car-images/Swift.png`,
+  'Swift Dzire': `${BASE}/car-images/Swift.png`,
+  'Nexon': `${BASE}/car-images/Nexon.png`,
+  'Harrier': `${BASE}/car-images/harrier.png`,
+  'Venue': `${BASE}/car-images/Venue.png`,
+  'Creta': `${BASE}/car-images/Venue.png`,
+  'XUV700': `${BASE}/car-images/XUV700.png`,
+  'XUV 700': `${BASE}/car-images/XUV700.png`,
+  'Seltos': `${BASE}/car-images/Verna.png`,
+  'Verna': `${BASE}/car-images/Verna.png`,
+  'Tiago': `${BASE}/car-images/Nexon.png`,
+  'Punch': `${BASE}/car-images/Nexon.png`,
+  'City': `${BASE}/car-images/Citroen.png`,
+  'Carens': `${BASE}/car-images/Verna.png`,
+  'Comet': `${BASE}/car-images/MG comet.png`,
+  'Splendor': `${BASE}/car-images/Splendor.png`,
+  'Activa': `${BASE}/car-images/Activa.png`,
+  'Pulsar': `${BASE}/car-images/Pulsar.png`,
+  'Classic 350': `${BASE}/car-images/KTM.png`,
+};
+
+const PWILO_MAKE_IMAGE: Record<string, string> = {
+  'Maruti Suzuki': `${BASE}/car-images/Swift.png`,
+  'Maruti': `${BASE}/car-images/Swift.png`,
+  'Hyundai': `${BASE}/car-images/Venue.png`,
+  'Tata': `${BASE}/car-images/Nexon.png`,
+  'Kia': `${BASE}/car-images/Verna.png`,
+  'Mahindra': `${BASE}/car-images/XUV700.png`,
+  'Toyota': `${BASE}/car-images/Toyota.png`,
+  'Honda': `${BASE}/car-images/Citroen.png`,
+  'MG': `${BASE}/car-images/MG comet.png`,
+  'Hero': `${BASE}/car-images/Splendor.png`,
+  'Bajaj': `${BASE}/car-images/Pulsar.png`,
+  'TVS': `${BASE}/car-images/CT 100.png`,
+  'Royal Enfield': `${BASE}/car-images/KTM.png`,
+};
+
+function computeSnapshots(): LobOverride[] {
+  const result: LobOverride[] = [];
   for (const lobId of Object.keys(LOB_TO_PRODUCT) as LobId[]) {
     const product = LOB_TO_PRODUCT[lobId];
-    const snap = loadSnapshot(product);
-    if (!snap) continue;
-    const display = getDropOffDisplay(snap);
-    if (!display) continue;
+    const isMotor = lobId === 'car' || lobId === 'bike';
+    const snapshots = isMotor
+      ? loadProductSnapshots(product)
+      : [loadSnapshot(product)].filter(Boolean) as import('../lib/journeyPersist').JourneySnapshot[];
 
-    let statusInfo: PolicyStatusInfo | null = null;
-    const stepId = snap.currentStepId;
-    if (stepId === 'life_db.personal_submitted') statusInfo = { badge: 'Update in progress', message: 'Personal info update · Processing in 2-3 days', urgency: 'low' };
-    else if (stepId === 'life_db.nominee_submitted') statusInfo = { badge: 'Update in progress', message: 'Nominee update · Verification in 2-3 days', urgency: 'low' };
-    else if (stepId === 'life_db.coverage_submitted') statusInfo = { badge: 'Under review', message: 'Coverage update · Review in 5-7 days', urgency: 'medium' };
-    else if (stepId === 'db.claim_submitted') {
-      const l = LOB_LABEL_MAP[lobId]?.replace(' Insurance', '') || lobId;
-      statusInfo = { badge: 'Claim submitted', message: `${l} claim request · Processing in 3-5 days`, urgency: 'low' };
-    } else if (stepId === 'db.edit_done') {
-      const l = LOB_LABEL_MAP[lobId]?.replace(' Insurance', '') || lobId;
-      statusInfo = { badge: 'Update in progress', message: `${l} policy update · Effective next billing cycle`, urgency: 'low' };
+    for (const snap of snapshots) {
+      const display = getDropOffDisplay(snap);
+      if (!display) continue;
+
+      let statusInfo: PolicyStatusInfo | null = null;
+      const stepId = snap.currentStepId;
+      if (stepId === 'life_db.personal_submitted') statusInfo = { badge: 'Update in progress', message: 'Personal info update · Processing in 2-3 days', urgency: 'low' };
+      else if (stepId === 'life_db.nominee_submitted') statusInfo = { badge: 'Update in progress', message: 'Nominee update · Verification in 2-3 days', urgency: 'low' };
+      else if (stepId === 'life_db.coverage_submitted') statusInfo = { badge: 'Under review', message: 'Coverage update · Review in 5-7 days', urgency: 'medium' };
+      else if (stepId === 'db.claim_submitted') {
+        const l = LOB_LABEL_MAP[lobId]?.replace(' Insurance', '') || lobId;
+        statusInfo = { badge: 'Claim submitted', message: `${l} claim request · Processing in 3-5 days`, urgency: 'low' };
+      } else if (stepId === 'db.edit_done') {
+        const l = LOB_LABEL_MAP[lobId]?.replace(' Insurance', '') || lobId;
+        statusInfo = { badge: 'Update in progress', message: `${l} policy update · Effective next billing cycle`, urgency: 'low' };
+      }
+
+      const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
+      const regNumber = snap.registrationNumber?.toUpperCase() || '';
+
+      const make = snap.vehicleData?.make || '';
+      const model = snap.vehicleData?.model || '';
+      const vType = snap.vehicleType || 'car';
+      const fallback = vType === 'bike' ? `${BASE}/offerings/bike-card.png` : `${BASE}/offerings/car-card.png`;
+      const imageUrl = PWILO_MODEL_IMAGE[model] || PWILO_MAKE_IMAGE[make] || fallback;
+
+      const subtitle = regNumber
+        ? regNumber
+        : isMotor ? display.badge : (display.subtitle || '');
+
+      let route = display.route;
+      if (isMotor && snap.journeyId) {
+        route += `&journeyId=${encodeURIComponent(snap.journeyId)}`;
+      }
+
+      result.push({
+        journeyId: snap.journeyId || '',
+        lobId,
+        badge: display.badge,
+        title: vehicleName || display.title,
+        subtitle,
+        route,
+        urgency: display.urgency,
+        ctaLabel: display.ctaLabel,
+        statusInfo,
+        imageUrl,
+      });
     }
-
-    const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
-    const regNumber = snap.registrationNumber?.toUpperCase() || '';
-
-    result[lobId] = {
-      badge: display.badge,
-      title: vehicleName || display.title,
-      subtitle: regNumber || display.subtitle || '',
-      route: display.route,
-      urgency: display.urgency,
-      ctaLabel: display.ctaLabel,
-      statusInfo,
-    };
   }
   return result;
 }
 
 function useLobSnapshots() {
-  const [overrides, setOverrides] = useState<Partial<Record<LobId, LobOverride>>>(() => {
-    if (typeof window === 'undefined') return {};
+  const [entries, setEntries] = useState<LobOverride[]>(() => {
+    if (typeof window === 'undefined') return [];
     return computeSnapshots();
   });
 
-  const reload = useCallback(() => setOverrides(computeSnapshots()), []);
+  const reload = useCallback(() => setEntries(computeSnapshots()), []);
 
   useEffect(() => {
     reload();
@@ -121,7 +186,7 @@ function useLobSnapshots() {
     };
   }, [reload]);
 
-  return overrides;
+  return entries;
 }
 
 /* ── Floating Header Pill ── */
@@ -318,315 +383,266 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
   );
 }
 
-/* ── Policies Bottom Sheet ── */
-function PoliciesBottomSheet({ isOpen, onClose, theme, onViewProfile }: {
-  isOpen: boolean;
-  onClose: () => void;
-  theme: string;
-  onViewProfile: () => void;
-}) {
-  const { policies } = useUserProfileStore();
-  const activePolicies = policies.filter(p => p.active);
+/* ── Policies Bottom Sheet — PAUSED ──
+function PoliciesBottomSheet(...) { ... }
+*/
 
-  const LOB_LABELS: Record<string, string> = {
-    car: 'Car Insurance', bike: 'Bike Insurance',
-    health: 'Health Insurance', life: 'Life Insurance',
-  };
-  const LOB_ICON: Record<string, string> = {
-    car: `${BASE}/icons/vehicles.svg`, bike: `${BASE}/icons/vehicles.svg`,
-    health: `${BASE}/icons/family.svg`, life: `${BASE}/icons/life.svg`,
-  };
+/* ── Manage My Policies Card — PAUSED ──
+function ManagePoliciesCard(...) { ... }
+*/
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className={`app-${theme} fixed inset-0 z-[9998]`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          {/* Backdrop */}
-          <motion.div
-            key="sheet-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0"
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-            onClick={onClose}
-          />
-          {/* Sheet */}
-          <motion.div
-            key="sheet-panel"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-[1] rounded-t-3xl"
-            style={{ background: 'var(--app-surface)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
-          >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2 shrink-0">
-              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--app-border-strong)' }} />
-            </div>
-
-            {/* Header */}
-            <div className="px-5 pt-1 pb-4 shrink-0">
-              <h2 className="text-[20px] font-semibold leading-[28px]" style={{ color: 'var(--app-text)' }}>
-                My policies
-              </h2>
-              <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
-                {activePolicies.length} active {activePolicies.length === 1 ? 'policy' : 'policies'}
-              </p>
-            </div>
-
-            <div className="w-full h-px shrink-0" style={{ background: 'var(--app-border)' }} />
-
-            {/* Policy list */}
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
-              {activePolicies.map((policy, idx) => (
-                <motion.div
-                  key={policy.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="flex items-center gap-3 p-4 rounded-2xl"
-                  style={{ background: 'var(--app-surface-2)', border: '1px solid var(--app-border)' }}
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--app-surface)' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={LOB_ICON[policy.lob] || LOB_ICON.car} alt={policy.lob} width={20} height={20} style={{ opacity: 0.7 }} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold leading-[20px] truncate" style={{ color: 'var(--app-text)' }}>
-                      {policy.label}
-                    </p>
-                    {policy.details && (
-                      <p className="text-[12px] leading-[16px] mt-0.5 truncate" style={{ color: 'var(--app-text-muted)' }}>
-                        {policy.details}
-                      </p>
-                    )}
-                    <p className="text-[11px] leading-[14px] mt-0.5" style={{ color: 'var(--app-text-subtle)' }}>
-                      {LOB_LABELS[policy.lob] || policy.lob}
-                    </p>
-                  </div>
-
-                  {policy.urgent && (
-                    <div className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium"
-                      style={{ background: 'rgba(216,61,55,0.1)', color: '#D83D37' }}>
-                      Renew
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Footer CTA */}
-            <div className="px-5 pb-8 pt-3 shrink-0" style={{ borderTop: '1px solid var(--app-border)' }}>
-              <button
-                onClick={() => { onClose(); onViewProfile(); }}
-                className="w-full h-[52px] rounded-2xl text-[15px] font-semibold"
-                style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-              >
-                View all in profile
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* ── Manage My Policies Card ── */
-function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
-  const { policies } = useUserProfileStore();
-  const activePolicies = policies.filter(p => p.active);
-
-  const vehicleCount = activePolicies.some(p => p.lob === 'car' || p.lob === 'bike');
-  const healthCount = activePolicies.some(p => p.lob === 'health');
-  const lifeCount = activePolicies.some(p => p.lob === 'life');
-
-  const vehicleUrgent = activePolicies.some(p => (p.lob === 'car' || p.lob === 'bike') && p.urgent);
-  const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
-  const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
-
-  const pills = [
-    healthCount && { label: 'Health', urgent: healthUrgent, iconSrc: `${BASE}/icons/family.svg` },
-    lifeCount && { label: 'Life', urgent: lifeUrgent, iconSrc: `${BASE}/icons/life.svg` },
-    vehicleCount && { label: 'Vehicles', urgent: vehicleUrgent, iconSrc: `${BASE}/icons/vehicles.svg` },
-  ].filter(Boolean) as { label: string; urgent: boolean; iconSrc: string }[];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.1 }}
-      className="relative overflow-hidden rounded-3xl cursor-pointer"
-      style={{
-        background: 'var(--app-surface)',
-        border: '1px solid var(--app-border)',
-        padding: '20px',
-      }}
-      onClick={onClick}
-      whileTap={{ scale: 0.98 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col gap-1 mb-4">
-        <h3 className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--app-text)' }}>
-          Manage my policies
-        </h3>
-        <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>
-          View, renew, claim, download docs
-        </p>
-      </div>
-
-      {/* Category pills — red dot only for renewal/urgent */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {pills.map(pill => (
-          <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
-            style={{ background: 'var(--app-surface-2)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={pill.iconSrc} alt={pill.label} width={16} height={16} style={{ opacity: 0.7 }} />
-            <span className="text-[10px] leading-[14px]" style={{ color: 'var(--app-text-muted)' }}>{pill.label}</span>
-            {pill.urgent && (
-              <div className="absolute w-2 h-2 rounded-full" style={{ background: '#D83D37', top: '-1px', right: '-1px' }} />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Circle arrow — 24×24px */}
-      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-
-      {/* Policies illustration — anchored to bottom-right corner */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`${BASE}/offerings/policies-card.svg`}
-        alt=""
-        draggable={false}
-        className="pointer-events-none"
-        style={{ position: 'absolute', bottom: 0, right: 0, width: 100, height: 100, objectFit: 'contain', objectPosition: 'bottom right' }}
-      />
-    </motion.div>
-  );
-}
-
-/* ── LOB Card ── */
-function LobCard({
-  card,
-  override,
-  index,
-  onClick,
+/* ── PWILO Section (Continue where you left off) ── */
+function PwiloSection({
+  entries,
+  onContinue,
   onStartNew,
 }: {
-  card: LobCardData;
-  override?: LobOverride;
-  index: number;
-  onClick: () => void;
-  onStartNew?: () => void;
+  entries: LobOverride[];
+  onContinue: (entry: LobOverride) => void;
+  onStartNew: (entry: LobOverride) => void;
 }) {
-  const isPwilo = !!override;
+  if (entries.length === 0) return null;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.12 + index * 0.06 }}
-      className="relative overflow-hidden rounded-2xl cursor-pointer"
-      style={{
-        background: 'var(--app-surface)',
-        border: '1px solid var(--app-border)',
-      }}
-      onClick={onClick}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex items-stretch min-h-[130px]">
-        <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
-          {isPwilo ? (
-            <>
-              <div>
-                <h3
-                  className="text-[14px] font-semibold leading-[20px]"
-                  style={{ color: 'var(--app-text)' }}
-                >
-                  Continue insuring your {override.title}
-                </h3>
-                {override.subtitle && (
-                  <p
-                    className="text-[12px] leading-[18px] mt-0.5"
-                    style={{ color: 'var(--app-text-muted)' }}
-                  >
-                    {override.subtitle}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  className="h-[32px] px-4 rounded-lg text-[12px] font-medium"
-                  style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-                  onClick={(e) => { e.stopPropagation(); onClick(); }}
-                >
-                  Continue
-                </button>
-                {onStartNew && (
-                  <button
-                    className="h-[32px] px-4 rounded-lg text-[12px] font-medium"
-                    style={{
-                      background: 'transparent',
-                      color: 'var(--app-text)',
-                      border: '1px solid var(--app-border-strong)',
-                    }}
-                    onClick={(e) => { e.stopPropagation(); onStartNew(); }}
-                  >
-                    Start new
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <h3
-                  className="text-[14px] font-semibold leading-[20px]"
-                  style={{ color: 'var(--app-text)' }}
-                >
-                  {card.title}
-                </h3>
-                <p
-                  className="text-[12px] leading-[18px] mt-0.5 max-w-[160px]"
-                  style={{ color: 'var(--app-text-muted)' }}
-                >
-                  {card.tagline}
-                </p>
-              </div>
-              {/* Circle arrow */}
-              <div
-                className="mt-2 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: 'var(--circle-arrow-bg)' }}
+  const isSingle = entries.length === 1;
+
+  const renderCard = (entry: LobOverride, idx: number) => {
+    const card = LOB_CARDS.find(c => c.id === entry.lobId);
+    const imgSrc = entry.imageUrl || card?.heroImage || `${BASE}/offerings/car-card.png`;
+
+    return (
+      <motion.div
+        key={entry.journeyId || entry.lobId}
+        initial={{ opacity: 0, x: isSingle ? 0 : 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, delay: idx * 0.08 }}
+        className={`relative overflow-hidden rounded-3xl ${isSingle ? 'w-full' : 'shrink-0 w-[300px] snap-start'}`}
+        style={{
+          background: 'var(--app-surface)',
+          border: '1px solid var(--app-border)',
+          padding: '20px',
+          minHeight: '150px',
+        }}
+      >
+        <div className="flex flex-col gap-3 pr-[110px]">
+          <div>
+            <h3
+              className="text-[16px] font-semibold leading-[22px]"
+              style={{ color: 'var(--app-text)' }}
+            >
+              Continue insuring your {entry.title}
+            </h3>
+            {entry.subtitle && (
+              <p
+                className="text-[12px] leading-[16px] mt-1"
+                style={{ color: 'var(--app-text-muted)' }}
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </>
-          )}
+                {entry.subtitle}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2.5 shrink-0">
+            <button
+              className="h-[32px] px-4 rounded-lg text-[12px] font-medium whitespace-nowrap"
+              style={{ background: '#6841e6', color: 'white' }}
+              onClick={(e) => { e.stopPropagation(); onContinue(entry); }}
+            >
+              Continue
+            </button>
+            <button
+              className="h-[32px] px-4 rounded-lg text-[12px] font-medium whitespace-nowrap"
+              style={{
+                background: 'var(--app-pwilo-start-bg, #f5f3ff)',
+                color: 'var(--app-pwilo-start-text, #582fd2)',
+                border: '1px solid var(--app-pwilo-start-border, #bdb8fa)',
+              }}
+              onClick={(e) => { e.stopPropagation(); onStartNew(entry); }}
+            >
+              Start new
+            </button>
+          </div>
         </div>
 
-        <div className="w-[130px] relative shrink-0 self-stretch flex items-center justify-end overflow-hidden">
+        <div className="absolute top-2 right-2 w-[105px] h-[105px] overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={card.heroImage}
-            alt={card.title}
-            className="h-[110%] w-auto object-contain"
-            style={{ marginRight: '-8px' }}
+            src={imgSrc}
+            alt={entry.title}
+            className="w-full h-full object-contain"
             draggable={false}
           />
         </div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="px-4 mb-6">
+      <p
+        className="text-[16px] font-semibold leading-[22px] text-center mb-4"
+        style={{ color: 'var(--app-text)' }}
+      >
+        Continue where you left off
+      </p>
+
+      {isSingle ? (
+        renderCard(entries[0], 0)
+      ) : (
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+          {entries.map((entry, idx) => renderCard(entry, idx))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Bento LOB Grid ── */
+function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) {
+  const car = LOB_CARDS.find(c => c.id === 'car')!;
+  const bike = LOB_CARDS.find(c => c.id === 'bike')!;
+  const health = LOB_CARDS.find(c => c.id === 'health')!;
+  const life = LOB_CARDS.find(c => c.id === 'life')!;
+
+  const cardStyle = {
+    background: 'var(--app-surface)',
+    border: '1px solid var(--app-border)',
+  };
+
+  const arrowBtn = (
+    <div
+      className="w-5 h-5 rounded-full flex items-center justify-center"
+      style={{ background: 'var(--app-pwilo-start-bg, #f5f3ff)', border: '1px solid var(--app-pwilo-start-border, #bdb8fa)' }}
+    >
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--app-pwilo-start-text, #582fd2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+
+  return (
+    <div className="px-4">
+      <div className="flex gap-2">
+        {/* Left column: Car + Bike */}
+        <div className="flex-1 flex flex-col gap-2">
+          {/* Car */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="relative h-[140px] rounded-2xl overflow-hidden cursor-pointer p-3"
+            style={cardStyle}
+            onClick={() => onCardClick('car')}
+            whileTap={{ scale: 0.98 }}
+          >
+            <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
+              {car.title}
+            </h3>
+            <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
+              Simple prices. Super fast claims. That&apos;s our promise.
+            </p>
+            <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={car.heroImage}
+              alt={car.title}
+              className="absolute object-contain pointer-events-none"
+              style={{ bottom: -1, right: -1, width: 80, height: 80 }}
+              draggable={false}
+            />
+          </motion.div>
+
+          {/* Bike */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.16 }}
+            className="relative h-[140px] rounded-2xl overflow-hidden cursor-pointer p-3"
+            style={cardStyle}
+            onClick={() => onCardClick('bike')}
+            whileTap={{ scale: 0.98 }}
+          >
+            <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
+              {bike.title}
+            </h3>
+            <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
+              Insure your bike or scooter in just 1 min
+            </p>
+            <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={bike.heroImage}
+              alt={bike.title}
+              className="absolute object-contain pointer-events-none"
+              style={{ bottom: -1, right: -1, width: 80, height: 80 }}
+              draggable={false}
+            />
+          </motion.div>
+        </div>
+
+        {/* Right column: Health (spans full height) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.13 }}
+          className="relative flex-1 rounded-2xl overflow-hidden cursor-pointer p-3"
+          style={{ ...cardStyle, minHeight: '288px' }}
+          onClick={() => onCardClick('health')}
+          whileTap={{ scale: 0.98 }}
+        >
+          <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
+            Health insurance
+          </h3>
+          <p className="text-[10px] leading-[12px] mt-1.5" style={{ color: 'var(--app-text-muted)' }}>
+            100% hospital bill payments. No surprises.
+          </p>
+          <div
+            className="inline-flex items-center px-2 py-1.5 rounded-full mt-1.5"
+            style={{
+              background: 'linear-gradient(90deg, rgba(153,116,249,0.36) 0%, rgba(236,72,153,0.08) 89%)',
+            }}
+          >
+            <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--app-text)' }}>
+              From &#x20B9;534/month
+            </span>
+          </div>
+          <div className="absolute left-3 bottom-3">{arrowBtn}</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={health.heroImage}
+            alt={health.title}
+            className="absolute object-cover pointer-events-none"
+            style={{ bottom: -1, right: -1, width: 90, height: 131, transform: 'scaleX(-1)' }}
+            draggable={false}
+          />
+        </motion.div>
       </div>
-    </motion.div>
+
+      {/* Life — full width below */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.22 }}
+        className="relative h-[140px] rounded-2xl overflow-hidden cursor-pointer p-3 mt-2"
+        style={cardStyle}
+        onClick={() => onCardClick('life')}
+        whileTap={{ scale: 0.98 }}
+      >
+        <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
+          {life.title}
+        </h3>
+        <p className="text-[10px] leading-[12px] mt-1.5 max-w-[200px]" style={{ color: 'var(--app-text-muted)' }}>
+          Secure your loved ones with term life insurance
+        </p>
+        <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={life.heroImage}
+          alt={life.title}
+          className="absolute object-contain pointer-events-none"
+          style={{ bottom: -1, right: -1, width: 150, height: 120 }}
+          draggable={false}
+        />
+      </motion.div>
+    </div>
   );
 }
 
@@ -806,11 +822,11 @@ function GlobalHomepageInner() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedLobId, setSelectedLobId] = useState<LobId | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [showPoliciesSheet, setShowPoliciesSheet] = useState(false);
+  // const [showPoliciesSheet, setShowPoliciesSheet] = useState(false); // PAUSED
 
   const overrides = useLobSnapshots();
-  const { firstName, isLoggedIn, policies } = useUserProfileStore();
-  const hasActivePolicies = policies.some(p => p.active);
+  const { firstName, isLoggedIn } = useUserProfileStore();
+  const hasOverrides = overrides.length > 0;
 
   const handleLanguageCycle = useCallback(() => {
     const idx = LANG_ORDER.indexOf(language as Language);
@@ -848,51 +864,16 @@ function GlobalHomepageInner() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCardClick = useCallback((lobId: LobId) => {
-    const override = overrides[lobId];
-    const ps = useUserProfileStore.getState();
-    const policyActive = ps.hasActivePolicyInLob(lobId as PolicyLob);
-    const snapshotActive = override && override.urgency === 'low';
-
-    if (policyActive || snapshotActive) {
-      if (snapshotActive && !policyActive) {
-        const snap = loadSnapshot(LOB_TO_PRODUCT[lobId]);
-        if (snap) {
-          ps.setProfile({ firstName: snap.name || snap.userName || 'Rahul', isLoggedIn: true });
-          if (!ps.policies.some(p => p.lob === lobId && p.active)) {
-            const detailParts = [
-              snap.vehicleData?.model || snap.vehicleData?.make,
-              snap.registrationNumber?.toUpperCase(),
-            ].filter(Boolean);
-            ps.addPolicy({
-              id: `${lobId}_snap_${Date.now()}`,
-              lob: lobId as PolicyLob,
-              policyNumber: `ACKO-M-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
-              label: `${snap.selectedPlanType === 'zero_dep' ? 'Zero Dep' : snap.selectedPlanType === 'third_party' ? 'Third Party' : 'Comprehensive'} ${LOB_LABEL_MAP[lobId] || lobId}`,
-              active: true,
-              purchasedAt: snap.savedAt || new Date().toISOString(),
-              premium: snap.totalPremium || 0,
-              premiumFrequency: 'yearly',
-              details: detailParts.length ? detailParts.join(' · ') : undefined,
-            });
-          }
-        }
-      }
-      setSelectedLobId(lobId);
-      setScreen('policy_action');
-      return;
-    }
-
-    if (override) {
-      router.push(override.route);
-      return;
-    }
-
     const card = LOB_CARDS.find(c => c.id === lobId);
     if (card) router.push(card.route);
-  }, [overrides, router]);
+  }, [router]);
 
-  const handleStartNew = useCallback((lobId: LobId) => {
-    const card = LOB_CARDS.find(c => c.id === lobId);
+  const handlePwiloContinue = useCallback((entry: LobOverride) => {
+    router.push(entry.route);
+  }, [router]);
+
+  const handlePwiloStartNew = useCallback((entry: LobOverride) => {
+    const card = LOB_CARDS.find(c => c.id === entry.lobId);
     if (card) router.push(card.route);
   }, [router]);
 
@@ -938,18 +919,18 @@ function GlobalHomepageInner() {
 
               <HeroGreeting
                 firstName={firstName}
-                subtitle={isLoggedIn && hasActivePolicies ? 'Good to see you again.\nWhat would you like to do?' : undefined}
+                subtitle={hasOverrides ? 'Good to see you again.\nWhat would you like to do?' : undefined}
               />
 
-              {/* Manage my policies — only for logged-in users with policies */}
-              {isLoggedIn && hasActivePolicies && (
-                <div className="px-4 mb-10">
-                  <ManagePoliciesCard onClick={() => setShowPoliciesSheet(true)} />
-                </div>
-              )}
+              {/* PWILO Section — continue where you left off */}
+              <PwiloSection
+                entries={overrides}
+                onContinue={handlePwiloContinue}
+                onStartNew={handlePwiloStartNew}
+              />
 
-              {/* Section divider — only when manage card is shown */}
-              {isLoggedIn && hasActivePolicies && (
+              {/* Section divider — only when PWILO cards exist */}
+              {hasOverrides && (
                 <div className="px-4 pb-8 text-center">
                   <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
                     Explore another insurance
@@ -960,19 +941,8 @@ function GlobalHomepageInner() {
                 </div>
               )}
 
-              {/* LOB Cards */}
-              <div className="px-4 space-y-3">
-                {LOB_CARDS.map((card, i) => (
-                  <LobCard
-                    key={card.id}
-                    card={card}
-                    override={overrides[card.id]}
-                    index={i}
-                    onClick={() => handleCardClick(card.id)}
-                    onStartNew={overrides[card.id] ? () => handleStartNew(card.id) : undefined}
-                  />
-                ))}
-              </div>
+              {/* LOB Bento Grid */}
+              <BentoLobGrid onCardClick={handleCardClick} />
 
               <WhyAckoSection />
             </div>
@@ -981,7 +951,7 @@ function GlobalHomepageInner() {
         )}
 
         {screen === 'policy_action' && selectedLobId && (() => {
-          const ov = overrides[selectedLobId];
+          const ov = overrides.find(o => o.lobId === selectedLobId);
           const card = LOB_CARDS.find(c => c.id === selectedLobId)!;
           const dropOff = ov && ov.urgency !== 'low' ? {
             badge: ov.badge,
@@ -1011,14 +981,6 @@ function GlobalHomepageInner() {
           );
         })()}
       </AnimatePresence>
-
-      {/* Policies bottom sheet — outside AnimatePresence so it layers on top */}
-      <PoliciesBottomSheet
-        isOpen={showPoliciesSheet}
-        onClose={() => setShowPoliciesSheet(false)}
-        theme={theme}
-        onViewProfile={() => router.push('/profile')}
-      />
     </div>
   );
 }

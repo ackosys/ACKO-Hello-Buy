@@ -200,6 +200,9 @@
   --app-divider: rgba(255,255,255,0.08);
   --circle-arrow-bg: #6841e6;
   --circle-arrow-icon: #FFFFFF;
+  --app-pwilo-start-bg: rgba(104,65,230,0.15);
+  --app-pwilo-start-border: rgba(104,65,230,0.3);
+  --app-pwilo-start-text: #c4b5fd;
   --btn-primary-bg: #6841e6;
   --btn-primary-text: #ffffff;
   --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
@@ -263,6 +266,9 @@
   --app-divider: rgba(0,0,0,0.06);
   --circle-arrow-bg: #6841e6;
   --circle-arrow-icon: #FFFFFF;
+  --app-pwilo-start-bg: #f5f3ff;
+  --app-pwilo-start-border: #bdb8fa;
+  --app-pwilo-start-text: #582fd2;
   --btn-primary-bg: #6841e6;
   --btn-primary-text: #ffffff;
   --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);

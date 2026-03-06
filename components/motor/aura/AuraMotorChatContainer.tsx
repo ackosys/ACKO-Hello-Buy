@@ -69,7 +69,8 @@ export default function AuraMotorChatContainer() {
   useEffect(() => {
     if (!MOTOR_SAVE_STEPS.has(currentStepId)) return;
     const s = useMotorStore.getState();
-    saveSnapshot({
+    const id = saveSnapshot({
+      journeyId: s.journeyId || undefined,
       product: s.vehicleType ?? 'car',
       currentStepId,
       savedAt: new Date().toISOString(),
@@ -87,6 +88,9 @@ export default function AuraMotorChatContainer() {
       ownerName: s.ownerName,
       paymentComplete: s.paymentComplete,
     });
+    if (id !== s.journeyId) {
+      updateState({ journeyId: id } as any);
+    }
   }, [currentStepId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

@@ -12,6 +12,7 @@ export type ProductKey = 'health' | 'car' | 'bike' | 'life';
 
 export interface JourneySnapshot {
   product: ProductKey;
+  journeyId?: string;
   currentStepId: string;
   savedAt: string; // ISO
 
@@ -59,35 +60,102 @@ export interface JourneySnapshot {
 // ── localStorage helpers ──────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'acko_journey_snapshots';
+const MAX_MOTOR_SNAPSHOTS = 5;
 
-function loadAll(): Partial<Record<ProductKey, JourneySnapshot>> {
-  if (typeof window === 'undefined') return {};
+function generateJourneyId(): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function loadAll(): JourneySnapshot[] {
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    // Migrate from old Record<ProductKey, JourneySnapshot> format
+    const migrated = (Object.values(parsed) as JourneySnapshot[])
+      .filter(Boolean)
+      .map(s => ({ ...s, journeyId: s.journeyId || generateJourneyId() }));
+    saveAll(migrated);
+    return migrated;
   } catch {
-    return {};
+    return [];
   }
 }
 
-function saveAll(data: Partial<Record<ProductKey, JourneySnapshot>>): void {
+function saveAll(data: JourneySnapshot[]): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-export function saveSnapshot(snapshot: JourneySnapshot): void {
+/**
+ * Save a snapshot. For motor products, multiple snapshots are kept (matched by
+ * journeyId only). For health/life, a single snapshot per product.
+ * Returns the assigned journeyId so callers can track the current journey.
+ */
+export function saveSnapshot(snapshot: JourneySnapshot): string {
   const all = loadAll();
-  all[snapshot.product] = snapshot;
+  const isMotor = snapshot.product === 'car' || snapshot.product === 'bike';
+
+  if (isMotor) {
+    let matchIdx = -1;
+
+    if (snapshot.journeyId) {
+      matchIdx = all.findIndex(s => s.journeyId === snapshot.journeyId);
+    }
+
+    if (matchIdx >= 0) {
+      snapshot.journeyId = all[matchIdx].journeyId || generateJourneyId();
+      all[matchIdx] = snapshot;
+    } else {
+      snapshot.journeyId = snapshot.journeyId || generateJourneyId();
+      all.push(snapshot);
+      const productSnaps = all.filter(s => s.product === snapshot.product);
+      if (productSnaps.length > MAX_MOTOR_SNAPSHOTS) {
+        const oldest = productSnaps
+          .sort((a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime())[0];
+        const removeIdx = all.findIndex(s => s.journeyId === oldest.journeyId);
+        if (removeIdx >= 0) all.splice(removeIdx, 1);
+      }
+    }
+  } else {
+    const idx = all.findIndex(s => s.product === snapshot.product);
+    if (idx >= 0) {
+      snapshot.journeyId = all[idx].journeyId || generateJourneyId();
+      all[idx] = snapshot;
+    } else {
+      snapshot.journeyId = snapshot.journeyId || generateJourneyId();
+      all.push(snapshot);
+    }
+  }
+
   saveAll(all);
+  return snapshot.journeyId!;
 }
 
 export function loadSnapshot(product: ProductKey): JourneySnapshot | null {
-  return loadAll()[product] ?? null;
+  return loadAll()
+    .filter(s => s.product === product)
+    .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())[0] ?? null;
+}
+
+export function loadSnapshotById(journeyId: string): JourneySnapshot | null {
+  return loadAll().find(s => s.journeyId === journeyId) ?? null;
+}
+
+export function loadProductSnapshots(product: ProductKey): JourneySnapshot[] {
+  return loadAll()
+    .filter(s => s.product === product)
+    .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
 }
 
 export function clearSnapshot(product: ProductKey): void {
-  const all = loadAll();
-  delete all[product];
-  saveAll(all);
+  saveAll(loadAll().filter(s => s.product !== product));
+}
+
+export function clearSnapshotById(journeyId: string): void {
+  saveAll(loadAll().filter(s => s.journeyId !== journeyId));
 }
 
 export function clearAllSnapshots(): void {

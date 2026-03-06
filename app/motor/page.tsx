@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useMotorStore } from '../../lib/motor/store';
 import { useThemeStore } from '../../lib/themeStore';
 import { useLanguageStore } from '../../lib/languageStore';
-import { loadSnapshot } from '../../lib/journeyPersist';
+import { loadSnapshot, loadSnapshotById } from '../../lib/journeyPersist';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import MotorHelloEntry from '../../components/motor/MotorHelloEntry';
 import MotorHeader from '../../components/motor/MotorHeader';
@@ -205,7 +205,10 @@ function MotorJourneyInner() {
 
   useEffect(() => {
     const product = vehicleParam ?? 'car';
-    const snap = resumeParam ? loadSnapshot(product) : null;
+    const journeyIdParam = searchParams.get('journeyId');
+    const snap = resumeParam
+      ? (journeyIdParam ? loadSnapshotById(journeyIdParam) : loadSnapshot(product))
+      : null;
     const screenParam = searchParams.get('screen');
 
     resetJourney();
@@ -222,6 +225,7 @@ function MotorJourneyInner() {
     } else if (snap && snap.vehicleType) {
       seedDemoState(snap.vehicleType);
       updateState({
+        journeyId: snap.journeyId ?? '',
         vehicleType: snap.vehicleType,
         registrationNumber: snap.registrationNumber ?? '',
         ownerName: snap.ownerName ?? '',
