@@ -83,7 +83,7 @@ function HealthJourneyInner() {
   const { updateState, resetJourney } = useJourneyStore();
   const paymentComplete = useJourneyStore(s => s.paymentComplete);
   const isExistingUser = useJourneyStore(s => s.isExistingAckoUser);
-  const [screen, setScreen] = useState<Screen>('entry');
+  const [screen, setScreen] = useState<Screen>('chat');
   const [showWelcome, setShowWelcome] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const searchParams = useSearchParams();
@@ -173,6 +173,9 @@ function HealthJourneyInner() {
         setScreen('chat');
       }
       setShowWelcome(false);
+    } else {
+      updateState({ isExistingAckoUser: false, currentStepId: 'entry.welcome', currentModule: 'entry' });
+      setScreen('chat');
     }
 
     setHydrated(true);
@@ -232,8 +235,10 @@ function HealthJourneyInner() {
           </motion.div>
         )}
         {screen === 'chat' && (
-          <div key="chat" className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--app-chat-gradient)' }}>
-            <Header /><ChatContainer />
+          <div key="chat" className="h-screen flex items-stretch overflow-hidden" style={{ background: 'var(--app-chat-gradient)' }}>
+            <div className="max-w-[430px] w-full mx-auto flex flex-col overflow-hidden">
+              <Header /><ChatContainer />
+            </div>
           </div>
         )}
       </AnimatePresence>

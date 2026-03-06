@@ -120,12 +120,8 @@ export default function LifeChatMessage({ message, onEdit, animate = false }: Li
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.215, 0.61, 0.355, 1] }}
-      className="flex gap-3 mb-4"
+      className="flex mb-4"
     >
-      <div className="flex-shrink-0 mt-0.5">
-        <UmbrellaAvatar />
-      </div>
-
       <div className="max-w-[85%]">
         <div className="backdrop-blur-sm px-4 py-3 chat-bubble-bot" style={{ background: 'var(--app-surface, var(--motor-surface))', border: '1px solid var(--app-border, var(--motor-border))' }}>
           {visibleParagraphs.map((words, i) => (
@@ -149,11 +145,8 @@ export function LifeTypingIndicator() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="flex gap-3 mb-4"
+      className="flex mb-4"
     >
-      <div className="flex-shrink-0">
-        <UmbrellaAvatar />
-      </div>
       <div className="backdrop-blur-sm px-4 py-3 chat-bubble-bot flex items-center gap-1.5" style={{ background: 'var(--app-surface, var(--motor-surface))', border: '1px solid var(--app-border, var(--motor-border))' }}>
         <span className="w-2 h-2 bg-purple-400 rounded-full animate-typing" style={{ animationDelay: '0ms' }} />
         <span className="w-2 h-2 bg-purple-400 rounded-full animate-typing" style={{ animationDelay: '200ms' }} />
