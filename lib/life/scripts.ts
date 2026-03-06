@@ -994,20 +994,27 @@ const lifeFinancialDependents: ConversationStep<LifeJourneyState> = {
   id: 'life_financial_dependents',
   module: 'basic_info',
   widgetType: 'multi_select',
-  getScript: (_persona, state) => ({
-    botMessages: [
-      `Who depends on you financially?`,
-      `Your dependents are the people your coverage needs to protect — this is the core of your plan.`,
-    ],
-    options: [
-      { id: 'spouse', label: 'Spouse' },
-      { id: 'kids', label: 'Kids' },
-      { id: 'parents', label: 'Parents' },
-      { id: 'parents_in_law', label: 'Parents-in-law' },
-      { id: 'extended_family', label: 'Extended family' },
-      { id: 'none', label: 'No one right now' },
-    ],
-  }),
+  getScript: (_persona, state) => {
+    const ms = state.maritalStatus;
+    const isMarried = ms === 'married';
+    const wasPreviouslyMarried = ms === 'separated_divorced' || ms === 'widowed';
+
+    const options: { id: string; label: string }[] = [];
+    if (isMarried) options.push({ id: 'spouse', label: 'Spouse' });
+    if (isMarried || wasPreviouslyMarried) options.push({ id: 'kids', label: 'Kids' });
+    options.push({ id: 'parents', label: 'Parents' });
+    if (isMarried) options.push({ id: 'parents_in_law', label: 'Parents-in-law' });
+    options.push({ id: 'extended_family', label: 'Extended family' });
+    options.push({ id: 'none', label: 'No one right now' });
+
+    return {
+      botMessages: [
+        `Who depends on you financially?`,
+        `Your dependents are the people your coverage needs to protect — this is the core of your plan.`,
+      ],
+      options,
+    };
+  },
   processResponse: (response, _state) => {
     const selected = String(response).split(',').filter(Boolean);
     const hasNone = selected.includes('none');
@@ -1561,7 +1568,7 @@ const lifePayment: ConversationStep<LifeJourneyState> = {
 };
 
 /* ═══════════════════════════════════════════════
-   MODULE: E-KYC — Aadhaar-based verification
+   MODULE: E-KYC — HyperVerge redirection flow
    ═══════════════════════════════════════════════ */
 
 const lifeEkyc: ConversationStep<LifeJourneyState> = {
@@ -1570,14 +1577,30 @@ const lifeEkyc: ConversationStep<LifeJourneyState> = {
   widgetType: 'ekyc_screen',
   getScript: (_persona, state) => ({
     botMessages: [
-      `Payment received — your coverage of ₹${((state.selectedCoverage || 10000000) / 10000000).toFixed(1)} Cr is reserved for you. 🎉`,
-      `Now let's complete your e-KYC. It's mandatory for policy issuance and takes under 2 minutes.\n\nYou'll need your **Aadhaar number** and access to the **mobile linked with Aadhaar**.`,
+      `Now let's verify your identity. This is mandatory for policy issuance.`,
     ],
   }),
-  processResponse: (_response, _state) => ({
-    ekycComplete: true,
-    currentModule: 'financial' as LifeModule,
+  processResponse: (response, _state) => {
+    if (response === 'skipped') return { currentModule: 'financial' as LifeModule };
+    return { ekycComplete: true, currentModule: 'financial' as LifeModule };
+  },
+  getNextStep: (response, _state) => {
+    if (response === 'skipped') return 'life_ekyc_skipped';
+    return 'life_financial';
+  },
+};
+
+const lifeEkycSkipped: ConversationStep<LifeJourneyState> = {
+  id: 'life_ekyc_skipped',
+  module: 'ekyc',
+  widgetType: 'none',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `No worries — you can complete e-KYC later. But please note, it's mandatory for policy issuance. Make sure you complete it within 5–7 days to avoid any delays in activating your coverage.`,
+      `We'll send you a reminder. Let's continue with the next steps for now.`,
+    ],
   }),
+  processResponse: (_response, _state) => ({}),
   getNextStep: (_response, _state) => 'life_financial',
 };
 
@@ -1589,12 +1612,16 @@ const lifeFinancial: ConversationStep<LifeJourneyState> = {
   id: 'life_financial',
   module: 'financial',
   widgetType: 'financial_screen',
-  getScript: (_persona, _state) => ({
-    botMessages: [
-      `e-KYC verified! ✅`,
-      `Next, we need to verify your income. This helps us confirm the coverage amount you've selected.\n\nYou can verify via **EPFO/PF**, **Account Aggregator** (bank statements), or by **uploading salary slips** — pick whichever works best for you.`,
-    ],
-  }),
+  getScript: (_persona, state) => {
+    const botMessages: string[] = [];
+    if (state.ekycComplete) {
+      botMessages.push(`e-KYC verified! ✅`);
+    }
+    botMessages.push(
+      `Next, we need to verify your income. This helps us confirm the coverage amount you've selected.\n\nYou can verify via **EPFO/PF**, **Account Aggregator** (bank statements), or by **uploading salary slips** — pick whichever works best for you.`
+    );
+    return { botMessages };
+  },
   processResponse: (_response, _state) => ({
     financialComplete: true,
     currentModule: 'medical' as LifeModule,
@@ -1612,8 +1639,7 @@ const lifeMedicalEval: ConversationStep<LifeJourneyState> = {
   widgetType: 'medical_screen',
   getScript: (_persona, _state) => ({
     botMessages: [
-      `Income verified! ✅`,
-      `Now for your **Video Medical Evaluation (VMER)** — a 15–20 minute video call with a licensed doctor.\n\nAfter the call, you'll review and confirm your health & lifestyle responses. Additional home tests may be required based on your profile.`,
+      `Now for your **Video Medical Evaluation (VMER)** — a 15–20 minute video call with a licensed doctor. You can join instantly or schedule at your convenience.`,
     ],
   }),
   processResponse: (_response, _state) => ({
@@ -1767,6 +1793,7 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeReview,
   lifePayment,
   lifeEkyc,
+  lifeEkycSkipped,
   lifeFinancial,
   lifeMedicalEval,
   lifeUnderwriting,

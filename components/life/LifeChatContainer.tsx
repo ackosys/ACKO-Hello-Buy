@@ -27,11 +27,12 @@ import {
   LifeCelebration,
   LifeCoverageInput,
   LifePaymentScreen,
+  LifePrePaymentSummary,
+  LifeEkycRedirection,
+  LifeVmerRedirection,
 } from './LifeChatWidgets';
 import { LifeRiderCards } from './LifeRiderCards';
-import { useEkycFlow, EkycInlineMessages, EkycInputWidget } from '../ekyc/EkycChatFlow';
 import { useFinancialFlow, FinancialInlineMessages, FinancialInputWidget } from './FinancialChatFlow';
-import { useMedicalFlow, MedicalInlineMessages, MedicalInputWidget } from './MedicalChatFlow';
 import { useUnderwritingFlow, UnderwritingInlineMessages, UnderwritingInputWidget } from './UnderwritingChatFlow';
 import type { LifeJourneyState } from '../../lib/life/types';
 
@@ -86,16 +87,12 @@ export default function LifeChatContainer() {
   const [editModal, setEditModal] = useState<{ stepId: string; visible: boolean }>({ stepId: '', visible: false });
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
 
-  const isEkycStep = currentStepId === 'life_ekyc';
   const isFinancialStep = currentStepId === 'life_financial';
-  const isMedicalStep = currentStepId === 'life_medical_eval';
   const isUnderwritingStep = currentStepId === 'life_underwriting';
-  const isChatFlowStep = isEkycStep || isFinancialStep || isMedicalStep || isUnderwritingStep;
+  const isChatFlowStep = isFinancialStep || isUnderwritingStep;
 
-  const ekyc = useEkycFlow(() => handleResponse('continue'), { skipIntro: true });
-  const financial = useFinancialFlow(() => handleResponse('continue'));
-  const medical = useMedicalFlow(() => handleResponse('continue'));
-  const underwriting = useUnderwritingFlow(() => handleResponse('continue'));
+  const financial = useFinancialFlow(() => handleResponse('continue'), { skipIntro: true });
+  const underwriting = useUnderwritingFlow(() => handleResponse('continue'), { skipIntro: true });
 
   // Scroll to bottom on new content
   useEffect(() => {
@@ -105,7 +102,7 @@ export default function LifeChatContainer() {
         behavior: 'smooth',
       });
     }, 100);
-  }, [conversationHistory, isTyping, showWidget, ekyc.state.messages, financial.state.messages, medical.state.messages, underwriting.state.messages]);
+  }, [conversationHistory, isTyping, showWidget, financial.state.messages, underwriting.state.messages]);
 
   // Process current step — bot messages + auto-advance for 'none' widgets
   useEffect(() => {
@@ -246,7 +243,7 @@ export default function LifeChatContainer() {
     } else if (step.widgetType === 'payment_screen') {
       userLabel = 'Payment completed ✓';
     } else if (step.widgetType === 'ekyc_screen') {
-      userLabel = 'e-KYC verified ✓';
+      userLabel = response === 'skipped' ? "I'll do this later" : 'e-KYC verified ✓';
     } else if (step.widgetType === 'financial_screen') {
       userLabel = 'Income verified ✓';
     } else if (step.widgetType === 'medical_screen') {
@@ -309,7 +306,7 @@ export default function LifeChatContainer() {
   const isLargeWidget = () => {
     const step = getLifeStep(currentStepId);
     if (!step) return false;
-    return ['coverage_card', 'premium_summary', 'rider_cards', 'review_summary', 'post_payment_timeline', 'celebration', 'coverage_input', 'payment_screen', 'nps_feedback', 'app_download_cta'].includes(step.widgetType);
+    return ['coverage_card', 'premium_summary', 'rider_cards', 'review_summary', 'post_payment_timeline', 'celebration', 'coverage_input', 'payment_screen', 'ekyc_screen', 'medical_screen', 'nps_feedback', 'app_download_cta'].includes(step.widgetType);
   };
 
   // Render edit widget
@@ -375,13 +372,15 @@ export default function LifeChatContainer() {
         return <LifeCoverageInput onContinue={() => handleResponse('continue')} />;
       case 'payment_screen':
         return <LifePaymentScreen onContinue={() => handleResponse('continue')} />;
+      case 'ekyc_screen':
+        return <LifeEkycRedirection onComplete={() => handleResponse('continue')} onSkip={() => handleResponse('skipped')} />;
+      case 'medical_screen':
+        return <LifeVmerRedirection onComplete={() => handleResponse('continue')} />;
       case 'nps_feedback':
         return <LifeNpsFeedback onSubmit={(data) => handleResponse(data)} />;
       case 'app_download_cta':
         return <LifeAppDownloadCta onComplete={() => handleResponse({})} />;
-      case 'ekyc_screen':
       case 'financial_screen':
-      case 'medical_screen':
       case 'underwriting_status':
         return null;
       default:
@@ -389,18 +388,38 @@ export default function LifeChatContainer() {
     }
   };
 
+  const { paymentComplete } = useLifeJourneyStore();
+
+  const POST_PAYMENT_MODULES = new Set(['ekyc', 'financial', 'medical', 'underwriting', 'completion']);
+
+  const paymentMsgIndex = paymentComplete
+    ? conversationHistory.findIndex(m => m.type === 'user' && m.content === 'Payment completed ✓')
+    : -1;
+  const postPaymentMessages = paymentMsgIndex >= 0
+    ? conversationHistory.slice(paymentMsgIndex + 1)
+    : conversationHistory;
+  const showSummary = paymentComplete && paymentMsgIndex >= 0;
+
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--app-chat-gradient, var(--motor-chat-gradient))' }}>
       {/* Scrollable chat messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-lg mx-auto">
+          {showSummary && <LifePrePaymentSummary />}
+
           <AnimatePresence initial={false}>
-            {conversationHistory.map((msg, index) => {
+            {(showSummary ? postPaymentMessages : conversationHistory).map((msg, index, arr) => {
               const isLatestBot = msg.type === 'bot' &&
-                index === conversationHistory.length - 1 &&
+                index === arr.length - 1 &&
                 !isTyping;
+              const disableEdit = paymentComplete && !POST_PAYMENT_MODULES.has(msg.module || '');
               return (
-                <LifeChatMessage key={msg.id} message={msg} onEdit={handleEditRequest} animate={isLatestBot} />
+                <LifeChatMessage
+                  key={msg.id}
+                  message={disableEdit ? { ...msg, editable: false } : msg}
+                  onEdit={handleEditRequest}
+                  animate={isLatestBot}
+                />
               );
             })}
           </AnimatePresence>
@@ -427,14 +446,8 @@ export default function LifeChatContainer() {
           </AnimatePresence>
 
           {/* Chat flow messages render inline */}
-          {showWidget && isEkycStep && (
-            <EkycInlineMessages messages={ekyc.state.messages} />
-          )}
           {showWidget && isFinancialStep && (
             <FinancialInlineMessages messages={financial.state.messages} />
-          )}
-          {showWidget && isMedicalStep && (
-            <MedicalInlineMessages messages={medical.state.messages} />
           )}
           {showWidget && isUnderwritingStep && (
             <UnderwritingInlineMessages messages={underwriting.state.messages} />
@@ -461,22 +474,6 @@ export default function LifeChatContainer() {
           </motion.div>
         )}
 
-        {/* e-KYC input widget at bottom */}
-        {showWidget && isEkycStep && (ekyc.state.step === 'aadhaar_input' || ekyc.state.step === 'otp_input') && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="shrink-0 shadow-[0_-4px_40px_rgba(0,0,0,0.3)]"
-              style={{ background: 'var(--app-glass-bg, var(--motor-glass-bg))', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderTop: '1px solid var(--app-border, var(--motor-border))' }}
-          >
-            <div className="max-w-lg mx-auto px-5 py-5 pb-8">
-              <EkycInputWidget {...ekyc} />
-            </div>
-          </motion.div>
-        )}
-
         {/* Financial input widget at bottom */}
         {showWidget && isFinancialStep && (
           <motion.div
@@ -489,22 +486,6 @@ export default function LifeChatContainer() {
           >
             <div className="max-w-lg mx-auto px-5 py-5 pb-8">
               <FinancialInputWidget {...financial} />
-            </div>
-          </motion.div>
-        )}
-
-        {/* Medical input widget at bottom */}
-        {showWidget && isMedicalStep && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="shrink-0 shadow-[0_-4px_40px_rgba(0,0,0,0.3)]"
-              style={{ background: 'var(--app-glass-bg, var(--motor-glass-bg))', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderTop: '1px solid var(--app-border, var(--motor-border))' }}
-          >
-            <div className="max-w-lg mx-auto px-5 py-5 pb-8">
-              <MedicalInputWidget {...medical} />
             </div>
           </motion.div>
         )}

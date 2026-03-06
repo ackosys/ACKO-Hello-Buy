@@ -14,7 +14,12 @@ type MedicalStep =
   | 'review_health'
   | 'review_confirm'
   | 'submitting'
-  | 'complete';
+  | 'complete'
+  | 'vmer_start'
+  | 'vmer_connecting'
+  | 'vmer_completed'
+  | 'vmer_schedule'
+  | 'vmer_scheduled';
 
 export interface MedicalMessage {
   id: string;
@@ -50,8 +55,9 @@ export interface UseMedicalFlowReturn {
   };
 }
 
-export function useMedicalFlow(onComplete: () => void): UseMedicalFlowReturn {
-  const [step, setStep] = useState<MedicalStep>('intro');
+export function useMedicalFlow(onComplete: () => void, options?: { skipIntro?: boolean }): UseMedicalFlowReturn {
+  const skipIntro = options?.skipIntro ?? false;
+  const [step, setStep] = useState<MedicalStep>(skipIntro ? 'check_availability' : 'intro');
   const [messages, setMessages] = useState<MedicalMessage[]>([]);
   const [joinCountdown, setJoinCountdown] = useState(300);
   const [selectedSlot, setSelectedSlot] = useState('');
@@ -76,6 +82,7 @@ export function useMedicalFlow(onComplete: () => void): UseMedicalFlowReturn {
 
   // Intro message
   useEffect(() => {
+    if (skipIntro) return;
     addBotMsg(
       <div className="space-y-3">
         <div className="flex items-start gap-3">

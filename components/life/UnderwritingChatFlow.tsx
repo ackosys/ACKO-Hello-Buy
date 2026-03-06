@@ -40,8 +40,9 @@ export interface UseUnderwritingFlowReturn {
   };
 }
 
-export function useUnderwritingFlow(onComplete: () => void): UseUnderwritingFlowReturn {
-  const [step, setStep] = useState<UWStep>('intro');
+export function useUnderwritingFlow(onComplete: () => void, options?: { skipIntro?: boolean }): UseUnderwritingFlowReturn {
+  const skipIntro = options?.skipIntro ?? false;
+  const [step, setStep] = useState<UWStep>(skipIntro ? 'processing' : 'intro');
   const [messages, setMessages] = useState<UnderwritingMessage[]>([]);
   const [demoOutcome, setDemoOutcome] = useState<'approved' | 'info_needed' | 'not_approved'>('approved');
   const [uploadedInfo, setUploadedInfo] = useState(false);
@@ -73,6 +74,7 @@ export function useUnderwritingFlow(onComplete: () => void): UseUnderwritingFlow
   }, []);
 
   useEffect(() => {
+    if (skipIntro) return;
     addBotMsg(
       <div className="space-y-3">
         <div className="flex items-start gap-3">

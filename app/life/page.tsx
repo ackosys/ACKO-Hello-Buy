@@ -50,7 +50,7 @@ function LifeJourneyInner() {
   const { showExpertPanel, showAIChat, journeyComplete, paymentComplete, ekycComplete, financialComplete, medicalComplete } = store as unknown as { showExpertPanel: boolean; showAIChat: boolean; journeyComplete: boolean; paymentComplete: boolean; ekycComplete: boolean; financialComplete: boolean; medicalComplete: boolean };
 
   const globalLanguage = useLanguageStore((s) => s.language);
-  const [screen, setScreen] = useState<Screen>('entry');
+  const [screen, setScreen] = useState<Screen>('chat');
   const [hydrated, setHydrated] = useState(false);
   const searchParams = useSearchParams();
 

@@ -9,6 +9,7 @@ type FinancialStep =
   | 'salaried_methods'
   | 'epfo_mobile' | 'epfo_otp' | 'epfo_verifying' | 'epfo_success' | 'epfo_failure'
   | 'aa_consent' | 'aa_bank' | 'aa_verifying' | 'aa_success'
+  | 'aa_redirect_start' | 'aa_redirect_loading' | 'aa_redirect_completed'
   | 'doc_upload'
   | 'business_methods' | 'gst_entry' | 'gst_verifying' | 'gst_success' | 'gst_failure'
   | 'doc_business'
@@ -43,21 +44,24 @@ export interface UseFinancialFlowReturn {
     setSelectedBank: (bank: string) => void;
     submitBank: () => void;
     consentAA: () => void;
+    startAARedirect: () => void;
+    completeAARedirect: () => void;
     uploadDocs: () => void;
     continueAfterSuccess: () => void;
     goBack: () => void;
   };
 }
 
-export function useFinancialFlow(onComplete: () => void): UseFinancialFlowReturn {
-  const [step, setStep] = useState<FinancialStep>('intro');
+export function useFinancialFlow(onComplete: () => void, options?: { skipIntro?: boolean }): UseFinancialFlowReturn {
+  const skipIntro = options?.skipIntro ?? false;
+  const [step, setStep] = useState<FinancialStep>(skipIntro ? 'choose_type' : 'intro');
   const [messages, setMessages] = useState<FinancialMessage[]>([]);
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpTimer, setOtpTimer] = useState(30);
   const [gstNumber, setGstNumber] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
-  const [history, setHistory] = useState<FinancialStep[]>(['intro']);
+  const [history, setHistory] = useState<FinancialStep[]>([skipIntro ? 'choose_type' : 'intro']);
 
   const addBotMsg = useCallback((content: string | React.ReactNode) => {
     setMessages(prev => [...prev, {
@@ -79,6 +83,7 @@ export function useFinancialFlow(onComplete: () => void): UseFinancialFlowReturn
   };
 
   useEffect(() => {
+    if (skipIntro) return;
     addBotMsg(
       <div className="space-y-3">
         <div className="flex items-start gap-3">
@@ -196,21 +201,7 @@ export function useFinancialFlow(onComplete: () => void): UseFinancialFlowReturn
       addBotMsg("Enter your EPFO-registered mobile number. We'll send an OTP to verify your PF records.");
       goTo('epfo_mobile');
     } else if (method === 'aa') {
-      addBotMsg(
-        <div className="space-y-2">
-          <p className="text-sm text-white/90 font-medium">Account Aggregator Consent</p>
-          <p className="text-xs text-white/70">Governed by RBI's AA framework. We'll access:</p>
-          <div className="space-y-1.5 mt-2">
-            {['Bank statements (last 6 months)', 'Salary credits & recurring transactions', 'Read-only — no payment access'].map(t => (
-              <div key={t} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                <p className="text-xs text-white/70">{t}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-      goTo('aa_consent');
+      goTo('aa_redirect_start');
     } else if (method === 'upload') {
       addBotMsg("Please upload your last 3 months' salary slips (PDF, PNG, or JPEG). Max 10 MB each.");
       goTo('doc_upload');
@@ -274,6 +265,24 @@ export function useFinancialFlow(onComplete: () => void): UseFinancialFlowReturn
     goTo('aa_bank');
   };
 
+  const startAARedirect = () => {
+    goTo('aa_redirect_loading');
+  };
+
+  const completeAARedirect = () => {
+    goTo('aa_redirect_completed');
+    setTimeout(() => {
+      addBotMsg(
+        <SuccessCard title="Income Verified" subtitle="Verified via Account Aggregator" items={[
+          { label: 'Method', value: 'Account Aggregator' },
+          { label: 'Data source', value: 'Bank statements (6 months)' },
+          { label: 'Status', value: 'Verified ✓' },
+        ]} />
+      );
+      goTo('aa_success');
+    }, 1500);
+  };
+
   const uploadDocs = () => {
     addUserMsg('Documents uploaded');
     addBotMsg(
@@ -333,8 +342,9 @@ export function useFinancialFlow(onComplete: () => void): UseFinancialFlowReturn
     actions: {
       chooseEmploymentType, chooseMethod, setMobile, setOtpDigit,
       submitMobile, submitOtp, setGstNumber, submitGst,
-      setSelectedBank, submitBank, consentAA, uploadDocs,
-      continueAfterSuccess, goBack,
+      setSelectedBank, submitBank, consentAA,
+      startAARedirect, completeAARedirect,
+      uploadDocs, continueAfterSuccess, goBack,
     },
   };
 }
@@ -551,6 +561,101 @@ export function FinancialInputWidget({ state, actions }: UseFinancialFlowReturn)
           className="w-full py-3.5 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
           Proceed to bank
         </button>
+      </div>
+    );
+  }
+
+  if (state.step === 'aa_redirect_start') {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white/5 p-5 space-y-5">
+          <div>
+            <h3 className="text-lg font-bold text-white">Verify your income</h3>
+            <p className="text-xs text-white/60 mt-1">We will verify your income via your salary account</p>
+          </div>
+
+          <div className="space-y-2">
+            {[
+              { icon: '✓', text: 'Safe way to retrieve financial data with your consent' },
+              { icon: '✓', text: 'Revoke data access when required' },
+              { icon: '✓', text: 'Licensed by RBI' },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-2.5">
+                <span className="text-emerald-400 text-sm font-bold">{icon}</span>
+                <p className="text-xs text-white/70">{text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { num: 1, title: 'Give consent', desc: 'Check details and provide consent' },
+              { num: 2, title: 'Connect account', desc: 'Connect with account aggregator using your phone number' },
+              { num: 3, title: 'Select & verify', desc: 'Using OTP sent by bank' },
+            ].map(({ num, title, desc }) => (
+              <div key={num} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3.5">
+                <div className="w-7 h-7 rounded-full bg-purple-500/30 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-purple-300">{num}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">{title}</p>
+                  <p className="text-xs text-white/50 mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-white/40 text-center">Powered by Anumati</p>
+        </div>
+
+        <button onClick={actions.startAARedirect}
+          className="w-full py-3.5 bg-purple-600 text-white hover:bg-purple-500 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">
+          Proceed to Verify
+        </button>
+        <button onClick={actions.goBack}
+          className="w-full py-2 text-purple-300 text-xs hover:text-white transition-colors text-center">
+          Use another method
+        </button>
+      </div>
+    );
+  }
+
+  if (state.step === 'aa_redirect_loading') {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white/5 p-5 space-y-4">
+          <div>
+            <h3 className="text-lg font-bold text-white">Verify your income</h3>
+            <p className="text-xs text-white/60 mt-1">We will verify your income via your salary account</p>
+          </div>
+
+          <div className="flex flex-col items-center justify-center py-10 rounded-xl bg-white/5 border border-white/10">
+            <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-sm text-white/50">Redirecting to Anumati...</p>
+          </div>
+        </div>
+
+        <button onClick={actions.completeAARedirect}
+          className="w-full py-3.5 bg-purple-600 text-white hover:bg-purple-500 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">
+          I&apos;ve Completed
+        </button>
+      </div>
+    );
+  }
+
+  if (state.step === 'aa_redirect_completed') {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mb-3">
+              <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-white">Income Verified!</p>
+          </div>
+        </div>
       </div>
     );
   }

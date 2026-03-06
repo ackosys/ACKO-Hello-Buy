@@ -1224,7 +1224,7 @@ export function LifeCoverageInput({ onContinue }: { onContinue: () => void }) {
 
 export function LifePaymentScreen({ onContinue }: { onContinue: () => void }) {
   const state = useLifeJourneyStore.getState() as LifeJourneyState;
-  const [processing, setProcessing] = useState(false);
+  const [stage, setStage] = useState<'ready' | 'processing' | 'success'>('ready');
 
   const formatAmt = (n: number) => {
     if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
@@ -1236,12 +1236,78 @@ export function LifePaymentScreen({ onContinue }: { onContinue: () => void }) {
   const monthlyPremium = state.quote?.monthlyPremium || 0;
 
   const handlePay = () => {
-    setProcessing(true);
+    setStage('processing');
     setTimeout(() => {
-      setProcessing(false);
-      onContinue();
+      setStage('success');
+      setTimeout(() => onContinue(), 2200);
     }, 2000);
   };
+
+  if (stage === 'success') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+        className="max-w-md"
+      >
+        <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5 py-10 px-6">
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.15 }}
+              className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-5"
+            >
+              <motion.svg
+                className="w-10 h-10 text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+              >
+                <motion.path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                />
+              </motion.svg>
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-xl font-bold text-white mb-1"
+            >
+              Payment Successful!
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              className="text-white/50 text-sm"
+            >
+              {formatAmt(state.selectedCoverage)} coverage secured
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="mt-5 flex items-center gap-2 text-white/40 text-xs"
+            >
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+              </svg>
+              Setting up your next steps...
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -1276,10 +1342,10 @@ export function LifePaymentScreen({ onContinue }: { onContinue: () => void }) {
         <div className="px-5 pb-5">
           <button
             onClick={handlePay}
-            disabled={processing}
+            disabled={stage === 'processing'}
             className="w-full py-3.5 rounded-xl bg-purple-600 text-white text-label-lg font-semibold active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30 hover:bg-purple-500 disabled:opacity-70"
           >
-            {processing ? (
+            {stage === 'processing' ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" /></svg>
                 Processing...
@@ -1298,10 +1364,539 @@ export function LifePaymentScreen({ onContinue }: { onContinue: () => void }) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   e-KYC — HyperVerge Redirection Flow
+   Steps: start → loading → completed
+   ═══════════════════════════════════════════════════════ */
+
+export function LifeEkycRedirection({ onComplete, onSkip }: { onComplete: () => void; onSkip?: () => void }) {
+  const [stage, setStage] = useState<'start' | 'loading' | 'completed'>('start');
+
+  const handleStart = () => {
+    setStage('loading');
+  };
+
+  const handleCompleted = () => {
+    setStage('completed');
+    setTimeout(() => onComplete(), 1200);
+  };
+
+  if (stage === 'completed') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md"
+      >
+        <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5 py-10 px-6">
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.15 }}
+              className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-5"
+            >
+              <motion.svg
+                className="w-10 h-10 text-green-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}
+              >
+                <motion.path
+                  strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                />
+              </motion.svg>
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-xl font-bold text-white mb-1"
+            >
+              KYC Verified!
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              className="text-white/50 text-sm"
+            >
+              Proceeding to next step...
+            </motion.p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-md"
+    >
+      <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-white">Complete KYC</h3>
+            <p className="text-xs text-white/50 mt-1 leading-relaxed max-w-[260px]">
+              HyperVerge, our reliable partner, will handle the KYC process for you with 100% security
+            </p>
+          </div>
+          {onSkip && stage === 'start' && (
+            <button
+              onClick={onSkip}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 hover:bg-white/20 transition-colors"
+            >
+              <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-5">
+          <AnimatePresence mode="wait">
+            {stage === 'start' && (
+              <motion.div
+                key="steps"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3 mb-5"
+              >
+                {[
+                  { title: 'Verify your identity', sub: 'Upload PAN card or Aadhaar' },
+                  { title: 'Take a quick selfie', sub: 'Face match for security' },
+                  { title: 'Instant confirmation', sub: 'Approved in most cases' },
+                ].map((step, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl border border-white/10 bg-white/5"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-purple-500/30 flex items-center justify-center shrink-0 text-xs font-bold text-purple-300">
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white">{step.title}</p>
+                      <p className="text-xs text-white/40 mt-0.5">{step.sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {stage === 'loading' && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mb-5"
+              >
+                <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-white/10 bg-white/5">
+                  <svg className="w-8 h-8 text-purple-400 animate-spin mb-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                  </svg>
+                  <p className="text-sm text-white/50">Loading KYC verification...</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {stage === 'start' && (
+            <p className="text-center text-xs text-white/30 mb-4">Powered by HyperVerge</p>
+          )}
+
+          <button
+            onClick={stage === 'start' ? handleStart : handleCompleted}
+            className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30"
+            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
+          >
+            {stage === 'start' ? 'Start KYC Verification' : "I've Completed"}
+          </button>
+
+          {stage === 'start' && onSkip && (
+            <button
+              onClick={onSkip}
+              className="w-full py-2.5 mt-2 text-sm font-medium text-purple-300 hover:text-purple-200 transition-colors"
+            >
+              I&apos;ll do this later
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   VMER Call — Video Medical Exam Redirection Flow
+   join instantly or schedule, then redirect to video call
+   ═══════════════════════════════════════════════════════ */
+
+type VmerStage = 'start' | 'connecting' | 'schedule' | 'scheduled' | 'completed';
+
+const VMER_LANGUAGES = ['English', 'Hindi', 'Hinglish', 'Kannada', 'Tamil', 'Malayalam'];
+
+function getUpcomingDates(count: number) {
+  const dates: { day: string; date: number; month: string; full: string }[] = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const today = new Date();
+  for (let i = 1; i <= count; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    dates.push({
+      day: dayNames[d.getDay()],
+      date: d.getDate(),
+      month: monthNames[d.getMonth()],
+      full: `${d.getDate()} ${monthNames[d.getMonth()]}`,
+    });
+  }
+  return dates;
+}
+
+const VMER_TIME_SLOTS = ['9:00 AM', '11:00 AM', '2:00 PM', '4:00 PM', '6:00 PM'];
+
+export function LifeVmerRedirection({ onComplete }: { onComplete: () => void }) {
+  const [stage, setStage] = useState<VmerStage>('start');
+  const [selectedLang, setSelectedLang] = useState('English');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const upcomingDates = getUpcomingDates(5);
+
+  const handleJoinCall = () => {
+    setStage('connecting');
+  };
+
+  const handleSchedule = () => {
+    setStage('schedule');
+  };
+
+  const handleConfirmSchedule = () => {
+    if (!selectedDate || !selectedTime) return;
+    setStage('scheduled');
+  };
+
+  const handleReschedule = () => {
+    setStage('schedule');
+  };
+
+  const handleCompleted = () => {
+    setStage('completed');
+    setTimeout(() => onComplete(), 1200);
+  };
+
+  if (stage === 'completed') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md"
+      >
+        <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5 py-10 px-6">
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.15 }}
+              className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-5"
+            >
+              <motion.svg
+                className="w-10 h-10 text-green-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}
+              >
+                <motion.path
+                  strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                />
+              </motion.svg>
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-xl font-bold text-white mb-1"
+            >
+              VMER Completed!
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              className="text-white/50 text-sm"
+            >
+              Proceeding to next step...
+            </motion.p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (stage === 'scheduled') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md"
+      >
+        <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5">
+          <div className="px-6 pt-8 pb-2 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-4">
+              <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">Call Scheduled</h3>
+            <p className="text-sm text-white/50">{selectedDate} at {selectedTime}</p>
+          </div>
+
+          <div className="px-6 pb-5">
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-white/10 bg-white/5 mt-4 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">Language: {selectedLang}</p>
+                <p className="text-xs text-white/40 mt-0.5">You&apos;ll receive a reminder before the call</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleJoinCall}
+              className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30"
+              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
+            >
+              Join Call
+            </button>
+
+            <button
+              onClick={handleReschedule}
+              className="w-full py-2.5 mt-2 text-sm font-medium text-purple-300 hover:text-purple-200 transition-colors"
+            >
+              Reschedule
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (stage === 'schedule') {
+    const canConfirm = selectedDate && selectedTime;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md"
+      >
+        <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5">
+          <div className="px-6 pt-6 pb-4">
+            <h3 className="text-lg font-bold text-white">Schedule VMER Call</h3>
+            <p className="text-xs text-white/50 mt-1">Pick a language, date, and time</p>
+          </div>
+
+          <div className="px-6 pb-5 space-y-5">
+            {/* Language */}
+            <div>
+              <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-2.5">Language Preference</p>
+              <div className="flex flex-wrap gap-2">
+                {VMER_LANGUAGES.map(lang => (
+                  <button
+                    key={lang}
+                    onClick={() => setSelectedLang(lang)}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                      selectedLang === lang
+                        ? 'bg-purple-500 text-white border border-purple-400'
+                        : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date */}
+            <div>
+              <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-2.5">Pick a Date</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {upcomingDates.map(d => (
+                  <button
+                    key={d.full}
+                    onClick={() => setSelectedDate(d.full)}
+                    className={`flex flex-col items-center px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all shrink-0 min-w-[60px] ${
+                      selectedDate === d.full
+                        ? 'bg-purple-500 text-white border border-purple-400'
+                        : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-[10px] opacity-60">{d.day}</span>
+                    <span className="text-sm font-bold mt-0.5">{d.date} {d.month}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time */}
+            <div>
+              <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-2.5">Pick a Time</p>
+              <div className="flex flex-wrap gap-2">
+                {VMER_TIME_SLOTS.map(time => (
+                  <button
+                    key={time}
+                    onClick={() => setSelectedTime(time)}
+                    className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                      selectedTime === time
+                        ? 'bg-purple-500 text-white border border-purple-400'
+                        : 'bg-white/5 border border-white/15 text-white/70 hover:bg-white/10'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              disabled={!canConfirm}
+              onClick={handleConfirmSchedule}
+              className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: canConfirm ? 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' : 'rgba(124,58,237,0.3)' }}
+            >
+              Confirm schedule
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-md"
+    >
+      <div className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm bg-gradient-to-br from-white/10 to-white/5">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4">
+          <h3 className="text-lg font-bold text-white">Video Medical Exam</h3>
+          <p className="text-xs text-white/50 mt-1 leading-relaxed max-w-[280px]">
+            Connect with a doctor for your medical examination via video call
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 pb-5">
+          <AnimatePresence mode="wait">
+            {stage === 'start' && (
+              <motion.div
+                key="options"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3 mb-5"
+              >
+                {[
+                  {
+                    icon: (
+                      <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                      </svg>
+                    ),
+                    title: 'Instant video call',
+                    sub: 'Jump on a call with an available doctor now',
+                  },
+                  {
+                    icon: (
+                      <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                      </svg>
+                    ),
+                    title: 'Schedule for later',
+                    sub: 'Pick a convenient date and time slot',
+                  },
+                ].map((opt, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl border border-white/10 bg-white/5"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                      {opt.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white">{opt.title}</p>
+                      <p className="text-xs text-white/40 mt-0.5">{opt.sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {stage === 'connecting' && (
+              <motion.div
+                key="connecting"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mb-5"
+              >
+                <p className="text-xs text-white/50 mb-3">Connecting you with a doctor</p>
+                <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-white/10 bg-white/5">
+                  <svg className="w-8 h-8 text-purple-400 animate-spin mb-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                  </svg>
+                  <p className="text-sm text-white/50">Connecting to video call...</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {stage === 'start' && (
+            <p className="text-center text-xs text-white/30 mb-4">Powered by Video Platform</p>
+          )}
+
+          {stage === 'start' && (
+            <>
+              <button
+                onClick={handleJoinCall}
+                className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30"
+                style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
+              >
+                Join Call
+              </button>
+              <button
+                onClick={handleSchedule}
+                className="w-full py-2.5 mt-2 text-sm font-medium text-purple-300 hover:text-purple-200 transition-colors"
+              >
+                Schedule for later
+              </button>
+            </>
+          )}
+
+          {stage === 'connecting' && (
+            <button
+              onClick={handleCompleted}
+              className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30"
+              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
+            >
+              I&apos;ve Completed
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    e-KYC Screen — Full Aadhaar OTP verification flow
-   Stages: start → aadhaar → sending → otp → verifying → success
-   Edge cases: wrong OTP (max 3), OTP expiry, service down,
-               Aadhaar not linked to mobile, alternative KYC paths
+   (Legacy — kept for standalone /ekyc route)
    ═══════════════════════════════════════════════════════ */
 
 type EkycStage =
@@ -4631,6 +5226,124 @@ export function LifeFinancialScreen({ onContinue }: { onContinue: () => void }) 
             </button>
           </div>
         )}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Pre-Payment Summary — Collapsed, non-editable summary
+   shown after payment replaces all pre-payment chat messages
+   ═══════════════════════════════════════════════════════ */
+
+const MARITAL_LABELS: Record<string, string> = {
+  married: 'Married',
+  single: 'Single',
+  separated_divorced: 'Separated / Divorced',
+  widowed: 'Widowed',
+};
+
+const DEPENDENT_LABELS: Record<string, string> = {
+  spouse: 'Spouse',
+  kids: 'Kids',
+  parents: 'Parents',
+  parents_in_law: 'Parents-in-law',
+  extended_family: 'Extended family',
+  none: 'None',
+};
+
+export function LifePrePaymentSummary({ defaultCollapsed = true }: { defaultCollapsed?: boolean }) {
+  const state = useLifeJourneyStore.getState() as LifeJourneyState;
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  const formatAmt = (n: number) => {
+    if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
+    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+    return `₹${n.toLocaleString('en-IN')}`;
+  };
+
+  const rows: { label: string; value: string }[] = [];
+  if (state.name) rows.push({ label: 'Name', value: state.name });
+  if (state.gender) rows.push({ label: 'Gender', value: state.gender === 'male' ? 'Male' : 'Female' });
+  if (state.dateOfBirth) rows.push({ label: 'Date of Birth', value: state.dateOfBirth });
+  if (state.age) rows.push({ label: 'Age', value: `${state.age} years` });
+  if (state.maritalStatus) rows.push({ label: 'Marital Status', value: MARITAL_LABELS[state.maritalStatus] || state.maritalStatus });
+  if (state.dependentTypes?.length > 0) {
+    rows.push({ label: 'Dependents', value: state.dependentTypes.map(d => DEPENDENT_LABELS[d] || d).join(', ') });
+  }
+  if (state.annualIncome) rows.push({ label: 'Annual Income', value: formatAmt(state.annualIncome) });
+  if (state.selectedCoverage) rows.push({ label: 'Coverage', value: formatAmt(state.selectedCoverage) });
+  if (state.selectedTerm) rows.push({ label: 'Term', value: `${state.selectedTerm} years (till age ${state.age + state.selectedTerm})` });
+  if (state.quote?.yearlyPremium) rows.push({ label: 'Premium', value: `₹${state.quote.yearlyPremium.toLocaleString('en-IN')}/year` });
+  if (state.selectedRiders?.length > 0) {
+    rows.push({ label: 'Riders', value: state.selectedRiders.map(r => r.name).join(', ') });
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mb-6"
+    >
+      <div
+        className="rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm"
+        style={{ background: 'var(--app-surface, var(--motor-surface))' }}
+      >
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Application Summary</p>
+              <p className="text-xs text-white/40 mt-0.5">Payment completed &middot; {formatAmt(state.selectedCoverage)} coverage</p>
+            </div>
+          </div>
+          <motion.svg
+            animate={{ rotate: collapsed ? 0 : 180 }}
+            transition={{ duration: 0.2 }}
+            className="w-5 h-5 text-white/40 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </motion.svg>
+        </button>
+
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="px-5 pb-5 border-t border-white/8">
+                <div className="mt-4 space-y-0">
+                  {rows.map((row, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between items-start py-2.5"
+                      style={{ borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+                    >
+                      <span className="text-xs text-white/40 flex-shrink-0">{row.label}</span>
+                      <span className="text-xs font-medium text-white/80 text-right ml-4">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
