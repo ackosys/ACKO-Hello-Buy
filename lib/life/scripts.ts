@@ -1560,7 +1560,7 @@ const lifeReview: ConversationStep<LifeJourneyState> = {
     return {
       botMessages: messages,
       options: [
-        { label: `Proceed to payment · ₹${yearlyPremium.toLocaleString('en-IN')}`, value: 'pay' },
+        { id: 'pay', label: `Proceed to payment · ₹${yearlyPremium.toLocaleString('en-IN')}` },
       ],
     };
   },
