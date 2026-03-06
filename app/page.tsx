@@ -128,18 +128,29 @@ function computeSnapshots(): LobOverride[] {
         statusInfo = { badge: 'Update in progress', message: `${l} policy update · Effective next billing cycle`, urgency: 'low' };
       }
 
-      const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
-      const regNumber = snap.registrationNumber?.toUpperCase() || '';
+      let imageUrl: string;
+      let title: string;
+      let subtitle: string;
 
-      const make = snap.vehicleData?.make || '';
-      const model = snap.vehicleData?.model || '';
-      const vType = snap.vehicleType || 'car';
-      const fallback = vType === 'bike' ? `${BASE}/offerings/bike-card.png` : `${BASE}/offerings/car-card.png`;
-      const imageUrl = PWILO_MODEL_IMAGE[model] || PWILO_MAKE_IMAGE[make] || fallback;
-
-      const subtitle = regNumber
-        ? regNumber
-        : isMotor ? display.badge : (display.subtitle || '');
+      if (isMotor) {
+        const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
+        const regNumber = snap.registrationNumber?.toUpperCase() || '';
+        const make = snap.vehicleData?.make || '';
+        const model = snap.vehicleData?.model || '';
+        const vType = snap.vehicleType || 'car';
+        const fallback = vType === 'bike' ? `${BASE}/offerings/bike-card.png` : `${BASE}/offerings/car-card.png`;
+        imageUrl = PWILO_MODEL_IMAGE[model] || PWILO_MAKE_IMAGE[make] || fallback;
+        title = vehicleName || display.title;
+        subtitle = regNumber || display.badge;
+      } else {
+        const lobImage: Record<string, string> = {
+          health: `${BASE}/offerings/health-card.png`,
+          life: `${BASE}/offerings/life-card.png`,
+        };
+        imageUrl = lobImage[lobId] || `${BASE}/offerings/health-card.png`;
+        title = display.title;
+        subtitle = display.subtitle || '';
+      }
 
       let route = display.route;
       if (isMotor && snap.journeyId) {
@@ -150,7 +161,7 @@ function computeSnapshots(): LobOverride[] {
         journeyId: snap.journeyId || '',
         lobId,
         badge: display.badge,
-        title: vehicleName || display.title,
+        title,
         subtitle,
         route,
         urgency: display.urgency,
@@ -429,7 +440,9 @@ function PwiloSection({
               className="text-[16px] font-semibold leading-[22px]"
               style={{ color: 'var(--app-text)' }}
             >
-              Continue insuring your {entry.title}
+              {(entry.lobId === 'car' || entry.lobId === 'bike')
+                ? `Continue insuring your ${entry.title}`
+                : entry.title}
             </h3>
             {entry.subtitle && (
               <p
@@ -648,91 +661,90 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
 
 /* ── Why ACKO Section ── */
 function WhyAckoSection() {
-  const WHY_CARDS = [
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+
+  const WHY_ITEMS = [
     {
-      icon: `${BASE}/icons/why-acko/icon-digital.svg`,
+      icon: `${BASE}/icons/100%25 digital.svg`,
       title: '100% Digital',
       description: 'Buy, manage and claim - all online',
     },
     {
-      icon: `${BASE}/icons/why-acko/icon-claim.svg`,
-      title: '98.8%',
-      description: 'Claims settled in 1 week',
+      icon: `${BASE}/icons/24X7 support.svg`,
+      title: '24x7 claim support',
+      description: 'Available for you always',
     },
     {
-      icon: `${BASE}/icons/why-acko/icon-support.svg`,
-      title: '24x7',
-      description: 'Instant claims support',
-    },
-    {
-      icon: `${BASE}/icons/why-acko/icon-pricing.svg`,
+      icon: `${BASE}/icons/Honest pricing.svg`,
       title: 'Honest Pricing',
       description: 'No middle men & no hidden costs',
+    },
+    {
+      icon: `${BASE}/icons/Claims settled.svg`,
+      title: '98.8% Claims settled',
+      description: 'Average claim settled in 1 week',
     },
   ];
 
   return (
-    <div className="px-4 py-8">
-      <div className="flex flex-col gap-4">
-        {/* Heading */}
-        <div className="text-center mb-1">
-          <h2
-            className="text-[24px] font-semibold leading-[30px]"
-            style={{ color: 'var(--app-text)' }}
-          >
-            Why ACKO ?
-          </h2>
-          <p
-            className="text-[14px] leading-[16px] mt-1"
-            style={{ color: 'var(--app-text-muted)' }}
-          >
-            Insurance that actually makes sense
-          </p>
-        </div>
-
-        {/* Award banner */}
-        <div
-          className="flex items-center justify-center h-[88px] rounded-3xl overflow-hidden"
-          style={{ background: 'var(--app-surface-2)' }}
-        >
-          <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${BASE}/icons/why-acko/award-laurel-left.svg`} alt="" className="h-12 w-auto" draggable={false} />
-            <div className="text-center leading-[19px]">
-              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
-                India&apos;s #1*
-              </p>
-              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
-                insurance app
-              </p>
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${BASE}/icons/why-acko/award-laurel-right.svg`} alt="" className="h-12 w-auto" draggable={false} />
+    <div className="px-4 pt-6 pb-8">
+      <div className="flex flex-col gap-6">
+        {/* Badge + heading */}
+        <div className="flex flex-col items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${BASE}/offerings/App-first.svg`}
+            alt="India's 1st Insurance App"
+            className="w-20 h-20 object-contain"
+            draggable={false}
+          />
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <h2
+              className="text-[24px] font-semibold leading-[30px] text-center"
+              style={{ color: 'var(--app-text)' }}
+            >
+              Why ACKO ?
+            </h2>
+            <p
+              className="text-[14px] leading-[16px] text-center"
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              Insurance that actually makes sense
+            </p>
           </div>
         </div>
 
-        {/* 2×2 bento grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {WHY_CARDS.map((card) => (
+        {/* Card list */}
+        <div className="flex flex-col gap-3">
+          {WHY_ITEMS.map((item) => (
             <div
-              key={card.title}
-              className="flex flex-col gap-1.5 h-[154px] rounded-3xl overflow-hidden p-5"
-              style={{ background: 'var(--app-surface-2)' }}
+              key={item.title}
+              className="flex items-center gap-4 p-2 rounded-lg"
+              style={{ background: isDark ? 'var(--app-surface)' : 'white' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={card.icon} alt="" className="w-10 h-10 object-contain" draggable={false} />
-              <p
-                className="text-[16px] font-semibold leading-[22px] mt-1"
-                style={{ color: 'var(--app-text)' }}
-              >
-                {card.title}
-              </p>
-              <p
-                className="text-[14px] leading-[16px]"
-                style={{ color: 'var(--app-text-muted)' }}
-              >
-                {card.description}
-              </p>
+              <img
+                src={item.icon}
+                alt=""
+                className="w-8 h-8 shrink-0 object-contain"
+                style={isDark ? { filter: 'brightness(0) invert(1) brightness(0.85)' } : undefined}
+                draggable={false}
+              />
+              <div className="flex flex-col">
+                <p
+                  className="text-[14px] font-semibold leading-[22px]"
+                  style={{ color: 'var(--app-text)' }}
+                >
+                  {item.title}
+                </p>
+                <p
+                  className="text-[12px] leading-[18px]"
+                  style={{ color: isDark ? 'var(--app-text-muted)' : 'rgba(0,0,0,0.56)' }}
+                >
+                  {item.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -944,6 +956,14 @@ function GlobalHomepageInner() {
               {/* LOB Bento Grid */}
               <BentoLobGrid onCardClick={handleCardClick} />
 
+              <p
+                className="text-[10px] leading-[14px] text-center mt-4"
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                UID: 6484 | ARN: L0110 | T&amp;C apply
+              </p>
+
+              <div className="h-8" />
               <WhyAckoSection />
             </div>
             <PageFooter />
