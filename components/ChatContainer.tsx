@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../lib/store';
-import { getStep } from '../lib/scripts';
+import { getStep, getCoverageReplyLabel } from '../lib/scripts';
 import { saveSnapshot, HEALTH_SAVE_STEPS } from '../lib/journeyPersist';
 import ChatMessage, { TypingIndicator } from './ChatMessage';
 import {
@@ -16,6 +16,7 @@ import {
   FrequencySelect,
   ReviewSummary,
   ConsentWidget,
+  HealthSummaryCard,
   PaymentWidget,
   LabScheduleWidget,
   HospitalList,
@@ -66,6 +67,7 @@ export default function ChatContainer() {
   }, [currentStepId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [editModal, setEditModal] = useState<{ stepId: string; visible: boolean }>({ stepId: '', visible: false });
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const editFromReviewRef = useRef(false);
 
   // Scroll to bottom
   useEffect(() => {
@@ -95,7 +97,8 @@ export default function ChatContainer() {
       return;
     }
 
-    const key = `${currentStepId}-${currentState.members.length}-${currentState.userName}-${currentState.pincode}-${currentState.conversationHistory.length}`;
+    // Use stepId only as the key — prevents duplicate bot messages when React re-renders (e.g. triple DOB ack)
+    const key = currentStepId;
     if (processedRef.current.has(key)) return;
     processedRef.current.add(key);
 
@@ -168,14 +171,25 @@ export default function ChatContainer() {
       if (opt) userLabel = opt.label;
     }
 
+    // Personalised reply for "who to cover" (feedback #13)
+    if (step.id === 'family.who_to_cover' && Array.isArray(response)) {
+      const stateUpdate = step.processResponse(response, currentState);
+      const merged = { ...currentState, ...stateUpdate } as JourneyState;
+      userLabel = getCoverageReplyLabel(merged.coverageFor || [], merged.numChildren ?? 0, merged.language || 'en');
+    }
+
     // Plan switcher: PlanSwitcher already updates store.selectedPlan internally
     if (step.widgetType === 'plan_switcher') {
       const tierLabels: Record<string, string> = { platinum: 'Platinum', platinum_lite: 'Platinum Lite', super_topup: 'Super Top-up' };
       userLabel = tierLabels[response] || response;
     }
 
-    // Trim all messages after this step's user message, then re-route
-    trimAndUpdateFromStep(editingStepId, userLabel);
+    // Preserve full chat history — append an "Updated" user message instead of trimming
+    addMessage({
+      type: 'user',
+      content: `✏️ Updated: ${userLabel}`,
+      stepId: editingStepId,
+    });
 
     // Apply the state update from the new response
     const stateUpdate = step.processResponse(response, currentState);
@@ -185,7 +199,7 @@ export default function ChatContainer() {
     setEditingStepId(null);
     setShowWidget(false);
 
-    // Clear processedRef so new steps can be processed fresh
+    // Clear processedRef so new steps can be processed fresh from this point
     processedRef.current.clear();
 
     // Navigate to the correct next step based on new response
@@ -197,7 +211,7 @@ export default function ChatContainer() {
         currentModule: nextStep?.module || mergedState.currentModule,
       });
     }, 300);
-  }, [editingStepId, resolvedPersona]);
+  }, [editingStepId, resolvedPersona, addMessage]);
 
   // Handle response
   const handleResponse = useCallback((response: any) => {
@@ -218,12 +232,19 @@ export default function ChatContainer() {
       if (opt) userLabel = opt.label;
     }
 
+    // Personalised reply for "who to cover" (feedback #13)
+    if (step.id === 'family.who_to_cover' && Array.isArray(response)) {
+      const stateUpdate = step.processResponse(response, currentState);
+      const merged = { ...currentState, ...stateUpdate } as JourneyState;
+      userLabel = getCoverageReplyLabel(merged.coverageFor || [], merged.numChildren ?? 0, merged.language || 'en');
+    }
+
     // Friendly labels for special widget types
     if (step.widgetType === 'plan_switcher') {
       const tierLabels: Record<string, string> = { platinum: 'Platinum', platinum_lite: 'Platinum Lite', super_topup: 'Super Top-up' };
       userLabel = tierLabels[response] || response;
     } else if (step.widgetType === 'dob_collection') {
-      userLabel = 'DOB submitted';
+      userLabel = 'Date of birth submitted for all members';
     } else if (step.widgetType === 'usp_cards') {
       userLabel = 'Got it, let\'s find a plan';
     }
@@ -312,8 +333,10 @@ export default function ChatContainer() {
         return <FrequencySelect onSelect={handleResponse} />;
       case 'review_summary':
         return <ReviewSummary onConfirm={() => handleResponse('confirmed')} onEditField={(stepId) => handleEditRequest(stepId)} />;
+      case 'health_summary_card':
+        return <HealthSummaryCard onConfirm={() => handleResponse('confirmed')} />;
       case 'consent':
-        return <ConsentWidget onConfirm={() => handleResponse('agreed')} />;
+        return <ConsentWidget onConfirm={() => handleResponse('agreed')} links={script.links} consentText={script.consentText} />;
       case 'dob_collection':
         return <DobCollectionWidget onConfirm={(resp: string) => handleResponse(resp)} />;
       case 'usp_cards':

@@ -998,7 +998,9 @@ const HOSPITALS_NEARBY = [
 export function HospitalList({ onContinue }: { onContinue: () => void }) {
   const t = useT();
   const nearbyHospitals = useJourneyStore(s => s.nearbyHospitals);
-  const [showAll, setShowAll] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const MAX_VISIBLE = 5;
+  const visibleHospitals = HOSPITALS_NEARBY.slice(0, MAX_VISIBLE);
 
   return (
     <div className="max-w-md">
@@ -1014,7 +1016,7 @@ export function HospitalList({ onContinue }: { onContinue: () => void }) {
 
       <div className="bg-white/8 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
         <div className="divide-y divide-white/5">
-          {(showAll ? HOSPITALS_NEARBY : HOSPITALS_NEARBY.slice(0, 3)).map((h, i) => (
+          {visibleHospitals.map((h, i) => (
             <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
               className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
               <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
@@ -1028,15 +1030,66 @@ export function HospitalList({ onContinue }: { onContinue: () => void }) {
             </motion.div>
           ))}
         </div>
-        {!showAll && (
-          <button onClick={() => setShowAll(true)} className="w-full py-2.5 text-label-md text-purple-300 font-medium hover:bg-white/5 transition-colors border-t border-white/5">
-             {t.widgets.viewAllHospitals(nearbyHospitals || 0)}
-          </button>
-        )}
+        <button onClick={() => setShowOverlay(true)} className="w-full py-2.5 text-label-md text-purple-300 font-medium hover:bg-white/5 transition-colors border-t border-white/5">
+          View full list ({nearbyHospitals || HOSPITALS_NEARBY.length}+ hospitals) →
+        </button>
       </div>
+
       <button onClick={onContinue} className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
         {t.common.continue}
       </button>
+
+      {/* Full hospital list overlay */}
+      <AnimatePresence>
+        {showOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setShowOverlay(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-[#1C0B47] rounded-t-3xl border border-white/10 overflow-hidden flex flex-col"
+              style={{ maxHeight: '85vh' }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
+                <div>
+                  <p className="text-white font-semibold text-base">{nearbyHospitals || HOSPITALS_NEARBY.length}+ Cashless Hospitals</p>
+                  <p className="text-white/50 text-xs mt-0.5">Walk in with your ACKO card — no upfront payment</p>
+                </div>
+                <button onClick={() => setShowOverlay(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors">
+                  ✕
+                </button>
+              </div>
+              <div className="overflow-y-auto divide-y divide-white/5 flex-1">
+                {HOSPITALS_NEARBY.map((h, i) => (
+                  <div key={i} className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/5 transition-colors">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                      <img src={h.image} alt={h.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white/90">{h.name}</p>
+                      <p className="text-xs text-white/40">{h.type}</p>
+                    </div>
+                    <span className="text-xs text-purple-300 flex-shrink-0">{h.distance}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 border-t border-white/10 flex-shrink-0">
+                <button onClick={() => setShowOverlay(false)} className="w-full py-3 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-600 transition-colors">
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1277,7 +1330,7 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
       <button
         onClick={handleSelect}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
       >
         {t.widgets.continueWith(plan.name)}
       </button>
@@ -1341,10 +1394,17 @@ export function UspCards({ onContinue }: { onContinue: () => void }) {
   const t = useT();
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-      {/* Brand ambassador banner */}
-      <div className="relative rounded-2xl overflow-hidden mb-4">
-        <img src={assetPath('/brand-ambassador.png')} alt="ACKO Brand Ambassador" className="w-full h-36 object-cover object-top" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+      {/* Brand ambassador banner — clickable video (feedback #12) */}
+      <div className="relative rounded-2xl overflow-hidden mb-4 cursor-pointer group ring-2 ring-white/10 hover:ring-purple-400/50 transition-all active:scale-[0.98]">
+        <img src={assetPath('/brand-ambassador.png')} alt="Watch: How ACKO works" className="w-full h-36 object-cover object-top group-hover:scale-105 transition-transform duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent group-hover:from-black/60 transition-colors" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+            <svg className="w-6 h-6 text-purple-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
         <div className="absolute bottom-3 left-4 right-4">
           <p className="text-white font-semibold text-sm">{t.widgets.whyFamiliesChoose}</p>
         </div>
@@ -1542,7 +1602,7 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
       <button
         onClick={onConfirm}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
       >
         {t.widgets.looksGood}
       </button>
@@ -1551,22 +1611,127 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
 }
 
 /* ═══════════════════════════════════════════════════════
+   Medical Summary Card (Area 16 — Tele-MER)
+   ═══════════════════════════════════════════════════════ */
+
+type MedicalStatus = 'clear' | 'waiting' | 'loading' | 'exclusion';
+
+interface MedicalSummaryEntry {
+  member: string;
+  condition?: string;
+  status: MedicalStatus;
+  detail?: string;
+}
+
+function statusBadge(status: MedicalStatus) {
+  const map: Record<MedicalStatus, { label: string; color: string; icon: string }> = {
+    clear:     { label: 'All clear',      color: 'bg-green-500/20 text-green-300 border-green-500/30',  icon: '✓' },
+    waiting:   { label: 'Waiting period', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30',  icon: '⏳' },
+    loading:   { label: 'Loading applied', color: 'bg-orange-500/20 text-orange-300 border-orange-500/30', icon: '⚠' },
+    exclusion: { label: 'Excluded',       color: 'bg-red-500/20 text-red-300 border-red-500/30',        icon: '✕' },
+  };
+  const s = map[status];
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${s.color}`}>
+      {s.icon} {s.label}
+    </span>
+  );
+}
+
+export function HealthSummaryCard({ onConfirm }: { onConfirm: () => void }) {
+  const members = useJourneyStore(s => s.members);
+  const memberConditions = useJourneyStore(s => s.memberConditions);
+
+  const entries: MedicalSummaryEntry[] = members.map(m => {
+    const conditions = memberConditions[m.id] || [];
+    const hasConditions = conditions.length > 0 && !conditions.includes('none');
+    return {
+      member: m.name || m.relation,
+      condition: hasConditions ? conditions.join(', ') : undefined,
+      status: hasConditions ? 'waiting' : 'clear',
+      detail: hasConditions ? '2-year waiting period applies' : undefined,
+    };
+  });
+
+  return (
+    <div className="max-w-md space-y-3">
+      <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
+          <span className="text-base">🩺</span>
+          <p className="text-sm font-semibold text-white/90">Medical Evaluation Summary</p>
+        </div>
+        <div className="divide-y divide-white/5">
+          {entries.map((entry, i) => (
+            <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white/90 capitalize">{entry.member}</p>
+                {entry.condition && (
+                  <p className="text-xs text-white/50 mt-0.5">{entry.condition}</p>
+                )}
+                {entry.detail && (
+                  <p className="text-xs text-amber-300/70 mt-1">{entry.detail}</p>
+                )}
+              </div>
+              <div className="flex-shrink-0">{statusBadge(entry.status)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <button onClick={onConfirm}
+        className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
+        Confirm &amp; Continue
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    Consent
    ═══════════════════════════════════════════════════════ */
 
-export function ConsentWidget({ onConfirm }: { onConfirm: () => void }) {
+export function ConsentWidget({
+  onConfirm,
+  links,
+  consentText,
+}: {
+  onConfirm: () => void;
+  links?: { label: string; url: string }[];
+  consentText?: string;
+}) {
   const t = useT();
   const [agreed, setAgreed] = useState(false);
+  const defaultLinks = [
+    { label: t.widgets.termsAndConditions, url: '/terms' },
+  ];
+  const resolvedLinks = links ?? defaultLinks;
+
   return (
-    <div className="max-w-md">
+    <div className="max-w-md space-y-3">
+      {resolvedLinks.length > 0 && (
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2">
+          <p className="text-xs text-white/50 font-medium uppercase tracking-wide">Important Documents</p>
+          {resolvedLinks.map((link, i) => (
+            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-purple-300 hover:text-white text-sm underline underline-offset-2 transition-colors">
+              <span>📄</span> {link.label}
+            </a>
+          ))}
+        </div>
+      )}
       <label className="flex items-start gap-3 cursor-pointer bg-white/5 rounded-xl p-4 border border-white/10">
-        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 accent-purple-500" />
+        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 accent-purple-500 flex-shrink-0" />
         <span className="text-body-sm text-white/70">
-          {t.widgets.confirmInfo}
+          {consentText ?? `${t.widgets.confirmInfo} `}
+          {!consentText && resolvedLinks.map((link, i) => (
+            <span key={i}>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{link.label}</a>
+              {i < resolvedLinks.length - 1 ? ' and ' : '.'}
+            </span>
+          ))}
         </span>
       </label>
       <button onClick={onConfirm} disabled={!agreed}
-        className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
+        className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
         {t.widgets.confirmAndProceed}
       </button>
     </div>
@@ -1817,7 +1982,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
         onClick={handleNext}
         disabled={!currentValid}
         className="mt-4 w-full py-3 rounded-xl text-[15px] font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
       >
         {isLast ? t.widgets.calculatePremium : t.common.continue}
       </button>

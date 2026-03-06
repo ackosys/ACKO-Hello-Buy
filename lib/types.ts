@@ -146,6 +146,9 @@ export interface StepScript {
   policyTerm?: string;
   coversTillAge?: number;
   breakdownItems?: { label: string; value: string }[];
+  links?: { label: string; url: string }[];
+  consentText?: string;
+  secondaryOptions?: Option[];
 }
 
 export interface PlanDetails {
@@ -180,6 +183,7 @@ export interface JourneyState {
 
   /* ── Intent ── */
   intent: Intent | null;
+  telemerMode: 'video' | 'chat' | null;
 
   /* ── Family ── */
   coverageFor: string[];
@@ -229,6 +233,7 @@ export interface JourneyState {
   /* ── Customization ── */
   sumInsured: number;
   paymentFrequency: PaymentFrequency;
+  paymentMethod: string | null;
   addons: string[];
   deductible: number | null;
 
@@ -277,7 +282,7 @@ export interface JourneyState {
   dashboardClaimSettlementAmount: number;
 
   /* ── Theme ── */
-  theme: 'dark' | 'light';
+  theme: 'midnight' | 'dark' | 'light';
 }
 
 export interface ChatMessage {
@@ -303,6 +308,7 @@ export const INITIAL_STATE: JourneyState = {
   nearbyHospitals: 0,
   resolvedPersona: 'first_timer',
   intent: null,
+  telemerMode: null,
   coverageFor: [],
   numChildren: 0,
   members: [],
@@ -326,6 +332,7 @@ export const INITIAL_STATE: JourneyState = {
   splitPlans: {},
   sumInsured: 1000000,
   paymentFrequency: 'monthly',
+  paymentMethod: null,
   addons: [],
   deductible: null,
   currentPremium: 0,
@@ -362,5 +369,5 @@ export const INITIAL_STATE: JourneyState = {
   dashboardSubmittedClaims: [],
   dashboardSubmittedEdits: [],
   dashboardClaimSettlementAmount: 0,
-  theme: 'dark',
+  theme: 'midnight',
 };

@@ -49,10 +49,9 @@ const entryWelcome: ConversationStep = {
     const t = getT(state.language);
     const name = state.userName || 'Rahul';
 
-    // Cross-LOB personalized greeting
     const crossLobGreeting = useUserProfileStore.getState().getCrossLobGreeting('health');
     if (crossLobGreeting) {
-      return { botMessages: [crossLobGreeting] };
+      return { botMessages: [crossLobGreeting, t.scripts.welcomeUsp] };
     }
 
     if (state.intent === 'check_gaps') {
@@ -62,9 +61,9 @@ const entryWelcome: ConversationStep = {
       return { botMessages: [t.scripts.welcomeSwitch] };
     }
     if (state.isExistingAckoUser) {
-      return { botMessages: [t.scripts.welcomeExisting(name)] };
+      return { botMessages: [t.scripts.welcomeExisting(name), t.scripts.welcomeUsp] };
     }
-    return { botMessages: [t.scripts.welcomeNew] };
+    return { botMessages: [t.scripts.welcomeNew, t.scripts.welcomeUsp] };
   },
   processResponse: () => ({}),
   getNextStep: (_, state) => {
@@ -135,9 +134,14 @@ const intentReadiness: ConversationStep = {
       botMessages: [t.scripts.intentQuestion(userName(state))],
       options: [
         { id: 'exploring', label: t.scripts.justExploring, description: t.scripts.justExploringSub, icon: 'search' },
-        { id: 'comparing', label: t.scripts.seeHowDifferent, description: t.scripts.seeHowDifferentSub, icon: 'compare' },
         { id: 'ready_to_buy', label: t.scripts.readyToPurchase, description: t.scripts.readyToPurchaseSub, icon: 'check' },
         { id: 'switch', label: t.scripts.checkGapsSwitch, description: t.scripts.checkGapsSwitchSub, icon: 'switch' },
+        { id: 'not_sure', label: t.scripts.notSureWhatToBuy, description: t.scripts.notSureWhatToBuySub, icon: 'help' },
+      ],
+      secondaryOptions: [
+        { id: 'comparing', label: t.scripts.seeHowDifferent },
+        { id: 'parents_ped', label: t.scripts.parentsWithPed },
+        { id: 'compare_policy', label: t.scripts.compareWithCurrent },
       ],
     };
   },
@@ -147,12 +151,19 @@ const intentReadiness: ConversationStep = {
       comparing: 'compare',
       ready_to_buy: 'which_plan',
       switch: 'switch',
+      not_sure: 'exploring',
+      parents_ped: 'exploring',
+      compare_policy: 'switch',
     };
-    return { intent: intentMap[response] || 'exploring', wantsGapAnalysis: response === 'switch' };
+    return {
+      intent: intentMap[response] || 'exploring',
+      wantsGapAnalysis: response === 'switch' || response === 'compare_policy',
+    };
   },
   getNextStep: (response) => {
-    if (response === 'switch') return 'gap_analysis.switch_intro';
-    if (response === 'comparing' || response === 'exploring') return 'intent.acko_usps';
+    if (response === 'switch' || response === 'compare_policy') return 'gap_analysis.switch_intro';
+    if (response === 'comparing' || response === 'exploring' || response === 'not_sure') return 'intent.acko_usps';
+    if (response === 'parents_ped') return 'family.who_to_cover';
     return 'family.who_to_cover';
   },
 };
@@ -435,11 +446,19 @@ const familyWhoToCover: ConversationStep = {
         { id: 'children', label: t.widgets.children, icon: 'child' },
         { id: 'father', label: t.widgets.father, icon: 'father' },
         { id: 'mother', label: t.widgets.mother, icon: 'mother' },
+        { id: 'parents_only', label: 'Parents only (exclude self)', icon: 'father', description: 'Purchase a policy for your parents without including yourself' },
       ],
     };
   },
   processResponse: (response: string[]) => {
-    // Decode children count encoded as 'children:N'
+    // "parents_only" shortcut — set father+mother, exclude self (feedback #16)
+    if (response.includes('parents_only')) {
+      return {
+        coverageFor: ['father', 'mother'],
+        numChildren: 0,
+        buyingForParents: true,
+      };
+    }
     const childrenEntry = response.find((r: string) => r.startsWith('children'));
     const numChildren = childrenEntry?.includes(':') ? parseInt(childrenEntry.split(':')[1]) || 1 : childrenEntry ? 1 : 0;
     const coverageFor = response.map((r: string) => r.startsWith('children:') ? 'children' : r);
@@ -484,13 +503,20 @@ const familyCoverAck: ConversationStep = {
     return { botMessages: [message] };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'family.your_age',
+  getNextStep: (_, state) => {
+    // Parents-only: skip self age, go directly to parents age (feedback #16)
+    if (state.buyingForParents && !state.coverageFor.includes('self')) {
+      return 'family.parents_age';
+    }
+    return 'family.your_age';
+  },
 };
 
 const familyYourAge: ConversationStep = {
   id: 'family.your_age',
   module: 'family',
   widgetType: 'number_input',
+  condition: (state) => state.coverageFor.includes('self'),
   getScript: (persona, state) => {
     const t = getT(state.language);
     return {
@@ -510,12 +536,99 @@ const familyYourAge: ConversationStep = {
     };
   },
   getNextStep: (_, state) => {
-    const coveringOthers = state.coverageFor.some(c => c !== 'self');
-    if (coveringOthers) return 'family.eldest_age';
+    const hasSpouse = state.coverageFor.includes('spouse');
+    if (hasSpouse) return 'family.spouse_age';
+    const hasParents = state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    if (hasParents) return 'family.parents_age';
+    const hasChildren = state.coverageFor.includes('children');
+    if (hasChildren) return 'family.age_ack';
     return 'family.age_ack';
   },
 };
 
+/* Spouse age — asked when spouse is selected (feedback #15a) */
+const familySpouseAge: ConversationStep = {
+  id: 'family.spouse_age',
+  module: 'family',
+  widgetType: 'number_input',
+  condition: (state) => state.coverageFor.includes('spouse'),
+  getScript: (persona, state) => {
+    const t = getT(state.language);
+    return {
+      botMessages: [`And how old is your spouse?`],
+      placeholder: "Spouse's age",
+      inputType: 'number',
+      min: 18,
+      max: 99,
+    };
+  },
+  processResponse: (response, state) => {
+    const age = parseInt(response);
+    const member = { id: 'spouse', relation: 'spouse' as const, name: 'Spouse', age, conditions: [] };
+    const members = [...state.members.filter(m => m.relation !== 'spouse'), member];
+    // Also add children with estimated ages if children are selected
+    const hasChildren = state.coverageFor.includes('children');
+    if (hasChildren) {
+      const selfAge = state.members.find(m => m.relation === 'self')?.age || 30;
+      const numKids = state.numChildren || 1;
+      for (let i = 0; i < numKids; i++) {
+        members.push({
+          id: `child_${i + 1}`,
+          relation: 'children' as any,
+          name: `Child ${i + 1}`,
+          age: Math.max(1, selfAge - 25 + i * 2),
+          conditions: [],
+        });
+      }
+    }
+    return {
+      members,
+      hasSenior: state.hasSenior || age >= 45,
+    };
+  },
+  getNextStep: (_, state) => {
+    const hasParents = state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    if (hasParents) return 'family.parents_age';
+    return 'family.age_ack';
+  },
+};
+
+/* Parents/in-laws eldest age — asked separately when parents are selected (feedback #15b) */
+const familyParentsAge: ConversationStep = {
+  id: 'family.parents_age',
+  module: 'family',
+  widgetType: 'number_input',
+  condition: (state) => state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c)),
+  getScript: (persona, state) => {
+    const parentMembers = state.coverageFor.filter(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    const who = parentMembers.length === 1 ? `your ${parentMembers[0].replace(/_/g, '-')}` : 'the eldest parent you\'d like to cover';
+    return {
+      botMessages: [`How old is ${who}? ${parentMembers.length > 1 ? 'Enter the age of the eldest parent.' : ''}`],
+      placeholder: "Eldest parent's age",
+      inputType: 'number',
+      min: 35,
+      max: 99,
+    };
+  },
+  processResponse: (response, state) => {
+    const age = parseInt(response);
+    const parentRelations = state.coverageFor.filter(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    const newMembers = parentRelations.map((relation, i) => ({
+      id: relation,
+      relation: relation as any,
+      name: relation.charAt(0).toUpperCase() + relation.slice(1).replace(/_/g, ' '),
+      age: i === 0 ? age : Math.max(35, age - 3),
+      conditions: [],
+    }));
+    return {
+      members: [...state.members.filter(m => !['father', 'mother', 'father_in_law', 'mother_in_law'].includes(m.relation)), ...newMembers],
+      hasSenior: state.hasSenior || age >= 45,
+    };
+  },
+  getNextStep: () => 'family.age_ack',
+};
+
+/* Legacy step kept as alias for backward compatibility */
 const familyEldestAge: ConversationStep = {
   id: 'family.eldest_age',
   module: 'family',
@@ -638,8 +751,12 @@ const coverageCurrentInsurance: ConversationStep = {
   widgetType: 'multi_select',
   getScript: (persona, state) => {
     const t = getT(state.language);
+    const hasSpouse = state.coverageFor.includes('spouse');
+    const question = hasSpouse
+      ? `${userName(state)}, do you or your spouse currently have any health insurance? Select all that apply.\n\nThis helps me suggest the right coverage for the family.`
+      : t.scripts.currentInsuranceQ(userName(state));
     return {
-      botMessages: [t.scripts.currentInsuranceQ(userName(state))],
+      botMessages: [question],
       options: [
         { id: 'gmc', label: t.scripts.employerGMC, icon: 'building' },
         { id: 'personal', label: t.scripts.personalPolicy, icon: 'document' },
@@ -712,17 +829,92 @@ const coverageGapCheck: ConversationStep = {
   getNextStep: (response) => response === 'yes' ? 'coverage.gap_scenario' : 'health.conditions',
 };
 
+/* Gap scenario broken into multiple messages for better engagement (feedback #21) */
 const coverageGapScenario: ConversationStep = {
   id: 'coverage.gap_scenario',
   module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const name = userName(state);
+    return {
+      botMessages: [
+        `${name}, let me walk you through a real scenario — this happens to thousands of Indian families every year.`,
+      ],
+      options: [{ id: 'continue', label: 'Show me', icon: 'arrow' }],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'coverage.gap_scenario_2',
+};
+
+const coverageGapScenario2: ConversationStep = {
+  id: 'coverage.gap_scenario_2',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const city = cityFromPincode(state.pincode);
+    const spouseText = state.coverageFor.includes('spouse') ? 'you or your spouse' : 'you';
+    const nearestHospital = city === 'Bangalore' ? 'Manipal Hospital (5.4 km away)' : 'a leading multi-speciality hospital nearby';
+    return {
+      botMessages: [
+        `**Scenario: Sudden cardiac arrest.**\n\nLet's say ${spouseText} experiences an emergency. Ambulance called, admitted to ${nearestHospital}.\n\nDoctors act fast — ICU, monitoring, surgery prep.`,
+      ],
+      options: [{ id: 'continue', label: 'What happens next?', icon: 'arrow' }],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'coverage.gap_scenario_3',
+};
+
+const coverageGapScenario3: ConversationStep = {
+  id: 'coverage.gap_scenario_3',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    return {
+      botMessages: [
+        `**ICU + surgery.**\n\nDoctors stabilise the condition in ICU — **2 nights at ₹50,000/night**.\n\nSurgery follows — bypass, stent, pacemaker. Total surgical bill: **₹14 lakhs**.\n\nPost-op recovery in a Single-AC room at ₹12,000/night for 5 nights.`,
+      ],
+      options: [{ id: 'continue', label: 'See what my insurance covers', icon: 'arrow' }],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'coverage.gap_scenario_4',
+};
+
+const coverageGapScenario4: ConversationStep = {
+  id: 'coverage.gap_scenario_4',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const cover = state.totalExistingCover;
+    const coverLabel = cover ? `₹${(cover / 100000).toFixed(0)}L` : 'your current cover';
+    const hasGmc = state.coverageStatus === 'gmc' || state.coverageStatus === 'both';
+    const policyType = hasGmc ? 'corporate insurance' : 'current policy';
+    return {
+      botMessages: [
+        `**What your ${policyType} (${coverLabel}) actually covers:**\n\n✓ Surgeon fees, medicines, scans → ₹3.5L covered\n✗ ICU cap at ₹25K/night (actual: ₹50K) → **₹50K from your pocket**\n✗ Consumables not covered → **₹2.5L from your pocket**\n✗ Room rent sub-limit deduction → **₹1.5L from your pocket**\n✗ Ambulance shortfall → **₹5K from your pocket**\n\n**Total gap: ~₹4.5–5 lakhs** on a ₹14 lakh bill.`,
+      ],
+      options: [{ id: 'continue', label: 'That\'s a big gap — what\'s the fix?', icon: 'arrow' }],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'coverage.gap_scenario_5',
+};
+
+const coverageGapScenario5: ConversationStep = {
+  id: 'coverage.gap_scenario_5',
+  module: 'coverage',
   widgetType: 'none',
   getScript: (persona, state) => {
-    const t = getT(state.language);
-    const cover = state.totalExistingCover;
-    const coverLabel = cover ? `₹${(cover / 100000).toFixed(0)} lakhs` : 'your current cover';
-    const city = cityFromPincode(state.pincode);
+    const name = userName(state);
+    const hasGmc = state.coverageStatus === 'gmc' || state.coverageStatus === 'both';
+    const familySize = state.members.length;
+    const familyNote = familySize > 2 ? `\n\nAnd don't forget — ${hasGmc ? 'your corporate insurance is a floater' : 'a single policy covers the whole family'}. With ${familySize} members, more than one emergency in a year would stretch it further.` : '';
     return {
-      botMessages: [t.scripts.gapScenario(city, coverLabel)],
+      botMessages: [
+        `${name}, as you can see — an unexpected emergency doesn't just affect your health, it can **drain your savings**.\n\nThat's why a **comprehensive personal health plan** alongside your ${hasGmc ? 'corporate insurance' : 'existing coverage'} is essential — it fills exactly these gaps.${familyNote}`,
+      ],
     };
   },
   processResponse: () => ({}),
@@ -821,15 +1013,43 @@ const healthHealthyAck: ConversationStep = {
 const healthConditionsAck: ConversationStep = {
   id: 'health.conditions_ack',
   module: 'health',
-  widgetType: 'none',
+  widgetType: 'selection_cards',
   getScript: (persona, state) => {
     const t = getT(state.language);
+    const conditions = Object.values(state.memberConditions).flat();
+    const hasDiabetes = conditions.some((c: string) => c.toLowerCase().includes('diabet'));
+    let msg = t.scripts.conditionsAck(userName(state));
+    if (hasDiabetes) {
+      msg += `\n\n**Did you know?** Over 40% of Indian adults are either diabetic or pre-diabetic.\n\nACKO's plans cover diabetes-related hospitalisations — including insulin, dialysis, and related complications. No unfair exclusions, and your cover grows **10% every year** with Inflation Protect.`;
+    }
     return {
-      botMessages: [t.scripts.conditionsAck(userName(state))],
+      botMessages: [msg],
+      options: [{ id: 'got_it', label: 'Got it, continue', icon: 'check' }],
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'customization.si_selection',
+  getNextStep: () => 'health.conditions_understood',
+};
+
+/* Pause for user acknowledgement after PED message before moving to SI (feedback #22) */
+const healthConditionsUnderstood: ConversationStep = {
+  id: 'health.conditions_understood',
+  module: 'health',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    return {
+      botMessages: ['Got it? Ready to look at coverage options?'],
+      options: [
+        { id: 'yes', label: 'Yes, show me options', icon: 'check' },
+        { id: 'questions', label: 'I have a question first', icon: 'help' },
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: (response) => {
+    if (response === 'questions') return 'health.conditions_understood';
+    return 'customization.si_selection';
+  },
 };
 
 /* ═══════════════════════════════════════════════
@@ -870,7 +1090,7 @@ const customizationSI: ConversationStep = {
     const recLabel = siOptions.find(s => s.value === recommendedSI)?.label || t.plans.si25L;
     return {
       botMessages: [
-        `Based on ${familySummary(state)}'s profile${state.pincode ? ` and location in ${city}` : ''}, I'd recommend ₹${recLabel} coverage.\n\n${reason} In ${city}, a major surgery like bypass costs ₹8-12 lakhs, and cancer treatment can go up to ₹25 lakhs.${gapNote}\n\nBut you can choose what feels right.`
+        `Based on ${familySummary(state)}'s profile${state.pincode ? ` in ${city}` : ''}, I'd recommend **₹${recLabel}** coverage.\n\n${reason}\n\nFor context — in ${city}, a **bypass surgery** costs ₹8–12 lakhs, and **cancer treatment** can go up to ₹25 lakhs.${gapNote}\n\nBut you can choose what feels right.`
       ],
       options: siOptions.map(si => ({
         id: String(si.value),
@@ -879,6 +1099,52 @@ const customizationSI: ConversationStep = {
         icon: si.value === recommendedSI ? 'star' : undefined,
         badge: si.value === recommendedSI ? t.common.recommended : undefined,
       })),
+    };
+  },
+  processResponse: (response, state) => {
+    const si = parseInt(response);
+    // Store recommended SI so we can compare for rebuttal
+    const eldestAge = Math.max(...state.members.map(m => m.age || 0), 0);
+    const memberCount = state.members.length;
+    let recommendedSI = 2500000;
+    if (eldestAge >= 50 || state.hasConditions || memberCount >= 3) recommendedSI = 10000000;
+    else if (eldestAge >= 35 || memberCount >= 2) recommendedSI = 5000000;
+    return { sumInsured: si };
+  },
+  getNextStep: (response, state) => {
+    const si = parseInt(response);
+    const eldestAge = Math.max(...state.members.map(m => m.age || 0), 0);
+    const memberCount = state.members.length;
+    let recommendedSI = 2500000;
+    if (eldestAge >= 50 || state.hasConditions || memberCount >= 3) recommendedSI = 10000000;
+    else if (eldestAge >= 35 || memberCount >= 2) recommendedSI = 5000000;
+    // Rebuttal if user picked significantly lower than recommended (feedback #24)
+    if (si < recommendedSI) return 'customization.si_rebuttal';
+    return 'recommendation.calculating';
+  },
+};
+
+/* SI Rebuttal — nudge user towards recommended coverage (feedback #24) */
+const customizationSIRebuttal: ConversationStep = {
+  id: 'customization.si_rebuttal',
+  module: 'customization',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const selectedLabel = formatSI(state.sumInsured);
+    const eldestAge = Math.max(...state.members.map(m => m.age || 0), 0);
+    const memberCount = state.members.length;
+    let recommendedSI = 2500000;
+    if (eldestAge >= 50 || state.hasConditions || memberCount >= 3) recommendedSI = 10000000;
+    else if (eldestAge >= 35 || memberCount >= 2) recommendedSI = 5000000;
+    const recLabel = formatSI(recommendedSI);
+    return {
+      botMessages: [
+        `**₹${selectedLabel}** may feel sufficient today — but medical costs in India are rising **14% year-on-year**.\n\nA single ICU stay in a metro can cost ₹8–15 lakhs. Cancer treatment can exceed ₹25 lakhs.\n\nI'd recommend **₹${recLabel}** — and with ACKO's **Inflation Protect**, your cover grows 10% every year automatically, so you're always ahead of medical inflation.`,
+      ],
+      options: [
+        { id: String(recommendedSI), label: `Go with ₹${recLabel}`, icon: 'star', badge: 'Recommended' },
+        { id: String(state.sumInsured), label: `Keep ₹${selectedLabel}`, icon: 'check' },
+      ],
     };
   },
   processResponse: (response) => ({ sumInsured: parseInt(response) }),
@@ -970,10 +1236,19 @@ const reviewConsent: ConversationStep = {
     const t = getT(state.language);
     return {
       botMessages: [t.scripts.consentMsg],
+      links: [
+        { label: 'Terms & Conditions', url: 'https://www.acko.com/terms-and-conditions/' },
+        { label: 'Customer Information Sheet (CIS)', url: 'https://www.acko.com/health-insurance/cis/' },
+      ],
+      consentText: 'I acknowledge I have read and understood the Terms & Conditions and Customer Information Sheet.',
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'payment.process',
+  getNextStep: (_response, state) => {
+    // Platinum Lite requires STP medical questions before payment
+    if (state.selectedPlan?.tier === 'platinum_lite') return 'stp.medical_questions';
+    return 'payment.method_selection';
+  },
 };
 
 const reviewDobCollection: ConversationStep = {
@@ -983,8 +1258,23 @@ const reviewDobCollection: ConversationStep = {
   getScript: (persona, state) => {
     const t = getT(state.language);
     const memberCount = state.members.length;
+    const hasSelfSpouse = state.coverageFor.includes('self') && state.coverageFor.includes('spouse');
+    const hasParents = state.coverageFor.includes('father') || state.coverageFor.includes('mother');
+    const buyingForParents = state.buyingForParents;
+
+    let contextMsg: string;
+    if (buyingForParents && hasParents) {
+      contextMsg = `${userName(state)}, please enter the date of birth for your parent${state.coverageFor.includes('father') && state.coverageFor.includes('mother') ? 's' : ''} — **start with the eldest**. Age determines exact premium pricing.`;
+    } else if (hasSelfSpouse && hasParents) {
+      contextMsg = `${userName(state)}, I'll need DOBs for all ${memberCount} members.\n\n**Start with the eldest between you and your spouse**, then your parent${state.coverageFor.includes('father') && state.coverageFor.includes('mother') ? 's' : ''}.`;
+    } else if (hasSelfSpouse) {
+      contextMsg = `Almost there, ${userName(state)}! Please enter DOBs — **start with the elder** between you and your spouse. Age determines pricing down to the day.`;
+    } else {
+      contextMsg = t.scripts.dobMsg(userName(state), memberCount);
+    }
+
     return {
-      botMessages: [t.scripts.dobMsg(userName(state), memberCount)],
+      botMessages: [contextMsg],
     };
   },
   processResponse: () => ({}),
@@ -1008,6 +1298,46 @@ const reviewDobAck: ConversationStep = {
 /* ═══════════════════════════════════════════════
    MODULE: PAYMENT
    ═══════════════════════════════════════════════ */
+
+/* TODO: Platinum Lite STP — awaiting 13 medical questions from product team.
+   Once questions are provided, replace this placeholder with individual steps. */
+const stpMedicalQuestions: ConversationStep = {
+  id: 'stp.medical_questions',
+  module: 'payment',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [
+      `For **ACKO Platinum Lite**, we need to ask a few quick health questions to enable immediate policy issuance.\n\nThis typically takes under 2 minutes — and if all answers are clear, your policy is issued instantly.`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'payment.method_selection',
+};
+
+const paymentMethodSelection: ConversationStep = {
+  id: 'payment.method_selection',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const isMonthly = state.paymentFrequency === 'monthly';
+    const options: any[] = [
+      { id: 'upi', label: 'UPI', description: 'GPay, PhonePe, Paytm & more', icon: 'upi' },
+      { id: 'card', label: 'Credit / Debit Card', description: 'Visa, Mastercard, RuPay', icon: 'card' },
+      { id: 'netbanking', label: 'Net Banking', description: 'All major banks supported', icon: 'bank' },
+    ];
+    if (!isMonthly) {
+      options.push({ id: 'emi', label: 'EMI', description: 'No-cost EMI on select cards', icon: 'emi' });
+    } else {
+      options.push({ id: 'autopay', label: 'Set up AutoPay', description: 'Auto-debit mandate for monthly payments', icon: 'autopay', badge: 'Required for monthly' });
+    }
+    return {
+      botMessages: [`How would you like to pay? Choose your preferred payment method.`],
+      options,
+    };
+  },
+  processResponse: (response) => ({ paymentMethod: response }),
+  getNextStep: () => 'payment.process',
+};
 
 const paymentProcess: ConversationStep = {
   id: 'payment.process',
@@ -1036,6 +1366,166 @@ const paymentSuccess: ConversationStep = {
   },
   processResponse: () => ({}),
   getNextStep: () => 'payment.success', // Stop here — PostPaymentJourney takes over via page.tsx useEffect
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: REPROPOSAL
+   ═══════════════════════════════════════════════ */
+
+const reproposalMandateUpdate: ConversationStep = {
+  id: 'reproposal.mandate_update',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => {
+    const isMonthly = state.paymentFrequency === 'monthly';
+    return {
+      botMessages: [
+        isMonthly
+          ? `Due to the revised premium from underwriting, your **monthly payment needs to be updated**.\n\nWe'll set up a new mandate for the revised amount. Your existing mandate will be cancelled automatically.\n\n*Note: If you pay via BASBA (Bank Account Statement Based Assessment), the updated amount will reflect in your next statement.*`
+          : `Your premium has been revised by underwriting. The updated annual amount will be reflected at checkout.`,
+      ],
+      options: [{ id: 'confirm', label: 'Confirm and continue', icon: 'check' }],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'reproposal.explanation',
+};
+
+const reproposalOffer: ConversationStep = {
+  id: 'reproposal.offer',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => ({
+    botMessages: [
+      `Based on the medical review, our underwriting team has made some adjustments to your policy.\n\nMost insurers may exclude or heavily load this condition. **This is the most balanced option available for your profile.**`,
+    ],
+    options: [
+      { id: 'accept', label: 'Accept revised proposal', icon: 'check', badge: 'Recommended' },
+      { id: 'decline', label: 'I\'d like to reconsider', icon: 'back' },
+    ],
+  }),
+  processResponse: (response) => ({ wantsGapAnalysis: response === 'accept' } as Partial<JourneyState>),
+  getNextStep: (response) => response === 'accept' ? 'reproposal.explanation' : 'recommendation.result',
+};
+
+const reproposalExplanation: ConversationStep = {
+  id: 'reproposal.explanation',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => ({
+    botMessages: [
+      `Here's what changed in the revised proposal:\n\n• **Sum Insured** adjusted based on underwriting guidelines\n• A **small loading** may apply to reflect your health profile\n• All other benefits — No Room Rent Limit, 100% Bills, Inflation Protect — remain unchanged\n\nThis gives you real coverage without leaving your family exposed.`,
+    ],
+    options: [{ id: 'continue', label: 'Proceed to payment', icon: 'check' }],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (_, state) => {
+    // If monthly and loading > 1 month premium diff, show mandate update
+    if (state.paymentFrequency === 'monthly' && (state as any).hasLoading) return 'reproposal.mandate_update';
+    return 'payment.method_selection';
+  },
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: TELE-MER (Mock Flow)
+   ═══════════════════════════════════════════════ */
+
+const telemerConnectPrompt: ConversationStep = {
+  id: 'telemer.connect_prompt',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `Your plan requires a quick **Tele-Medical Review** with our AI-assisted doctor.\n\nDr. Riya will walk you through a few health questions — typically takes 5–7 minutes.`,
+    ],
+    options: [
+      { id: 'video', label: 'Connect with Dr. Riya now', description: 'Start the tele-consultation', icon: 'video' },
+      { id: 'chat', label: 'Switch to chat instead', description: 'Answer questions via text', icon: 'chat' },
+    ],
+  }),
+  processResponse: (response) => ({ telemerMode: response as 'video' | 'chat' }),
+  getNextStep: () => 'telemer.call_in_progress',
+};
+
+const telemerCallInProgress: ConversationStep = {
+  id: 'telemer.call_in_progress',
+  module: 'payment',
+  widgetType: 'none',
+  getScript: (_, state) => ({
+    botMessages: [
+      state.telemerMode === 'chat'
+        ? `Starting your chat session with Dr. Riya...`
+        : `Connecting you with Dr. Riya... 📞\n\n*Please stay on the line.*`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'telemer.call_complete',
+};
+
+const telemerCallComplete: ConversationStep = {
+  id: 'telemer.call_complete',
+  module: 'payment',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [
+      `Call complete. Let me prepare your **Medical Summary** based on the evaluation...`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'telemer.medical_summary',
+};
+
+const telemerMedicalSummary: ConversationStep = {
+  id: 'telemer.medical_summary',
+  module: 'payment',
+  widgetType: 'health_summary_card',
+  getScript: (_, state) => ({
+    botMessages: [`Here's your Medical Summary from the evaluation:`],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'telemer.confirm_summary',
+};
+
+const telemerConfirmSummary: ConversationStep = {
+  id: 'telemer.confirm_summary',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [`Please confirm this summary is accurate before we proceed.`],
+    options: [
+      { id: 'confirmed', label: 'Yes, this is correct', icon: 'check' },
+      { id: 'incorrect', label: 'Something needs correction', icon: 'edit' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (response) => response === 'incorrect' ? 'telemer.connect_prompt' : 'telemer.outcome',
+};
+
+const telemerOutcome: ConversationStep = {
+  id: 'telemer.outcome',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `Based on your medical review, your policy can be **issued immediately**.\n\nNo further steps needed — let's complete payment.`,
+    ],
+    options: [{ id: 'proceed', label: 'Proceed to payment', icon: 'check' }],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'payment.method_selection',
+};
+
+const telemerStatusTracker: ConversationStep = {
+  id: 'telemer.status_tracker',
+  module: 'payment',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [
+      `**Underwriting in progress.**\n\nOur team is reviewing your medical details. Expected update in **2–3 working days**.\n\nWe'll notify you via SMS and email once a decision is made.`,
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: () => 'payment.success',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1149,6 +1639,8 @@ export const STEPS: Record<string, ConversationStep> = {
   'family.who_to_cover': familyWhoToCover,
   'family.cover_ack': familyCoverAck,
   'family.your_age': familyYourAge,
+  'family.spouse_age': familySpouseAge,
+  'family.parents_age': familyParentsAge,
   'family.eldest_age': familyEldestAge,
   'family.age_ack': familyAgeAck,
   'family.pincode': familyPincode,
@@ -1159,6 +1651,10 @@ export const STEPS: Record<string, ConversationStep> = {
   'coverage.total_cover': coverageTotalCover,
   'coverage.gap_check': coverageGapCheck,
   'coverage.gap_scenario': coverageGapScenario,
+  'coverage.gap_scenario_2': coverageGapScenario2,
+  'coverage.gap_scenario_3': coverageGapScenario3,
+  'coverage.gap_scenario_4': coverageGapScenario4,
+  'coverage.gap_scenario_5': coverageGapScenario5,
   'coverage.gap_insight': coverageGapInsight,
   'coverage.no_insurance_ack': coverageNoInsuranceAck,
   'coverage.switch_ack': coverageSwitchAck,
@@ -1167,9 +1663,11 @@ export const STEPS: Record<string, ConversationStep> = {
   'health.conditions': healthConditions,
   'health.healthy_ack': healthHealthyAck,
   'health.conditions_ack': healthConditionsAck,
+  'health.conditions_understood': healthConditionsUnderstood,
 
   /* Sum Insured */
   'customization.si_selection': customizationSI,
+  'customization.si_rebuttal': customizationSIRebuttal,
 
   /* Recommendation */
   'recommendation.calculating': recommendationCalculating,
@@ -1184,9 +1682,27 @@ export const STEPS: Record<string, ConversationStep> = {
   'review.dob_collection': reviewDobCollection,
   'review.dob_ack': reviewDobAck,
 
+  /* STP */
+  'stp.medical_questions': stpMedicalQuestions,
+
   /* Payment */
+  'payment.method_selection': paymentMethodSelection,
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
+
+  /* Reproposal */
+  'reproposal.mandate_update': reproposalMandateUpdate,
+  'reproposal.offer': reproposalOffer,
+  'reproposal.explanation': reproposalExplanation,
+
+  /* Tele-MER */
+  'telemer.connect_prompt': telemerConnectPrompt,
+  'telemer.call_in_progress': telemerCallInProgress,
+  'telemer.call_complete': telemerCallComplete,
+  'telemer.medical_summary': telemerMedicalSummary,
+  'telemer.confirm_summary': telemerConfirmSummary,
+  'telemer.outcome': telemerOutcome,
+  'telemer.status_tracker': telemerStatusTracker,
 
   /* Health Eval */
   'health_eval.intro': healthEvalIntro,
@@ -1199,4 +1715,26 @@ export const STEPS: Record<string, ConversationStep> = {
 
 export function getStep(stepId: string): ConversationStep | undefined {
   return STEPS[stepId];
+}
+
+/** Build a personalised reply label for "who to cover" selection (feedback #13). */
+export function getCoverageReplyLabel(coverageFor: string[], numChildren: number, language: string): string {
+  const t = getT(language as any);
+  const scripts = t.scripts as { coverageReply?: (c: number, p: string) => string; coverageReplyOnlyParents?: string };
+  const parts: string[] = [];
+  if (coverageFor.includes('self')) parts.push('you');
+  if (coverageFor.includes('spouse')) parts.push('your spouse');
+  if (coverageFor.includes('children')) {
+    parts.push(numChildren === 1 ? 'your child' : `your ${numChildren} children`);
+  }
+  if (coverageFor.includes('father')) parts.push('your father');
+  if (coverageFor.includes('mother')) parts.push('your mother');
+  if (parts.length === 0) return scripts.coverageReplyOnlyParents ?? 'Parents only';
+  const count = (coverageFor.includes('self') ? 1 : 0) + (coverageFor.includes('spouse') ? 1 : 0)
+    + (coverageFor.includes('children') ? Math.max(1, numChildren) : 0)
+    + (coverageFor.includes('father') ? 1 : 0) + (coverageFor.includes('mother') ? 1 : 0);
+  if (parts.length === 1) return parts[0];
+  const last = parts.pop()!;
+  const joined = parts.join(', ') + ' and ' + last;
+  return scripts.coverageReply ? scripts.coverageReply(count, joined) : `Family of ${count} — ${joined}`;
 }
