@@ -10,6 +10,7 @@ export const hinglish: T = {
 
   common: {
     continue: 'Aage badhein',
+    hospitalCount: '14,000+',
     cancel: 'Cancel karein',
     confirm: 'Confirm karein',
     back: 'Wapas',
@@ -180,6 +181,7 @@ export const hinglish: T = {
     editLabel: (label: string) => `${label} badlein`,
     looksGood: 'Sab theek hai — aage badhein',
     confirmInfo: 'Main confirm karta/karti hoon ki information sahi hai aur terms & conditions se agree hoon.',
+    termsAndConditions: 'Terms & Conditions',
     confirmAndProceed: 'Confirm karein aur aage badhein',
     dobTitle: 'Har member ki date of birth',
     day: 'Din',
@@ -216,7 +218,6 @@ export const hinglish: T = {
     uspRestoreDesc: 'Sum insured automatically refill hota hai',
     uspInflation: 'Inflation Protect',
     uspInflationDesc: 'Har saal SI mein 10% badhotri, bina extra cost ke',
-    termsAndConditions: 'Terms & Conditions',
   },
 
   plans: {
@@ -229,6 +230,7 @@ export const hinglish: T = {
     badgeMostComprehensive: 'Sabse comprehensive',
     badgePopular: 'Popular choice',
     badgeBestGMC: 'GMC ke saath best',
+    hospitalBills100: '100% Hospital Bills paid',
     zeroWaitingSpecific: 'Kuch bimariyon ke liye zero waiting period',
     noRoomRent: 'Koi room rent limit nahi',
     consumablesCovered: 'Consumables covered',
@@ -276,7 +278,6 @@ export const hinglish: T = {
     stroke: 'Stroke',
     organTransplant: 'Organ transplant',
     noneAbove: 'Inme se koi nahi',
-    hospitalBills100: '100% Hospital Bills paid',
   },
 
   help: {
@@ -671,6 +672,7 @@ export const hinglish: T = {
   scripts: {
     welcomeExisting: (name: string) => `Welcome back, ${name}! Aap apni car ke liye hum pe trust karte hain — ab aapki health bhi cover karte hain.\n\nIse form nahi, baat-cheet samjhiye. Best plan dhoondhne ke liye kuch sawaal poochunga.`,
     welcomeNew: `Hi! 👋\n\nMain aapko ek simple baat-cheet ke zariye sahi health plan dhoondhne mein madad karunga. Har sawaal ka ek maqsad hai — koi jargon nahi, koi pressure nahi.\n\nSirf honest recommendations.`,
+    welcomeUsp: 'Takes under 2 minutes. I\'ll ask a few quick questions — no jargon, no sales pitch.',
     welcomeGapCheck: `Hi! 👋\n\nAapka current coverage kaafi hai ya nahi — chaliye check karte hain. Zyada log tab jaante hain ki unka cover kam hai jab bahut late ho jaata hai.\n\nPehle apna naam bataiye.`,
     welcomeSwitch: `Hi! 👋\n\nACKO pe switch karna chahte hain? Main aapka current plan ACKO se compare karne mein madad karunga — waiting period credits aur no-claim bonus safe rahenge.\n\nPehle apna naam bataiye.`,
     askName: 'Shuru karne se pehle, main aapko kya bulaun?',
@@ -687,6 +689,10 @@ export const hinglish: T = {
     readyToPurchaseSub: 'Chaliye shuru karte hain',
     checkGapsSwitch: 'Gaps check karein aur ACKO pe switch karein',
     checkGapsSwitchSub: 'Apne current plan ka analysis karein aur dekhein ACKO kaise gaps fill karta hai',
+    notSureWhatToBuy: 'Not sure what I need',
+    notSureWhatToBuySub: 'Help me figure out the right plan',
+    parentsWithPed: 'Insurance for parents with PED',
+    compareWithCurrent: 'Compare with current policy',
     uspsExploring: (name: string) => `Badhiya, ${name}! Shuru karne se pehle, dekhiye ACKO doosre health insurers se kaise alag hai:`,
     uspsComparing: (name: string) => `Bohot achha sawaal, ${name}. Ye raha ACKO traditional insurers se kaise sachchi mein alag hai:`,
     gapIntro: (name: string) => `Bohot achha sawaal, ${name}. "Kya mera cover kaafi hai?" — ye sabse common sawaal hai — aur jawab zyada logon ko chaunka deta hai.\n\nChaliye ise practically dekhte hain. Main ya to aapki policy document analyse kar sakti hoon, ya kuch quick sawaal pooch sakti hoon.\n\nAap kya prefer karenge?`,
@@ -705,6 +711,8 @@ export const hinglish: T = {
     gapResults: (name: string, cover: string, insurer: string) => `${name}, ${insurer} se aapke ${cover} cover ke basis pe, ye rahi aapke plan aur ACKO ki comparison. Kisi bhi row pe tap karke samjhein ki ye kyun matter karta hai.`,
     gapProceed: 'Badhiya — ab aapki family aur health profile samajh lete hain taaki in gaps ko fill karne wala sahi ACKO plan suggest kar sakun.',
     whoToCoverQ: 'Kisko cover karna chahenge? Isse mujhe sahi plan type choose karne mein madad milegi — individual plans, family floaters, aur parent plans alag-alag kaam karte hain.',
+    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
+    coverageReplyOnlyParents: 'Parents only',
     coverAckSelf: (name: string) => `Badhiya choice, ${name}. Pehle khud ko cover karna sabse smart financial decision hai — ye kuch unexpected hone pe aapki income aur savings protect karta hai.`,
     coverAckParentsSpouse: (name: string, count: number) => `Bohot achha approach, ${name}. ${count} family members ko saath mein cover karna sabse zyada peace of mind deta hai. Chaliye sabki umar samajhte hain.`,
     coverAckParents: (name: string) => `Bohot soch-samajhke kiya, ${name}. Apne parents ko cover karna unke liye sabse achhi cheez hai. 45 ke baad, hospitalisation risk har decade mein double ho jaata hai.`,
@@ -759,6 +767,8 @@ export const hinglish: T = {
     reviewMsg: (name: string) => `${name}, ye raha aapke plan ka poora summary. Details dekhein, payment ke baad main health evaluation mein guide karunga.`,
     consentMsg: 'Sab theek hai? Payment ke liye aage badhein. Agar health evaluation mein kuch unexpected aaya to poora refund — koi sawaal nahi.',
     dobMsg: (name: string, count: number) => `Almost ho gaya, ${name}! Please ${count === 1 ? 'apni' : `sabhi ${count} members ki`} date of birth daalein. Sahi premium calculate karne ke liye zaroori hai.`,
+    dobMsgSelfSpouse: (name: string) => `Almost there, ${name}! To calculate your premium accurately, I need the date of birth of the eldest between you and your spouse.`,
+    dobMsgWithParents: (name: string) => `Almost there, ${name}! I'll need two sets of dates: eldest between you and your spouse, then eldest among your parents.`,
     dobAck: 'Perfect — exact ages ke basis pe final premium calculate ho gaya. Ab payment ka tarika choose karein.',
     paymentReady: (freq: string) => `Aapka ${freq} premium ready hai. Secure payment ke liye neeche tap karein.`,
     paymentSuccess: (name: string) => `Payment successful! ACKO Health Insurance mein aapka swagat hai, ${name}.\n\nAapki health evaluation journey ab shuru hoti hai — main har step mein guide karunga.`,
@@ -767,8 +777,6 @@ export const hinglish: T = {
     afternoon: 'Dopahar (12pm - 4pm)',
     evening: 'Shaam (4pm - 7pm)',
     completionMsg: (name: string) => `${name}, sab ready hai! Aapka health evaluation schedule ho gaya hai. Complete hone pe aapki policy live ho jayegi.`,
-    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
-    coverageReplyOnlyParents: 'Parents only',
   },
 
   ppScripts: {

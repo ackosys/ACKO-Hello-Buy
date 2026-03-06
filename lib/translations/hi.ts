@@ -25,6 +25,7 @@ export const hi: T = {
 
   common: {
     continue: 'जारी रखें',
+    hospitalCount: '14,000+',
     cancel: 'रद्द करें',
     confirm: 'पुष्टि करें',
     back: 'वापस',
@@ -290,8 +291,8 @@ export const hi: T = {
     heartDisease: 'हार्ट अटैक / हृदय रोग',
     stroke: 'स्ट्रोक',
     organTransplant: 'अंग प्रत्यारोपण',
-    noneAbove: 'इनमें से कोई नहीं',
     hospitalBills100: '100% Hospital Bills paid',
+    noneAbove: 'इनमें से कोई नहीं',
   },
 
   help: {
@@ -686,6 +687,7 @@ export const hi: T = {
   scripts: {
     welcomeExisting: (name: string) => `वापसी पर स्वागत है, ${name}! आप अपनी कार के लिए हम पर भरोसा करते हैं — अब आपकी सेहत को भी सुरक्षित करते हैं।\n\nइसे फ़ॉर्म नहीं, बातचीत समझिए। सबसे अच्छा प्लान खोजने के लिए कुछ सवाल पूछूंगा।`,
     welcomeNew: `नमस्ते! 👋\n\nमैं एक सरल बातचीत के ज़रिए आपके लिए सही हेल्थ प्लान खोजने में मदद करूंगा। हर सवाल का एक मकसद है — कोई जटिल शब्द नहीं, कोई दबाव नहीं।\n\nबस ईमानदार सुझाव।`,
+    welcomeUsp: 'Takes under 2 minutes. I\'ll ask a few quick questions — no jargon, no sales pitch.',
     welcomeGapCheck: `नमस्ते! 👋\n\nआपका मौजूदा कवर काफ़ी है या नहीं — चलिए देखते हैं। ज़्यादातर लोगों को तब पता चलता है कि उनका कवर कम है जब बहुत देर हो जाती है।\n\nपहले अपना नाम बताइए।`,
     welcomeSwitch: `नमस्ते! 👋\n\nACKO पर स्विच करना चाहते हैं? मैं आपका मौजूदा प्लान ACKO से तुलना करने में मदद करूंगा — वेटिंग पीरियड क्रेडिट और नो-क्लेम बोनस सुरक्षित रहेंगे।\n\nपहले अपना नाम बताइए।`,
     askName: 'शुरू करने से पहले, मैं आपको क्या बुलाऊं?',
@@ -702,6 +704,10 @@ export const hi: T = {
     readyToPurchaseSub: 'चलिए शुरू करते हैं',
     checkGapsSwitch: 'कमियाँ जाँचें और ACKO पर स्विच करें',
     checkGapsSwitchSub: 'अपने मौजूदा प्लान का विश्लेषण करें और देखें ACKO कैसे कमियाँ पूरी करता है',
+    notSureWhatToBuy: 'Not sure what I need',
+    notSureWhatToBuySub: 'Help me figure out the right plan',
+    parentsWithPed: 'Insurance for parents with PED',
+    compareWithCurrent: 'Compare with current policy',
     uspsExploring: (name: string) => `बढ़िया, ${name}! शुरू करने से पहले, देखिए ACKO दूसरे हेल्थ इंश्योरर्स से कैसे अलग है:`,
     uspsComparing: (name: string) => `बहुत अच्छा सवाल, ${name}। यह रहा ACKO पारंपरिक इंश्योरर्स से कैसे सच में अलग है:`,
     gapIntro: (name: string) => `बहुत अच्छा सवाल, ${name}। "क्या मेरा कवर काफ़ी है?" — यह सबसे आम सवाल है — और जवाब ज़्यादातर लोगों को चौंका देता है।\n\nचलिए इसे प्रैक्टिकली देखते हैं। मैं या तो आपकी मौजूदा पॉलिसी डॉक्यूमेंट का विश्लेषण कर सकती हूँ, या कुछ सवाल पूछ सकती हूँ।\n\nआप क्या पसंद करेंगे?`,
@@ -774,6 +780,8 @@ export const hi: T = {
     reviewMsg: (name: string) => `${name}, यह रहा आपके प्लान का पूरा सारांश। विवरण देखें, भुगतान के बाद मैं हेल्थ इवैल्यूएशन में गाइड करूंगा।`,
     consentMsg: 'सब ठीक है? भुगतान के लिए आगे बढ़ें। अगर हेल्थ इवैल्यूएशन में कुछ अप्रत्याशित आया तो पूरा रिफंड — कोई सवाल नहीं।',
     dobMsg: (name: string, count: number) => `लगभग हो गया, ${name}! कृपया ${count === 1 ? 'अपनी' : `सभी ${count} सदस्यों की`} जन्मतिथि दर्ज करें। सटीक प्रीमियम कैलकुलेट करने के लिए यह ज़रूरी है।`,
+    dobMsgSelfSpouse: (name: string) => `Almost there, ${name}! To calculate your premium accurately, I need the date of birth of the eldest between you and your spouse.`,
+    dobMsgWithParents: (name: string) => `Almost there, ${name}! I'll need two sets of dates: eldest between you and your spouse, then eldest among your parents.`,
     dobAck: 'बढ़िया — सटीक उम्र के आधार पर फ़ाइनल प्रीमियम कैलकुलेट हो गया। अब भुगतान का तरीका चुनें।',
     paymentReady: (freq: string) => `आपका ${freq} प्रीमियम तैयार है। सुरक्षित भुगतान के लिए नीचे टैप करें।`,
     paymentSuccess: (name: string) => `भुगतान सफल! ACKO हेल्थ इंश्योरेंस में स्वागत है, ${name}।\n\nआपकी हेल्थ इवैल्यूएशन यात्रा अब शुरू होती है — मैं हर कदम पर गाइड करूंगा।`,

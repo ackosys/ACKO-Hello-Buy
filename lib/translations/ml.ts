@@ -34,6 +34,38 @@ export const ml: T = {
     perYear: '/വർഷം',
     recommended: 'ശുപാർശ ചെയ്തത്',
     or: 'അല്ലെങ്കിൽ',
+    hospitalCount: '14,000+',
+  },
+
+  landing: {
+    ...en.landing,
+    usp100Bills: '100% Hospital Bill coverage',
+    usp100BillsSub: 'We pay the full hospital bill — no room rent caps, no sub-limits.',
+    claimStatPolicyAdvisory: '95%',
+    claimStatPolicyAdvisorySub: 'customers rated our policy advisory 5/5',
+  },
+
+  widgets: {
+    ...en.widgets,
+    termsAndConditions: 'Terms & Conditions',
+  },
+
+  plans: {
+    ...en.plans,
+    hospitalBills100: '100% Hospital Bills paid',
+  },
+
+  scripts: {
+    ...en.scripts,
+    welcomeUsp: "Takes under 2 minutes. I'll ask a few quick questions — no jargon, no sales pitch.",
+    notSureWhatToBuy: 'Not sure what I need',
+    notSureWhatToBuySub: 'Help me figure out the right plan',
+    parentsWithPed: 'Insurance for parents with PED',
+    compareWithCurrent: 'Compare with current policy',
+    dobMsgSelfSpouse: (name: string) => `Almost there, ${name}! To calculate your premium accurately, I need the date of birth of the eldest between you and your spouse.`,
+    dobMsgWithParents: (name: string) => `Almost there, ${name}! I'll need two sets of dates: eldest between you and your spouse, then eldest among your parents.`,
+    coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
+    coverageReplyOnlyParents: 'Parents only',
   },
 
   welcome: {

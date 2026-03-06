@@ -24,6 +24,7 @@ export const en = {
   /* ── Common ── */
   common: {
     continue: 'Continue',
+    hospitalCount: '14,000+',
     cancel: 'Cancel',
     confirm: 'Confirm',
     back: 'Back',
@@ -81,7 +82,7 @@ export const en = {
     talkToExpert: 'Speak to an advisor',
     loyaltyBanner: 'Loyalty reward: Extra 10% off!',
     loyaltyBannerSub: 'As an existing ACKO customer, you get an additional 10% discount on your health plan. Applied automatically at checkout.',
-    topRated: 'Highly rated health insurance',
+    topRated: 'Health insurance that works when you need it',
     heroTitle: 'Let your savings be for life goals, not hospital bills.',
     heroSubtitle: 'Comprehensive health plans personalised to your family. Just honest recommendations.',
     familyTrust: '5 lakh+ families trust ACKO',
@@ -104,7 +105,7 @@ export const en = {
     claimStat3: '14,000+',
     claimStat3Sub: 'Network hospitals',
     claimStatPolicyAdvisory: '95%',
-    claimStatPolicyAdvisorySub: 'of users rated 5/5 for Policy Advisory',
+    claimStatPolicyAdvisorySub: 'customers rated our policy advisory 5/5',
     seeHowItWorks: 'See how ACKO works',
     walkthrough: 'A 2-minute walkthrough of our claims experience',
     watchClaims: 'Watch: Claims in 60 mins',
@@ -730,7 +731,8 @@ export const en = {
   scripts: {
     // Entry
     welcomeExisting: (name: string) => `Welcome back, ${name}! You trust us with your car — now let's make sure your health is covered too.\n\nThink of this as a conversation, not a form. I'll ask you a few things to find the best plan for your family.`,
-    welcomeNew: `Hi! 👋\n\nI'll help you find the right health plan through a simple conversation. Every question has a purpose — no jargon, no pressure.\n\nJust honest recommendations.`,
+    welcomeNew: `Hi! 👋\n\nWelcome to ACKO Health Insurance — **100% hospital bills paid** (including consumables), **no room rent limit**, and **10% Inflation Protect** so your cover grows every year automatically.\n\nLet's find the right plan for you through a quick conversation.`,
+    welcomeUsp: `Takes under 2 minutes. I'll ask a few quick questions — no jargon, no sales pitch.`,
     welcomeGapCheck: `Hi! 👋\n\nLet's check if your current coverage is truly enough. Most people find out they're underinsured only when it's too late.\n\nFirst, let me know your name.`,
     welcomeSwitch: `Hi! 👋\n\nLooking to switch to ACKO? I'll help you compare what you currently have with what ACKO offers — including preserving your waiting period credits and no-claim bonus.\n\nFirst, let me know your name.`,
     askName: "What's your full name (as per Aadhaar)? We need this for the policy — it should match your ID.",
@@ -748,6 +750,10 @@ export const en = {
     readyToPurchaseSub: "Let's get this done",
     checkGapsSwitch: 'Check gaps & switch to ACKO',
     checkGapsSwitchSub: 'Analyse your current plan and see how ACKO fills the gaps',
+    notSureWhatToBuy: 'Not sure what I need',
+    notSureWhatToBuySub: 'Help me figure out the right plan',
+    parentsWithPed: 'Insurance for parents with PED',
+    compareWithCurrent: 'Compare with current policy',
     // USPs
     uspsExploring: (name: string) => `Great, ${name}! Before we dive in, here's a quick look at what makes ACKO different from other health insurers:`,
     uspsComparing: (name: string) => `Great question, ${name}. Here's what makes ACKO genuinely different from traditional insurers:`,
@@ -788,11 +794,11 @@ export const en = {
     ageInsightYoung: (age: number) => `At ${age}, you're in a great spot — young and healthy means affordable premiums and strong protection against unexpected medical emergencies. This is the sweet spot for buying health insurance.`,
     ageInsightYoungFamily: (name: string) => `Young family — you'll have access to the best plans at the most affordable premiums. Starting now means all waiting periods finish while you're still young and likely healthy. Really smart timing.`,
     ageInsightGeneric: (name: string) => `Great age profile — you'll get competitive premiums and the widest choice of plans.`,
-    ageAckHospitalIntro: "Now let me find cashless hospitals near you — this is important because cashless treatment means zero out-of-pocket at the hospital.",
+    ageAckHospitalIntro: "Now let me find hospitals near you.",
     pdfNextPreFill: (memberInfo: string) => memberInfo ? `${memberInfo} I've pulled key details from your policy — let me confirm them so we can skip the repetitive questions.` : "I've pulled key details from your policy — let me confirm them so we can skip the repetitive questions.",
-    pincodeQ: "What's your pincode? Premiums are calculated by location, and I'll also show you cashless hospitals near you — where you can walk in and get treated without paying upfront.",
+    pincodeQ: "What's your pincode?\n\nThis is needed for **accurate premium calculation** based on your city. I'll also show you nearby hospitals where you can get cashless treatment.",
     pincodePlaceholder: 'Enter 6-digit pincode',
-    hospitalResult: (count: number) => `Great news — ${count}+ cashless hospitals near you! These are hospitals where you can walk in with your ACKO card and get treated without paying upfront. Here are some nearby.`,
+    hospitalResult: (count: number) => `Great news — **${count}+ network hospitals** near you. Walk in with your ACKO card, no upfront payment needed.`,
     // Coverage
     currentInsuranceQ: (name: string) => `${name}, do you currently have any health insurance? Select all that apply.\n\nThis helps me suggest the right coverage — whether you need a fresh comprehensive plan, a top-up on existing cover, or a smarter alternative.`,
     totalCoverContextGmcBoth: "What's the total health cover you have across your employer insurance and personal policy combined",
@@ -817,19 +823,21 @@ export const en = {
     conditionsAck: (name: string) => `Thanks for sharing that, ${name}. Pre-existing conditions are very common — over 40% of our policyholders have them. I'll make sure the plan I recommend has the best coverage for these conditions.\n\nNow let me suggest the right coverage amount.`,
     // Recommendation
     calculating: 'Let me put together the best options for you...',
-    recommendationGmc: (name: string, familySummary: string, siLabel: string) => `${name}, I'd recommend **Platinum** for the best coverage alongside your employer plan. You can also compare Lite and Super Top-up options using the tabs below.\n\nExpand "What's covered" to see how each plan protects ${familySummary}.`,
-    recommendationStandard: (name: string, familySummary: string, siLabel: string) => `${name}, I'd recommend **Platinum** — our most comprehensive plan for ${familySummary} at ₹${siLabel} coverage.\n\nYou can compare all plans using the tabs below. Expand "What's covered" to see the details.`,
+    recommendationGmc: (name: string, familySummary: string, siLabel: string) => `${name}, I'd recommend **ACKO Platinum** to fill the gaps in your employer plan.\n\n✓ **100% Hospital Bills Paid** — including consumables your corporate policy misses\n✓ **No Room Rent Limit** — choose any room, no deductions\n✓ **10% Inflation Protect** — your cover grows every year automatically\n\nYou can compare Platinum, Platinum Lite, and Super Top-up using the tabs below.`,
+    recommendationStandard: (name: string, familySummary: string, siLabel: string) => `${name}, I'd recommend **ACKO Platinum** — our most comprehensive plan for ${familySummary} at ₹${siLabel} coverage.\n\n✓ **100% Hospital Bills Paid** — no sub-limits, no room rent cap\n✓ **No Room Rent Limit** — pick any room without worrying about deductions\n✓ **10% Inflation Protect** — cover auto-increases every year\n\nCompare all plans using the tabs below.`,
     // Frequency
     frequencyQ: "How would you like to pay? Yearly payment saves 8% — that's roughly one month free.",
     saveEight: 'Recommended — Save 8%',
     // Review
     reviewMsg: (name: string) => `Here's your complete plan summary, ${name}. Review the details, and after payment I'll walk you through the health evaluation — it's simpler than you think.`,
     consentMsg: "All good? Confirm to proceed to payment. If the health evaluation reveals anything unexpected, you get a full refund — no questions asked.",
-    dobMsg: (name: string, count: number) => `Almost there, ${name}! Please enter the date of birth for ${count === 1 ? 'yourself' : `all ${count} members`}. This is required by the insurer to calculate the exact premium — age determines pricing down to the day.`,
+    dobMsg: (name: string, count: number) => `Almost there, ${name}! Please enter the date of birth for ${count === 1 ? 'yourself' : `all ${count} members`}. Age determines pricing down to the day — this is required by the insurer for the exact premium.`,
+    dobMsgSelfSpouse: (name: string) => `Almost there, ${name}! To calculate your premium accurately, I need the **date of birth of the eldest between you and your spouse**.\n\nAge determines pricing down to the day.`,
+    dobMsgWithParents: (name: string) => `Almost there, ${name}! I'll need two sets of dates:\n\n1. **Eldest between you and your spouse**\n2. **Eldest among your parents**\n\nThis lets me calculate separate age bands for you and your parents.`,
     dobAck: "Perfect — your final premium has been calculated based on exact ages. Now let's pick how you'd like to pay.",
     // Payment
     paymentReady: (freq: string) => `Your ${freq} premium is ready. Tap below to pay securely.`,
-    paymentSuccess: (name: string) => `Payment successful! Welcome to ACKO Health Insurance, ${name}.\n\nYour health evaluation journey starts now — I'll guide you through each step to get your policy activated.`,
+    paymentSuccess: (name: string) => `Payment successful! Welcome to ACKO Health Insurance, ${name}.\n\n**Your policy documents** will be emailed to you within 24 hours. You can also access them anytime from the ACKO app under **My Policies**.\n\nYour health evaluation journey starts now — I'll guide you through each step to get your policy activated.`,
     // Health Eval
     healthEvalLab: "Based on the health conditions shared, a visit to a nearby diagnostic lab will be needed. This includes blood tests, ECG, and other diagnostics — it helps us confirm coverage terms.\n\nLet's pick a convenient date, time, and lab near you.",
     healthEvalDoctorCall: "Your health evaluation involves a phone call with our doctor and basic medical tests at home. It takes about 30 minutes and is completely free.\n\nLet's schedule it.",
@@ -1134,8 +1142,8 @@ export const en = {
 
     whyAcko: 'Why ACKO?',
     whyAckoSub: 'Insurance that actually makes sense.',
-    prop1Title: "India's #1*",
-    prop1Desc: "India's #1* insurance app.",
+    prop1Title: 'Trusted by 10Cr+ Indians',
+    prop1Desc: 'Trusted by over 10 crore Indians.',
     prop2Title: '100% Digital',
     prop2Desc: 'Buy, claim, and manage — all online.',
     prop3Title: 'Fast Claims',
