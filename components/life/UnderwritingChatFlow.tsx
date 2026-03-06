@@ -42,7 +42,7 @@ export interface UseUnderwritingFlowReturn {
 
 export function useUnderwritingFlow(onComplete: () => void, options?: { skipIntro?: boolean }): UseUnderwritingFlowReturn {
   const skipIntro = options?.skipIntro ?? false;
-  const [step, setStep] = useState<UWStep>(skipIntro ? 'processing' : 'intro');
+  const [step, setStep] = useState<UWStep>(skipIntro ? 'reviewing' : 'intro');
   const [messages, setMessages] = useState<UnderwritingMessage[]>([]);
   const [demoOutcome, setDemoOutcome] = useState<'approved' | 'info_needed' | 'not_approved'>('approved');
   const [uploadedInfo, setUploadedInfo] = useState(false);

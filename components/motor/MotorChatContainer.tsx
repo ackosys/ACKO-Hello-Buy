@@ -305,7 +305,7 @@ export default function MotorChatContainer() {
     const firstName = useUserProfileStore.getState().firstName || '';
     setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
     buildPoliciesForState(state).forEach(p => addPolicy(p));
-    writeSessionCookie({ firstName, phone: `+91${phone}` });
+    writeSessionCookie({ firstName });
 
     addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.phone_gate', module: 'login' });
     setShowWidget(false);

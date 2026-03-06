@@ -30,7 +30,8 @@ export type MotorModule =
   | 'owner_details'
   | 'review'
   | 'payment'
-  | 'post_purchase';
+  | 'post_purchase'
+  | 'login';
 
 export type MotorWidgetType =
   | 'selection_cards'
@@ -63,6 +64,7 @@ export type MotorWidgetType =
   | 'policy_tracker'
   | 'nps_feedback'
   | 'app_download_cta'
+  | 'login_gate'
   | 'dashboard_cta'
   | 'document_upload'
   | 'safety_condition_picker'

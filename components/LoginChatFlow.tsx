@@ -522,7 +522,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
       const state = detectPostLoginState(phone);
       setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
       buildPoliciesForState(state).forEach(p => addPolicy(p));
-      writeSessionCookie({ firstName: name.trim(), phone: `+91${phone}` });
+      writeSessionCookie({ firstName: name.trim() });
 
       setOtpEchoed(true);
       setPostLoginState(state);
