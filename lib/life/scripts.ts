@@ -1510,7 +1510,7 @@ const lifeAddonsDisability: ConversationStep<LifeJourneyState> = {
 const lifeReview: ConversationStep<LifeJourneyState> = {
   id: 'life_review',
   module: 'review',
-  widgetType: 'none',
+  widgetType: 'selection_cards',
   getScript: (_persona, state) => {
     const formatAmt = (n: number) => {
       if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
@@ -1530,10 +1530,15 @@ const lifeReview: ConversationStep<LifeJourneyState> = {
       `• Riders: ${state.selectedRiders.length} selected`,
       `• Premium: ${formatAmt(yearlyPremium)}/year (${formatAmt(monthlyPremium)}/month)`,
       ``,
-      `Let's proceed to payment.`,
+      `Ready to proceed?`,
     ];
     
-    return { botMessages: messages };
+    return {
+      botMessages: messages,
+      options: [
+        { label: `Proceed to payment · ₹${yearlyPremium.toLocaleString('en-IN')}`, value: 'pay' },
+      ],
+    };
   },
   processResponse: (_response, _state) => ({}),
   getNextStep: (_response, _state) => 'life_payment',
