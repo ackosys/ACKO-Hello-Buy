@@ -5,35 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUserProfileStore } from '../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../lib/mockUsers';
+import type { PostLoginState } from '../lib/mockUsers';
+import { readSessionCookie, writeSessionCookie, clearSessionCookie } from '../lib/sessionCookie';
 
 const VALID_OTP = '0000';
-
-// Phone → user state mapping (prototype simulation)
-type PostLoginState =
-  | 'new_user'
-  | 'new_user_pwilo_car'
-  | 'new_user_pwilo_health'
-  | 'new_user_pwilo_life'
-  | 'one_policy'
-  | 'two_policies_health_vehicle'
-  | 'two_policies_vehicles'
-  | 'one_policy_pwilo_car'
-  | 'one_policy_pwilo_health'
-  | 'one_policy_pwilo_life';
-
-function detectPostLoginState(phone: string): PostLoginState {
-  if (phone === '9876543210') return 'new_user';
-  if (phone === '9876543211') return 'new_user_pwilo_car';
-  if (phone === '9876543212') return 'one_policy';
-  if (phone === '9876543213') return 'two_policies_health_vehicle';
-  if (phone === '9876543214') return 'two_policies_vehicles';
-  if (phone === '9876543215') return 'one_policy_pwilo_car';
-  if (phone === '9876543216') return 'new_user_pwilo_health';
-  if (phone === '9876543217') return 'new_user_pwilo_life';
-  if (phone === '9876543218') return 'one_policy_pwilo_health';
-  if (phone === '9876543219') return 'one_policy_pwilo_life';
-  return 'new_user';
-}
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export type LoginIntent = 'insure_existing' | 'insure_new' | 'continue_quote' | 'insure_another';
 
@@ -63,7 +40,7 @@ const MOCK_TWO_VEHICLES: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
   {
@@ -73,7 +50,7 @@ const MOCK_TWO_VEHICLES: MockPolicy[] = [
     regNumber: 'KA05 AB 9876',
     planType: 'Comprehensive plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/Nexon.png',
+    imageUrl: `${BASE}/car-images/Nexon.png`,
     lob: 'bike',
   },
 ];
@@ -87,7 +64,7 @@ const MOCK_ONE_POLICY: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
 ];
@@ -101,7 +78,7 @@ const MOCK_HEALTH_VEHICLE: MockPolicy[] = [
     regNumber: '₹5L cover · 4 members',
     planType: 'Comprehensive health plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/offerings/health-card.png',
+    imageUrl: `${BASE}/offerings/health-card.png`,
     lob: 'health',
   },
   {
@@ -111,7 +88,7 @@ const MOCK_HEALTH_VEHICLE: MockPolicy[] = [
     regNumber: 'KA01 AB 1234',
     planType: 'Zero depreciation plan',
     validTill: '31 Aug 2026',
-    imageUrl: '/car-images/harrier.png',
+    imageUrl: `${BASE}/car-images/harrier.png`,
     lob: 'car',
   },
 ];
@@ -130,21 +107,21 @@ const MOCK_PWILO_CAR: MockPwilo = {
   lob: 'car',
   title: 'Continue insuring your Tata Harrier',
   subtitle: 'KA01 AB 1234',
-  imageUrl: '/car-images/harrier.png',
+  imageUrl: `${BASE}/car-images/harrier.png`,
 };
 
 const MOCK_PWILO_HEALTH: MockPwilo = {
   lob: 'health',
   title: 'Continue your health plan',
   subtitle: 'Family floater · ₹5L cover',
-  imageUrl: '/offerings/health-card.png',
+  imageUrl: `${BASE}/offerings/health-card.png`,
 };
 
 const MOCK_PWILO_LIFE: MockPwilo = {
   lob: 'life',
   title: 'Continue your life cover',
   subtitle: 'Term plan · ₹1Cr cover',
-  imageUrl: '/offerings/life-card.png',
+  imageUrl: `${BASE}/offerings/life-card.png`,
 };
 
 function getPwilo(state: PostLoginState): MockPwilo | null {
@@ -282,7 +259,7 @@ function OtpInput({ onComplete, error }: { onComplete: (val: string) => void; er
   );
 }
 
-/* ── Active policy card — matches Figma node 220-11026 ── */
+/* ── Active policy card ── */
 function PolicyCard({
   policy,
   delay,
@@ -309,7 +286,6 @@ function PolicyCard({
         boxShadow: '0 20px 20px -3px rgba(0,0,0,0.02), 0 6px 6px -2px rgba(0,0,0,0.02), 0 3.5px 3.5px -1.5px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02)',
       }}
     >
-      {/* Text */}
       <div className="flex flex-col gap-1" style={{ width: '204px' }}>
         <p className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--motor-text, var(--app-text))' }}>
           {policy.make} {policy.model}
@@ -318,13 +294,9 @@ function PolicyCard({
         <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>{policy.planType}</p>
         <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>Valid till {policy.validTill}</p>
       </div>
-
-      {/* Car image — top right, overlapping */}
       <div className="absolute top-0 right-0 w-[105px] h-[105px] pointer-events-none">
         <Image src={policy.imageUrl} alt={`${policy.make} ${policy.model}`} width={105} height={105} className="object-contain w-full h-full" />
       </div>
-
-      {/* Primary: File a claim */}
       <button
         onClick={onFileClaim}
         className="absolute text-[12px] font-medium leading-[16px] px-4 py-2 rounded-lg transition-all active:opacity-80"
@@ -332,8 +304,6 @@ function PolicyCard({
       >
         File a claim
       </button>
-
-      {/* Secondary: Download policy */}
       <button
         onClick={onDownload}
         className="absolute text-[12px] font-medium leading-[16px] px-4 py-2 rounded-lg transition-all active:opacity-80"
@@ -368,13 +338,7 @@ function PwiloCard({ delay, pwilo, onContinue }: { delay: number; pwilo: MockPwi
           </p>
         </div>
         <div className="shrink-0 w-[100px] h-[64px] flex items-center justify-center">
-          <Image
-            src={pwilo.imageUrl}
-            alt={pwilo.title}
-            width={100}
-            height={64}
-            className="object-contain w-full h-full"
-          />
+          <Image src={pwilo.imageUrl} alt={pwilo.title} width={100} height={64} className="object-contain w-full h-full" />
         </div>
       </div>
       <div className="px-4 pb-4">
@@ -390,46 +354,65 @@ function PwiloCard({ delay, pwilo, onContinue }: { delay: number; pwilo: MockPwi
   );
 }
 
-/* ── Vehicle type chips (new user) ── */
-function VehicleTypeChip({
+/* ── Vehicle type cards — 2-col grid with icon, used for any vehicle intent selection ── */
+function VehicleCard({
   label,
   sub,
+  icon,
   delay,
   onClick,
 }: {
   label: string;
   sub: string;
+  icon: React.ReactNode;
   delay: number;
   onClick: () => void;
 }) {
   return (
     <motion.button
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.25, ease: 'easeOut' }}
+      whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
+      className="flex flex-col items-center gap-3 rounded-2xl p-5 text-center transition-all active:scale-[0.96]"
       style={{
         background: 'var(--motor-surface, var(--app-surface))',
         border: '1.5px solid var(--motor-border, var(--app-border))',
       }}
     >
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center"
+        style={{ background: 'var(--app-surface-2, var(--motor-surface-2, rgba(109,40,217,0.08)))' }}
+      >
+        {icon}
+      </div>
       <span className="flex flex-col gap-0.5">
-        <span className="text-[14px] font-semibold" style={{ color: 'var(--motor-text, var(--app-text))' }}>
+        <span className="text-[14px] font-semibold leading-[18px]" style={{ color: 'var(--motor-text, var(--app-text))' }}>
           {label}
         </span>
-        <span className="text-[12px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>
+        <span className="text-[11px] leading-[14px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>
           {sub}
         </span>
       </span>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>
-        <path d="M6 3l5 5-5 5" />
-      </svg>
     </motion.button>
   );
 }
 
-/* ── "Insure another car" section — bot bubble + CTA button ── */
+/* ── SVG icons for vehicle cards ── */
+const RenewIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--app-accent, #6D28D9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+  </svg>
+);
+
+const NewCarIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--app-accent, #6D28D9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+  </svg>
+);
+
+/* ── "Insure another car" section ── */
 function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () => void }) {
   return (
     <motion.div
@@ -453,9 +436,15 @@ function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () =
 /* ── Main component ── */
 export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginChatFlowProps) {
   const router = useRouter();
-  const { setProfile } = useUserProfileStore();
+  const { setProfile, addPolicy } = useUserProfileStore();
 
-  const [step, setStep] = useState<'q1' | 'q2' | 'q3' | 'post_login'>('q1');
+  // 'returning' — cookie found, show recognition prompt
+  // 'q1'        — collect name (new user)
+  // 'journey'   — show vehicle type chips after name
+  // 'q2'        — collect phone (gated before plans)
+  // 'q3'        — collect OTP
+  // 'post_login'— show results
+  const [step, setStep] = useState<'returning' | 'q1' | 'journey' | 'q2' | 'q3' | 'post_login'>('q1');
   const [showTyping, setShowTyping] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -464,10 +453,23 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
   const [phoneEchoed, setPhoneEchoed] = useState(false);
   const [otpEchoed, setOtpEchoed] = useState(false);
   const [postLoginState, setPostLoginState] = useState<PostLoginState | null>(null);
-  // Cascade: 0=none, 1=welcome msg, 2=context msg, 3=cards/chips, 4=insure-another section
   const [contentStep, setContentStep] = useState(0);
+  // Stored when user taps a vehicle chip in 'journey' step — used to navigate after login
+  const [pendingIntent, setPendingIntent] = useState<LoginIntent | null>(null);
+  // Set when a valid session cookie is found on mount (name only — phone not stored)
+  const [returningUser, setReturningUser] = useState<{ firstName: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Check for session cookie on mount
+  useEffect(() => {
+    const session = readSessionCookie();
+    if (session) {
+      setReturningUser(session);
+      setName(session.firstName);
+      setStep('returning');
+    }
+  }, []);
 
   useEffect(() => {
     setTimeout(() => {
@@ -475,13 +477,23 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
     }, 100);
   }, [step, showTyping, nameEchoed, phoneEchoed, otpEchoed, contentStep]);
 
+  // New user: name → journey (vehicle chips)
   const handleNameSubmit = () => {
     if (!name.trim()) return;
+    // Store the name as a partial (pre-login) profile so the motor flow can greet the user by name
+    setProfile({ firstName: name.trim(), isLoggedIn: false });
     setNameEchoed(true);
     setShowTyping(true);
-    setTimeout(() => { setShowTyping(false); setStep('q2'); }, 900);
+    setTimeout(() => { setShowTyping(false); setStep('journey'); }, 900);
   };
 
+  // Vehicle chip selected: navigate to motor journey immediately — phone+OTP gate happens
+  // inside the motor flow, right before quotes are shown.
+  const handleChipSelect = (intent: LoginIntent) => {
+    onSuccess(intent);
+  };
+
+  // Phone → OTP
   const handlePhoneSubmit = () => {
     if (phone.replace(/\D/g, '').length < 10) return;
     setPhoneEchoed(true);
@@ -489,30 +501,54 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
     setTimeout(() => { setShowTyping(false); setStep('q3'); }, 900);
   };
 
+  // Returning user taps "Yes, continue" — go to phone input (number not stored in cookie)
+  const handleReturningContinue = () => {
+    setShowTyping(true);
+    setTimeout(() => { setShowTyping(false); setStep('q2'); }, 700);
+  };
+
+  // "Not me" — clear cookie and start fresh
+  const handleNotMe = () => {
+    clearSessionCookie();
+    setReturningUser(null);
+    setName('');
+    setPhone('');
+    setStep('q1');
+  };
+
   const handleOtp = (val: string) => {
     if (val === VALID_OTP) {
       setOtpError(false);
       const state = detectPostLoginState(phone);
-      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true });
+      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+      buildPoliciesForState(state).forEach(p => addPolicy(p));
+      writeSessionCookie({ firstName: name.trim(), phone: `+91${phone}` });
+
       setOtpEchoed(true);
       setPostLoginState(state);
       setShowTyping(true);
 
-      // welcome message
+      // New user who tapped a vehicle chip: navigate to plan page after brief delay
+      if (pendingIntent && (state === 'new_user' || state.startsWith('new_user_pwilo'))) {
+        setTimeout(() => {
+          setShowTyping(false);
+          onSuccess(pendingIntent);
+        }, 900);
+        return;
+      }
+
+      // Returning customer or new user without a selected intent: show post_login cascade
       setTimeout(() => {
         setShowTyping(false);
         setStep('post_login');
         setContentStep(1);
-        // context message
         setTimeout(() => {
           setShowTyping(true);
           setTimeout(() => {
             setShowTyping(false);
             setContentStep(2);
-            // cards / chips
             setTimeout(() => {
               setContentStep(3);
-              // insure-another section — not for pure new_user (they use LOB chips instead)
               if (state !== 'new_user') {
                 setTimeout(() => setContentStep(4), 600);
               }
@@ -527,15 +563,12 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
   };
 
   const nameCanSubmit = name.trim().length > 0;
-  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
 
-  // Welcome message varies by state
   const isNewUser = postLoginState === 'new_user' || postLoginState?.startsWith('new_user_pwilo');
   const welcomeMsg = isNewUser
     ? `Welcome to ACKO, ${name}! Great to have you here.`
     : `Welcome back, ${name}!`;
 
-  // Context message varies by state
   const contextMsg = (() => {
     if (!postLoginState) return 'What are you looking to insure today?';
     if (postLoginState === 'new_user') return 'What are you looking to insure today?';
@@ -546,9 +579,10 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
     return 'What are you looking to insure today?';
   })();
 
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header — only when standalone (not embedded in motor journey) */}
       {!hideHeader && (
         <div
           className="flex items-center justify-between px-4 h-[56px] shrink-0"
@@ -569,33 +603,66 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
       )}
 
       {/* Chat area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-6 pb-24" style={{ background: 'var(--app-bg)' }}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-6 pb-6" style={{ background: 'var(--app-bg)' }}>
 
-        {/* Q1 */}
-        <BotBubble>Hello! What would you like us to call you?</BotBubble>
+        {/* ── Returning user path ── */}
+        {returningUser ? (
+          <>
+            <BotBubble>
+              Welcome back, {returningUser.firstName}! 👋 Looks like you&apos;ve been here before.
+            </BotBubble>
+            <BotBubble>
+              Shall we continue as <strong>{returningUser.firstName}</strong>?
+            </BotBubble>
 
-        <AnimatePresence>
-          {nameEchoed && <UserBubble>{name}</UserBubble>}
-        </AnimatePresence>
+            <AnimatePresence>
+              {(step === 'q2' || step === 'q3' || step === 'post_login') && (
+                <BotBubble>
+                  To verify it&apos;s you, please enter your mobile number.
+                </BotBubble>
+              )}
+            </AnimatePresence>
 
-        {/* Q2 */}
-        <AnimatePresence>
-          {(step === 'q2' || step === 'q3' || step === 'post_login') && (
-            <BotBubble>Glad to have you here, {name}! Can we get your phone number?</BotBubble>
-          )}
-        </AnimatePresence>
+            <AnimatePresence>
+              {phoneEchoed && <UserBubble>+91 {phone}</UserBubble>}
+            </AnimatePresence>
 
-        <AnimatePresence>
-          {phoneEchoed && <UserBubble>+91 {phone}</UserBubble>}
-        </AnimatePresence>
+            <AnimatePresence>
+              {(step === 'q3' || step === 'post_login') && (
+                <BotBubble>
+                  We&apos;ve sent an OTP to +91 {phone}. Please enter it below.
+                </BotBubble>
+              )}
+            </AnimatePresence>
+          </>
+        ) : (
+          <>
+            {/* ── New user path ── */}
+            <BotBubble>Hello! What would you like us to call you?</BotBubble>
 
-        {/* Q3 */}
-        <AnimatePresence>
-          {(step === 'q3' || step === 'post_login') && (
-            <BotBubble>Please type in the OTP sent to your phone number.</BotBubble>
-          )}
-        </AnimatePresence>
+            <AnimatePresence>
+              {nameEchoed && <UserBubble>{name}</UserBubble>}
+            </AnimatePresence>
 
+            <AnimatePresence>
+              {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
+                <BotBubble>Nice to meet you, {name}! What would you like to do today?</BotBubble>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {phoneEchoed && <UserBubble>+91 {phone}</UserBubble>}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {(step === 'q3' || step === 'post_login') && (
+                <BotBubble>We&apos;ve sent an OTP to +91 {phone}. Please enter it below.</BotBubble>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+
+        {/* ── OTP input (both paths) ── */}
         <AnimatePresence>
           {step === 'q3' && (
             <motion.div
@@ -617,22 +684,19 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           )}
         </AnimatePresence>
 
-        {/* OTP echo — plain text, no icon */}
         <AnimatePresence>
-          {otpEchoed && <UserBubble>OTP Verified</UserBubble>}
+          {otpEchoed && <UserBubble>OTP Verified ✓</UserBubble>}
         </AnimatePresence>
 
-        {/* Welcome message */}
+        {/* ── Post-login cascade ── */}
         <AnimatePresence>
           {contentStep >= 1 && <BotBubble>{welcomeMsg}</BotBubble>}
         </AnimatePresence>
 
-        {/* Context message */}
         <AnimatePresence>
           {contentStep >= 2 && <BotBubble>{contextMsg}</BotBubble>}
         </AnimatePresence>
 
-        {/* Policy cards — for all customer states */}
         <AnimatePresence>
           {contentStep >= 3 && postLoginState && getPoliciesForState(postLoginState).length > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -649,7 +713,6 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           )}
         </AnimatePresence>
 
-        {/* Pwilo card — for any state containing pwilo */}
         <AnimatePresence>
           {contentStep >= 3 && postLoginState && getPwilo(postLoginState) && (
             <PwiloCard
@@ -660,41 +723,12 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           )}
         </AnimatePresence>
 
-        {/* LOB chips — for new users (with or without Pwilo) */}
-        <AnimatePresence>
-          {contentStep >= 3 && postLoginState && (postLoginState === 'new_user' || postLoginState.startsWith('new_user_pwilo')) && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col gap-3 mb-4"
-            >
-              <VehicleTypeChip
-                label="I have an existing car"
-                sub="Renew or get a new policy"
-                delay={0.05}
-                onClick={() => onSuccess('insure_existing')}
-              />
-              <VehicleTypeChip
-                label="Brand new car"
-                sub="Just bought or about to buy"
-                delay={0.15}
-                onClick={() => onSuccess('insure_new')}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* "Or need insurance for another car?" — for all non-new-user states */}
         <AnimatePresence>
           {contentStep >= 4 && postLoginState && postLoginState !== 'new_user' && (
-            <InsureAnotherSection
-              delay={0}
-              onClick={() => onSuccess('insure_another')}
-            />
+            <InsureAnotherSection delay={0} onClick={() => onSuccess('insure_another')} />
           )}
         </AnimatePresence>
 
-        {/* Typing indicator */}
         <AnimatePresence>
           {showTyping && <TypingIndicator />}
         </AnimatePresence>
@@ -702,8 +736,37 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         <div className="h-2" />
       </div>
 
-      {/* Bottom input bar — only during login steps */}
+      {/* ── Bottom input bar ── */}
       <AnimatePresence mode="wait">
+
+        {/* Returning user: Continue / Not me */}
+        {step === 'returning' && returningUser && (
+          <motion.div
+            key="returning-actions"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="shrink-0 px-4 pb-8 pt-3 flex flex-col gap-2"
+            style={{ borderTop: '1px solid var(--motor-border, var(--app-border))' }}
+          >
+            <button
+              onClick={handleReturningContinue}
+              className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
+              style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+            >
+              Continue as {returningUser.firstName}
+            </button>
+            <button
+              onClick={handleNotMe}
+              className="w-full h-[44px] rounded-2xl text-[14px] font-medium transition-colors active:scale-[0.97]"
+              style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}
+            >
+              Not me
+            </button>
+          </motion.div>
+        )}
+
+        {/* New user: name input */}
         {step === 'q1' && !nameEchoed && (
           <motion.div
             key="input-name"
@@ -729,7 +792,8 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
             />
             <button
               onClick={handleNameSubmit}
-              className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
+              disabled={!nameCanSubmit}
+              className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
               style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
             >
               Continue
@@ -737,6 +801,36 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           </motion.div>
         )}
 
+        {/* Journey: vehicle type cards — 2-col grid */}
+        {step === 'journey' && (
+          <motion.div
+            key="journey-chips"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="shrink-0 px-4 pb-8 pt-3"
+            style={{ borderTop: '1px solid var(--motor-border, var(--app-border))' }}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <VehicleCard
+                label="Renew my insurance"
+                sub="I already have a car"
+                icon={<RenewIcon />}
+                delay={0.05}
+                onClick={() => handleChipSelect('insure_existing')}
+              />
+              <VehicleCard
+                label="Insure a new car"
+                sub="Just bought a new car"
+                icon={<NewCarIcon />}
+                delay={0.12}
+                onClick={() => handleChipSelect('insure_new')}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Phone input — shown for returning users at q2 step */}
         {step === 'q2' && !phoneEchoed && (
           <motion.div
             key="input-phone"
@@ -759,7 +853,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
                 autoFocus
                 type="tel"
                 inputMode="numeric"
-                placeholder="Enter your phone number"
+                placeholder="Enter your mobile number"
                 value={phone}
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
@@ -769,13 +863,44 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
             </div>
             <button
               onClick={handlePhoneSubmit}
-              className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
+              disabled={!phoneCanSubmit}
+              className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
               style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
             >
-              Continue
+              Send OTP
             </button>
           </motion.div>
         )}
+
+        {/* Post-login cards for new_user who arrived via returning path (no pendingIntent) */}
+        {step === 'post_login' && contentStep >= 3 && postLoginState && (postLoginState === 'new_user' || postLoginState.startsWith('new_user_pwilo')) && (
+          <motion.div
+            key="post-lob-chips"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="shrink-0 px-4 pb-8 pt-3"
+            style={{ borderTop: '1px solid var(--motor-border, var(--app-border))' }}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <VehicleCard
+                label="Renew my insurance"
+                sub="I already have a car"
+                icon={<RenewIcon />}
+                delay={0.05}
+                onClick={() => onSuccess('insure_existing')}
+              />
+              <VehicleCard
+                label="Insure a new car"
+                sub="Just bought a new car"
+                icon={<NewCarIcon />}
+                delay={0.12}
+                onClick={() => onSuccess('insure_new')}
+              />
+            </div>
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </div>
   );

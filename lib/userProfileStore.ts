@@ -12,6 +12,7 @@ export interface UserPolicy {
   premium?: number;
   premiumFrequency?: 'monthly' | 'yearly';
   details?: string;
+  urgent?: boolean; // true = show red dot (renewal due, open claim, etc.)
 }
 
 export interface UserProfile {

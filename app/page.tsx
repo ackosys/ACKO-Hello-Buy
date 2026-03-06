@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { useJourneyStore } from '../lib/store';
-
-const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 import LanguageSelector from '../components/LanguageSelector';
 import AckoLogo from '../components/AckoLogo';
 import PolicyActionScreen, { type PolicyStatusInfo } from '../components/global/PolicyActionScreen';
@@ -284,17 +281,8 @@ function HeaderPill({
   );
 }
 
-/* ── Hero Greeting with Lottie animated ACKO logo ── */
-function HeroGreeting({ firstName }: { firstName: string }) {
-  const [animationData, setAnimationData] = useState<object | null>(null);
-
-  useEffect(() => {
-    fetch(`${BASE}/offerings/logo-animation.json`)
-      .then(res => res.json())
-      .then(data => setAnimationData(data))
-      .catch(() => {});
-  }, []);
-
+/* ── Hero Greeting with transparent-bg webm logo ── */
+function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
   return (
     <motion.div
       className="flex flex-col items-center gap-2 px-6 pt-8 pb-10"
@@ -303,26 +291,224 @@ function HeroGreeting({ firstName }: { firstName: string }) {
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <div className="w-[84px] h-[84px] mb-1">
-        {animationData ? (
-          <Lottie animationData={animationData} loop autoplay style={{ width: 84, height: 84 }} />
-        ) : (
-          <div className="w-full h-full rounded-full" style={{ background: '#4e29bb' }} />
-        )}
+        <video
+          src={`${BASE}/offerings/logo-animation.webm`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ width: 84, height: 84, objectFit: 'contain' }}
+        />
       </div>
       <div className="text-center">
         <h1
-          className="text-[20px] font-semibold tracking-[-0.1px] leading-[28px]"
+          className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
           style={{ color: 'var(--app-text)' }}
         >
-          {firstName ? `Hello ${firstName},` : 'Hello,'}
+          {firstName ? `Hello ${firstName}` : 'Hello'}
         </h1>
         <p
-          className="text-[20px] leading-[20px] mt-0.5"
+          className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
           style={{ color: 'var(--app-text-muted)' }}
         >
-          What insurance are you interested in?
+          {subtitle || 'What insurance are you interested in?'}
         </p>
       </div>
+    </motion.div>
+  );
+}
+
+/* ── Policies Bottom Sheet ── */
+function PoliciesBottomSheet({ isOpen, onClose, theme, onViewProfile }: {
+  isOpen: boolean;
+  onClose: () => void;
+  theme: string;
+  onViewProfile: () => void;
+}) {
+  const { policies } = useUserProfileStore();
+  const activePolicies = policies.filter(p => p.active);
+
+  const LOB_LABELS: Record<string, string> = {
+    car: 'Car Insurance', bike: 'Bike Insurance',
+    health: 'Health Insurance', life: 'Life Insurance',
+  };
+  const LOB_ICON: Record<string, string> = {
+    car: `${BASE}/icons/vehicles.svg`, bike: `${BASE}/icons/vehicles.svg`,
+    health: `${BASE}/icons/family.svg`, life: `${BASE}/icons/life.svg`,
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className={`app-${theme} fixed inset-0 z-[9998]`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          {/* Backdrop */}
+          <motion.div
+            key="sheet-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            onClick={onClose}
+          />
+          {/* Sheet */}
+          <motion.div
+            key="sheet-panel"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="relative z-[1] rounded-t-3xl"
+            style={{ background: 'var(--app-surface)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2 shrink-0">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--app-border-strong)' }} />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 pt-1 pb-4 shrink-0">
+              <h2 className="text-[20px] font-semibold leading-[28px]" style={{ color: 'var(--app-text)' }}>
+                My policies
+              </h2>
+              <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+                {activePolicies.length} active {activePolicies.length === 1 ? 'policy' : 'policies'}
+              </p>
+            </div>
+
+            <div className="w-full h-px shrink-0" style={{ background: 'var(--app-border)' }} />
+
+            {/* Policy list */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {activePolicies.map((policy, idx) => (
+                <motion.div
+                  key={policy.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex items-center gap-3 p-4 rounded-2xl"
+                  style={{ background: 'var(--app-surface-2)', border: '1px solid var(--app-border)' }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--app-surface)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={LOB_ICON[policy.lob] || LOB_ICON.car} alt={policy.lob} width={20} height={20} style={{ opacity: 0.7 }} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-semibold leading-[20px] truncate" style={{ color: 'var(--app-text)' }}>
+                      {policy.label}
+                    </p>
+                    {policy.details && (
+                      <p className="text-[12px] leading-[16px] mt-0.5 truncate" style={{ color: 'var(--app-text-muted)' }}>
+                        {policy.details}
+                      </p>
+                    )}
+                    <p className="text-[11px] leading-[14px] mt-0.5" style={{ color: 'var(--app-text-subtle)' }}>
+                      {LOB_LABELS[policy.lob] || policy.lob}
+                    </p>
+                  </div>
+
+                  {policy.urgent && (
+                    <div className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                      style={{ background: 'rgba(216,61,55,0.1)', color: '#D83D37' }}>
+                      Renew
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Footer CTA */}
+            <div className="px-5 pb-8 pt-3 shrink-0" style={{ borderTop: '1px solid var(--app-border)' }}>
+              <button
+                onClick={() => { onClose(); onViewProfile(); }}
+                className="w-full h-[52px] rounded-2xl text-[15px] font-semibold"
+                style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+              >
+                View all in profile
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ── Manage My Policies Card ── */
+function ManagePoliciesCard({ onClick }: { onClick: () => void }) {
+  const { policies } = useUserProfileStore();
+  const activePolicies = policies.filter(p => p.active);
+
+  const vehicleCount = activePolicies.some(p => p.lob === 'car' || p.lob === 'bike');
+  const healthCount = activePolicies.some(p => p.lob === 'health');
+  const lifeCount = activePolicies.some(p => p.lob === 'life');
+
+  const vehicleUrgent = activePolicies.some(p => (p.lob === 'car' || p.lob === 'bike') && p.urgent);
+  const healthUrgent = activePolicies.some(p => p.lob === 'health' && p.urgent);
+  const lifeUrgent = activePolicies.some(p => p.lob === 'life' && p.urgent);
+
+  const pills = [
+    healthCount && { label: 'Health', urgent: healthUrgent, iconSrc: `${BASE}/icons/family.svg` },
+    lifeCount && { label: 'Life', urgent: lifeUrgent, iconSrc: `${BASE}/icons/life.svg` },
+    vehicleCount && { label: 'Vehicles', urgent: vehicleUrgent, iconSrc: `${BASE}/icons/vehicles.svg` },
+  ].filter(Boolean) as { label: string; urgent: boolean; iconSrc: string }[];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1 }}
+      className="relative overflow-hidden rounded-3xl cursor-pointer"
+      style={{
+        background: 'var(--app-surface)',
+        border: '1px solid var(--app-border)',
+        padding: '20px',
+      }}
+      onClick={onClick}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* Header */}
+      <div className="flex flex-col gap-1 mb-4">
+        <h3 className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--app-text)' }}>
+          Manage my policies
+        </h3>
+        <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>
+          View, renew, claim, download docs
+        </p>
+      </div>
+
+      {/* Category pills — red dot only for renewal/urgent */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        {pills.map(pill => (
+          <div key={pill.label} className="relative flex items-center gap-1 px-2 py-1 rounded-[32px]"
+            style={{ background: 'var(--app-surface-2)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pill.iconSrc} alt={pill.label} width={16} height={16} style={{ opacity: 0.7 }} />
+            <span className="text-[10px] leading-[14px]" style={{ color: 'var(--app-text-muted)' }}>{pill.label}</span>
+            {pill.urgent && (
+              <div className="absolute w-2 h-2 rounded-full" style={{ background: '#D83D37', top: '-1px', right: '-1px' }} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Circle arrow — 24×24px */}
+      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--circle-arrow-bg)' }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M3.33 8h9.34M8.67 4L13 8l-4.33 4" stroke="var(--circle-arrow-icon)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* Policies illustration — anchored to bottom-right corner */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${BASE}/offerings/policies-card.svg`}
+        alt=""
+        draggable={false}
+        className="pointer-events-none"
+        style={{ position: 'absolute', bottom: 0, right: 0, width: 100, height: 100, objectFit: 'contain', objectPosition: 'bottom right' }}
+      />
     </motion.div>
   );
 }
@@ -444,224 +630,96 @@ function LobCard({
   );
 }
 
-/* ── Trust Disclaimer ── */
-function TrustDisclaimer() {
-  return (
-    <div className="px-4 pt-10 pb-4">
-      <p
-        className="text-[10px] leading-[14px] text-center"
-        style={{ color: 'var(--app-text-subtle)' }}
-      >
-        USD 44M | ARN: LROI | T&C apply
-      </p>
-    </div>
-  );
-}
-
-/* ── Award Badges ── */
-function AwardBadges() {
-  return (
-    <div className="px-4 pb-6">
-      <div className="flex gap-3">
-        {[
-          { image: `${BASE}/offerings/award-1.svg` },
-          { image: `${BASE}/offerings/award-2.svg` },
-        ].map((badge, i) => (
-          <div key={i} className="flex-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={badge.image} alt="Award badge" className="award-badge w-full h-auto object-contain" draggable={false} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Trust Heading ── */
-function TrustHeading() {
-  return (
-    <div className="px-4 pb-6 text-center">
-      <h2
-        className="text-[24px] font-semibold leading-[28px] tracking-[-0.1px]"
-        style={{ color: 'var(--app-text)' }}
-      >
-        Your trust isn&apos;t assumed,{' '}
-        <br />
-        its earned
-      </h2>
-    </div>
-  );
-}
-
-/* ── Stats Section ── */
-function StatsSection() {
-  const stats = [
-    { value: '7 mins', label: 'Fastest claim settlement' },
-    { value: '98.8%', label: 'Claims settled in 1 week' },
-    { value: '24x7', label: 'Instant claims support' },
+/* ── Why ACKO Section ── */
+function WhyAckoSection() {
+  const WHY_CARDS = [
+    {
+      icon: `${BASE}/icons/why-acko/icon-digital.svg`,
+      title: '100% Digital',
+      description: 'Buy, manage and claim - all online',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-claim.svg`,
+      title: '98.8%',
+      description: 'Claims settled in 1 week',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-support.svg`,
+      title: '24x7',
+      description: 'Instant claims support',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-pricing.svg`,
+      title: 'Honest Pricing',
+      description: 'No middle men & no hidden costs',
+    },
   ];
 
   return (
-    <div className="px-4 pb-6">
-      <div className="flex items-stretch">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 text-center"
-            style={{
-              borderRight: i < stats.length - 1 ? '1px solid var(--app-border)' : 'none',
-            }}
-          >
-            <div
-              className="text-[18px] font-semibold leading-[24px]"
-              style={{ color: 'var(--app-stats-accent, #ac93ff)' }}
-            >
-              {stat.value}
-            </div>
-            <div className="text-[12px] leading-[14px] mt-1" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Promises Heading ── */
-function PromisesHeading() { return null; }
-
-/* ── Testimonial ── */
-function TestimonialSection() {
-  return (
-    <div className="px-4 pb-4">
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--app-surface)',
-          border: '1px solid var(--app-border)',
-        }}
-      >
-        {/* Heading inside the card */}
-        <div className="px-5 pt-5 pb-4 text-center">
+    <div className="px-4 py-8">
+      <div className="flex flex-col gap-4">
+        {/* Heading */}
+        <div className="text-center mb-1">
           <h2
-            className="text-[20px] font-semibold leading-[26px]"
+            className="text-[24px] font-semibold leading-[30px]"
             style={{ color: 'var(--app-text)' }}
           >
-            Promises made. Promises kept.
+            Why ACKO ?
           </h2>
-        </div>
-
-        <div className="w-full h-px" style={{ background: 'var(--app-border)' }} />
-
-        {/* Review content */}
-        <div className="px-5 py-5">
-          <div className="flex justify-center gap-1 mb-4">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <svg key={s} width="20" height="20" viewBox="0 0 24 24" fill={s < 5 ? '#FBBF24' : 'none'} stroke="#FBBF24" strokeWidth="1.5">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            ))}
-          </div>
-          <p className="text-[14px] leading-[22px] text-center" style={{ color: 'var(--app-text)' }}>
-            &ldquo;My wife underwent an emergency C-section, and we visited a hospital outside ACKO&apos;s network, so we couldn&apos;t use their cashless service. After discharge, I applied for a reimbursement claim, and within one day, the funds were credited to my account.&rdquo;
+          <p
+            className="text-[14px] leading-[16px] mt-1"
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            Insurance that actually makes sense
           </p>
-          <div className="flex items-center gap-3 mt-5">
+        </div>
+
+        {/* Award banner */}
+        <div
+          className="flex items-center justify-center h-[88px] rounded-3xl overflow-hidden"
+          style={{ background: 'var(--app-surface-2)' }}
+        >
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${BASE}/icons/why-acko/award-laurel-left.svg`} alt="" className="h-12 w-auto" draggable={false} />
+            <div className="text-center leading-[19px]">
+              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
+                India&apos;s #1*
+              </p>
+              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
+                insurance app
+              </p>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${BASE}/icons/why-acko/award-laurel-right.svg`} alt="" className="h-12 w-auto" draggable={false} />
+          </div>
+        </div>
+
+        {/* 2×2 bento grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {WHY_CARDS.map((card) => (
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0"
-              style={{ background: 'var(--app-surface-2)', color: 'var(--app-text)' }}
+              key={card.title}
+              className="flex flex-col gap-1.5 h-[154px] rounded-3xl overflow-hidden p-5"
+              style={{ background: 'var(--app-surface-2)' }}
             >
-              S
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={card.icon} alt="" className="w-10 h-10 object-contain" draggable={false} />
+              <p
+                className="text-[16px] font-semibold leading-[22px] mt-1"
+                style={{ color: 'var(--app-text)' }}
+              >
+                {card.title}
+              </p>
+              <p
+                className="text-[14px] leading-[16px]"
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                {card.description}
+              </p>
             </div>
-            <div>
-              <div className="text-[14px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-                Sabik Edavanna
-              </div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>
-                ACKO health insurance
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-
-        <div className="w-full h-px" style={{ background: 'var(--app-border)' }} />
-
-        {/* See all reviews — full width inside card */}
-        <button
-          className="w-full h-[48px] rounded-b-2xl text-[16px] font-medium"
-          style={{ background: 'var(--app-cta-bg, #141414)', color: 'var(--app-cta-text, #fbfbfb)' }}
-        >
-          See all reviews
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── App Download Banner ── */
-function AppDownloadBanner() {
-  return (
-    <div className="px-4 py-6">
-      <div
-        className="p-5 rounded-3xl text-center"
-        style={{
-          background: 'linear-gradient(160deg, #8B5CF6 0%, #7C3AED 40%, #6D28D9 100%)',
-        }}
-      >
-        <h3 className="text-[28px] font-bold text-white leading-[34px] tracking-[-0.5px]">
-          Get India&apos;s #1<br />insurance app
-        </h3>
-        <p className="text-[14px] mt-2 leading-[20px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          12+ million app downloads
-        </p>
-
-        {/* Store rating cards */}
-        <div className="flex gap-3 mt-5">
-          {/* Play Store */}
-          <div
-            className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          >
-            {/* Play Store icon */}
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'white' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M3.18 23.76c.36.19.77.2 1.15.04l12.01-6.77-2.71-2.71L3.18 23.76z" fill="#EA4335"/>
-                <path d="M21.26 10.35L18.4 8.74l-3.07 3.08 3.07 3.07 2.88-1.62c.82-.46.82-1.65-.02-2.12v.2z" fill="#FBBC04"/>
-                <path d="M2.1.5C1.68.71 1.4 1.16 1.4 1.73v20.54c0 .57.28 1.02.7 1.23l.08.04 11.51-11.51v-.27L2.18.46 2.1.5z" fill="#4285F4"/>
-                <path d="M13.69 12l2.71-2.71-12-6.76c-.38-.16-.8-.15-1.15.04l11.44 9.43z" fill="#34A853"/>
-              </svg>
-            </div>
-            <div className="text-left">
-              <div className="text-[22px] font-bold text-white leading-[26px]">4.6</div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Play Store</div>
-            </div>
-          </div>
-
-          {/* App Store */}
-          <div
-            className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          >
-            {/* App Store icon */}
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#1B9BE8' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/>
-              </svg>
-            </div>
-            <div className="text-left">
-              <div className="text-[22px] font-bold text-white leading-[26px]">4.8</div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'rgba(255,255,255,0.6)' }}>App Store</div>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <button
-          className="w-full h-[52px] rounded-2xl text-[16px] font-bold mt-4"
-          style={{ background: 'white', color: '#1a1a1a' }}
-        >
-          Get the app
-        </button>
       </div>
     </div>
   );
@@ -748,9 +806,11 @@ function GlobalHomepageInner() {
   const [hydrated, setHydrated] = useState(false);
   const [selectedLobId, setSelectedLobId] = useState<LobId | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPoliciesSheet, setShowPoliciesSheet] = useState(false);
 
   const overrides = useLobSnapshots();
-  const { firstName, isLoggedIn } = useUserProfileStore();
+  const { firstName, isLoggedIn, policies } = useUserProfileStore();
+  const hasActivePolicies = policies.some(p => p.active);
 
   const handleLanguageCycle = useCallback(() => {
     const idx = LANG_ORDER.indexOf(language as Language);
@@ -876,7 +936,29 @@ function GlobalHomepageInner() {
                 langLabel={LANG_LABELS[language as string] || language}
               />
 
-              <HeroGreeting firstName={firstName} />
+              <HeroGreeting
+                firstName={firstName}
+                subtitle={isLoggedIn && hasActivePolicies ? 'Good to see you again.\nWhat would you like to do?' : undefined}
+              />
+
+              {/* Manage my policies — only for logged-in users with policies */}
+              {isLoggedIn && hasActivePolicies && (
+                <div className="px-4 mb-10">
+                  <ManagePoliciesCard onClick={() => setShowPoliciesSheet(true)} />
+                </div>
+              )}
+
+              {/* Section divider — only when manage card is shown */}
+              {isLoggedIn && hasActivePolicies && (
+                <div className="px-4 pb-8 text-center">
+                  <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
+                    Explore another insurance
+                  </p>
+                  <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
+                    Find the right cover for your needs
+                  </p>
+                </div>
+              )}
 
               {/* LOB Cards */}
               <div className="px-4 space-y-3">
@@ -892,12 +974,7 @@ function GlobalHomepageInner() {
                 ))}
               </div>
 
-              <TrustDisclaimer />
-              <AwardBadges />
-              <TrustHeading />
-              <StatsSection />
-              <TestimonialSection />
-              <AppDownloadBanner />
+              <WhyAckoSection />
             </div>
             <PageFooter />
           </motion.div>
@@ -934,6 +1011,14 @@ function GlobalHomepageInner() {
           );
         })()}
       </AnimatePresence>
+
+      {/* Policies bottom sheet — outside AnimatePresence so it layers on top */}
+      <PoliciesBottomSheet
+        isOpen={showPoliciesSheet}
+        onClose={() => setShowPoliciesSheet(false)}
+        theme={theme}
+        onViewProfile={() => router.push('/profile')}
+      />
     </div>
   );
 }

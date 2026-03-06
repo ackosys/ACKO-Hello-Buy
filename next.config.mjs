@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const isGhPages = process.env.GITHUB_PAGES === 'true';
-const basePath = isGhPages ? '/ACKO-Hello-Buy' : '';
+const subPath = process.env.DEPLOY_SUBPATH || '';
+const basePath = isGhPages
+  ? `/ACKO-Hello-Buy${subPath ? `/${subPath}` : ''}`
+  : '';
 
 const nextConfig = {
   reactStrictMode: true,
@@ -11,7 +14,7 @@ const nextConfig = {
   },
   ...(isGhPages && {
     basePath,
-    assetPrefix: '/ACKO-Hello-Buy/',
+    assetPrefix: `${basePath}/`,
   }),
 };
 

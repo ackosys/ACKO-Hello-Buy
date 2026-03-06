@@ -1,5 +1,6 @@
 import { MotorConversationStep, MotorJourneyState } from './types';
 import { getT, getCurrentLang } from '../translations';
+import { useUserProfileStore } from '../userProfileStore';
 
 /* ═══════════════════════════════════════════════════════════════════
    ACKO Motor Insurance — Conversational Scripts
@@ -520,7 +521,7 @@ const brandNewViewPrices: MotorConversationStep = {
     botMessages: [getT(state.language).motorScripts.fetchingPlans(state.vehicleData.make, state.vehicleData.model)],
   }),
   processResponse: () => ({}),
-  getNextStep: () => 'quote.calculating',
+  getNextStep: () => 'login.phone_gate',
 };
 
 /* ═══════════════════════════════════════════════
@@ -952,6 +953,32 @@ const preQuoteViewPrices: MotorConversationStep = {
     return {
       botMessages: [
         `Fetching the best insurance plans for your ${v.make} ${v.model}...`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'login.phone_gate',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: LOGIN GATE — Phone+OTP before showing plans
+   Shown only when the user has not logged in yet.
+   The widget itself is handled in MotorChatContainer.
+   ═══════════════════════════════════════════════ */
+
+const loginPhoneGate: MotorConversationStep = {
+  id: 'login.phone_gate',
+  module: 'login',
+  widgetType: 'login_gate',
+  // Skip entirely if already logged in
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: () => {
+    const firstName = useUserProfileStore.getState().firstName;
+    const greeting = firstName ? `Almost there, ${firstName}!` : 'Almost there!';
+    return {
+      botMessages: [
+        greeting,
+        `To show your personalized quotes and save your progress, please verify your mobile number.`,
       ],
     };
   },
@@ -1500,6 +1527,7 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'brand_new.pincode': brandNewPincode,
   'brand_new.summary': brandNewSummary,
   'brand_new.view_prices': brandNewViewPrices,
+  'login.phone_gate': loginPhoneGate,
   'owner_details.intro': ownerDetailsIntro,
   'owner_details.name': ownerDetailsName,
   'owner_details.email': ownerDetailsEmail,

@@ -389,7 +389,7 @@ function MotorJourneyInner() {
           </div>
         )}
         {screen === 'chat' && (
-          <div key="chat" className={`h-screen flex items-stretch overflow-hidden motor-${theme}`} style={{ background: 'var(--motor-bg)' }}>
+          <div key="chat" className={`h-screen flex items-stretch overflow-hidden motor-${theme}`} style={{ background: 'var(--app-bg)' }}>
             <div className="max-w-[430px] w-full mx-auto flex flex-col overflow-hidden">
               <MotorHeader />
               <MotorChatContainer />
