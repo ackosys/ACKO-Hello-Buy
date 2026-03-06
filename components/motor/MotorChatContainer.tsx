@@ -7,6 +7,9 @@ import { getMotorStep } from '../../lib/motor/scripts';
 import { MotorJourneyState } from '../../lib/motor/types';
 import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../lib/journeyPersist';
 import { saveRecentVehicle, getBrandLogoUrl } from '../../lib/motorRecentVehicles';
+import { useUserProfileStore } from '../../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
+import { writeSessionCookie } from '../../lib/sessionCookie';
 import ChatMessage, { TypingIndicator } from '../ChatMessage';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import {
@@ -32,6 +35,131 @@ import {
 } from './MotorWidgets';
 import { PremiumBreakdown, PaymentGateway, MotorCelebration, PolicyTracker, NpsFeedback, AppDownloadCta } from './MotorFinalWidgets';
 
+/* ── Inline phone+OTP gate shown before quotes are revealed ── */
+const VALID_OTP = '0000';
+
+function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
+  const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const ref0 = useRef<HTMLInputElement>(null);
+  const ref1 = useRef<HTMLInputElement>(null);
+  const ref2 = useRef<HTMLInputElement>(null);
+  const ref3 = useRef<HTMLInputElement>(null);
+  const otpRefs = [ref0, ref1, ref2, ref3];
+
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
+  const handlePhoneSubmit = () => {
+    if (!phoneCanSubmit) return;
+    setGateStep('otp');
+    setTimeout(() => otpRefs[0].current?.focus(), 150);
+  };
+
+  const handleOtpChange = (i: number, val: string) => {
+    const d = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[i] = d;
+    setDigits(next);
+    if (d && i < 3) otpRefs[i + 1].current?.focus();
+    if (next.every(x => x !== '')) {
+      const otp = next.join('');
+      if (otp === VALID_OTP) {
+        setOtpError(false);
+        onSuccess(phone);
+      } else {
+        setOtpError(true);
+        setTimeout(() => { setOtpError(false); setDigits(['', '', '', '']); }, 600);
+        setTimeout(() => otpRefs[0].current?.focus(), 650);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) otpRefs[i - 1].current?.focus();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.215, 0.61, 0.355, 1] }}
+      className="mt-2 mb-4 rounded-2xl overflow-hidden"
+      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+    >
+      {gateStep === 'phone' ? (
+        <div className="p-4 flex flex-col gap-3">
+          <div
+            className="w-full h-[52px] rounded-xl flex items-center overflow-hidden"
+            style={{ border: '1.5px solid var(--motor-border-strong)', background: 'var(--motor-bg)' }}
+          >
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0" style={{ color: 'var(--motor-text-muted)' }}>+91</span>
+            <div className="w-px h-5 shrink-0" style={{ background: 'var(--motor-border-strong)' }} />
+            <input
+              autoFocus
+              type="tel"
+              inputMode="numeric"
+              placeholder="Enter your mobile number"
+              value={phone}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
+              className="flex-1 h-full px-3 text-[15px] outline-none bg-transparent"
+              style={{ color: 'var(--motor-text)' }}
+            />
+          </div>
+          <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
+            We&apos;ll save your progress so you can continue from where you left off
+          </p>
+          <button
+            onClick={handlePhoneSubmit}
+            disabled={!phoneCanSubmit}
+            className="w-full h-[48px] rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+          >
+            Send OTP
+          </button>
+        </div>
+      ) : (
+        <div className="p-4 flex flex-col gap-3">
+          <p className="text-[13px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
+            OTP sent to +91 {phone}
+          </p>
+          <motion.div
+            className="flex gap-2 justify-center"
+            animate={otpError ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleOtpChange(i, e.target.value)}
+                onKeyDown={e => handleOtpKeyDown(i, e)}
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all"
+                style={{
+                  background: 'var(--motor-bg)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid var(--motor-cta-bg, #6D28D9)' : '1.5px solid var(--motor-border-strong)',
+                  color: 'var(--motor-text)',
+                }}
+              />
+            ))}
+          </motion.div>
+          {otpError ? (
+            <p className="text-[12px] text-center" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+          ) : (
+            <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>Enter <strong>0000</strong> to verify</p>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export default function MotorChatContainer() {
   const {
     currentStepId,
@@ -41,6 +169,8 @@ export default function MotorChatContainer() {
     updateState,
     trimAndUpdateFromStep,
   } = useMotorStore();
+
+  const { isLoggedIn, setProfile, addPolicy } = useUserProfileStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
@@ -164,6 +294,26 @@ export default function MotorChatContainer() {
 
     addBotMessage();
   }, [currentStepId]);
+
+  // Login gate: called after user verifies OTP inside the motor journey
+  const handleLoginGateSuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName, phone: `+91${phone}` });
+
+    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.phone_gate', module: 'login' });
+    setShowWidget(false);
+
+    // Advance to quote.calculating
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'quote.calculating',
+        currentModule: 'quote',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState]);
 
   // Handle edit
   const handleEditRequest = (stepId: string) => {
@@ -493,6 +643,8 @@ export default function MotorChatContainer() {
         return <NpsFeedback onSubmit={(data) => handleResponse(data)} />;
       case 'app_download_cta':
         return <AppDownloadCta onComplete={() => handleResponse({})} />;
+      case 'login_gate':
+        return <MotorLoginGate onSuccess={handleLoginGateSuccess} />;
       default:
         return null;
     }
@@ -511,7 +663,7 @@ export default function MotorChatContainer() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--motor-chat-gradient)' }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--app-bg)' }}>
       {/* Scrollable chat messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-lg mx-auto">
@@ -566,10 +718,8 @@ export default function MotorChatContainer() {
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
             className="shrink-0 max-h-[45vh] overflow-y-auto"
             style={{
-              background: 'var(--motor-glass-bg)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              borderTop: '1px solid var(--motor-border)',
+              background: 'var(--app-bg)',
+              borderTop: '1px solid var(--motor-border, var(--app-border))',
               boxShadow: '0 -4px 40px var(--motor-shadow)',
             }}
           >

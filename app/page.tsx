@@ -630,224 +630,96 @@ function LobCard({
   );
 }
 
-/* ── Trust Disclaimer ── */
-function TrustDisclaimer() {
-  return (
-    <div className="px-4 pt-10 pb-4">
-      <p
-        className="text-[10px] leading-[14px] text-center"
-        style={{ color: 'var(--app-text-subtle)' }}
-      >
-        USD 44M | ARN: LROI | T&C apply
-      </p>
-    </div>
-  );
-}
-
-/* ── Award Badges ── */
-function AwardBadges() {
-  return (
-    <div className="px-4 pb-6">
-      <div className="flex gap-3">
-        {[
-          { image: `${BASE}/offerings/award-1.svg` },
-          { image: `${BASE}/offerings/award-2.svg` },
-        ].map((badge, i) => (
-          <div key={i} className="flex-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={badge.image} alt="Award badge" className="award-badge w-full h-auto object-contain" draggable={false} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Trust Heading ── */
-function TrustHeading() {
-  return (
-    <div className="px-4 pb-6 text-center">
-      <h2
-        className="text-[24px] font-semibold leading-[28px] tracking-[-0.1px]"
-        style={{ color: 'var(--app-text)' }}
-      >
-        Your trust isn&apos;t assumed,{' '}
-        <br />
-        its earned
-      </h2>
-    </div>
-  );
-}
-
-/* ── Stats Section ── */
-function StatsSection() {
-  const stats = [
-    { value: '7 mins', label: 'Fastest claim settlement' },
-    { value: '98.8%', label: 'Claims settled in 1 week' },
-    { value: '24x7', label: 'Instant claims support' },
+/* ── Why ACKO Section ── */
+function WhyAckoSection() {
+  const WHY_CARDS = [
+    {
+      icon: `${BASE}/icons/why-acko/icon-digital.svg`,
+      title: '100% Digital',
+      description: 'Buy, manage and claim - all online',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-claim.svg`,
+      title: '98.8%',
+      description: 'Claims settled in 1 week',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-support.svg`,
+      title: '24x7',
+      description: 'Instant claims support',
+    },
+    {
+      icon: `${BASE}/icons/why-acko/icon-pricing.svg`,
+      title: 'Honest Pricing',
+      description: 'No middle men & no hidden costs',
+    },
   ];
 
   return (
-    <div className="px-4 pb-6">
-      <div className="flex items-stretch">
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 text-center"
-            style={{
-              borderRight: i < stats.length - 1 ? '1px solid var(--app-border)' : 'none',
-            }}
-          >
-            <div
-              className="text-[18px] font-semibold leading-[24px]"
-              style={{ color: 'var(--app-stats-accent, #ac93ff)' }}
-            >
-              {stat.value}
-            </div>
-            <div className="text-[12px] leading-[14px] mt-1" style={{ color: 'var(--app-text-muted)' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Promises Heading ── */
-function PromisesHeading() { return null; }
-
-/* ── Testimonial ── */
-function TestimonialSection() {
-  return (
-    <div className="px-4 pb-4">
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--app-surface)',
-          border: '1px solid var(--app-border)',
-        }}
-      >
-        {/* Heading inside the card */}
-        <div className="px-5 pt-5 pb-4 text-center">
+    <div className="px-4 py-8">
+      <div className="flex flex-col gap-4">
+        {/* Heading */}
+        <div className="text-center mb-1">
           <h2
-            className="text-[20px] font-semibold leading-[26px]"
+            className="text-[24px] font-semibold leading-[30px]"
             style={{ color: 'var(--app-text)' }}
           >
-            Promises made. Promises kept.
+            Why ACKO ?
           </h2>
-        </div>
-
-        <div className="w-full h-px" style={{ background: 'var(--app-border)' }} />
-
-        {/* Review content */}
-        <div className="px-5 py-5">
-          <div className="flex justify-center gap-1 mb-4">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <svg key={s} width="20" height="20" viewBox="0 0 24 24" fill={s < 5 ? '#FBBF24' : 'none'} stroke="#FBBF24" strokeWidth="1.5">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            ))}
-          </div>
-          <p className="text-[14px] leading-[22px] text-center" style={{ color: 'var(--app-text)' }}>
-            &ldquo;My wife underwent an emergency C-section, and we visited a hospital outside ACKO&apos;s network, so we couldn&apos;t use their cashless service. After discharge, I applied for a reimbursement claim, and within one day, the funds were credited to my account.&rdquo;
+          <p
+            className="text-[14px] leading-[16px] mt-1"
+            style={{ color: 'var(--app-text-muted)' }}
+          >
+            Insurance that actually makes sense
           </p>
-          <div className="flex items-center gap-3 mt-5">
+        </div>
+
+        {/* Award banner */}
+        <div
+          className="flex items-center justify-center h-[88px] rounded-3xl overflow-hidden"
+          style={{ background: 'var(--app-surface-2)' }}
+        >
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${BASE}/icons/why-acko/award-laurel-left.svg`} alt="" className="h-12 w-auto" draggable={false} />
+            <div className="text-center leading-[19px]">
+              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
+                India&apos;s #1*
+              </p>
+              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
+                insurance app
+              </p>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${BASE}/icons/why-acko/award-laurel-right.svg`} alt="" className="h-12 w-auto" draggable={false} />
+          </div>
+        </div>
+
+        {/* 2×2 bento grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {WHY_CARDS.map((card) => (
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-semibold shrink-0"
-              style={{ background: 'var(--app-surface-2)', color: 'var(--app-text)' }}
+              key={card.title}
+              className="flex flex-col gap-1.5 h-[154px] rounded-3xl overflow-hidden p-5"
+              style={{ background: 'var(--app-surface-2)' }}
             >
-              S
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={card.icon} alt="" className="w-10 h-10 object-contain" draggable={false} />
+              <p
+                className="text-[16px] font-semibold leading-[22px] mt-1"
+                style={{ color: 'var(--app-text)' }}
+              >
+                {card.title}
+              </p>
+              <p
+                className="text-[14px] leading-[16px]"
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                {card.description}
+              </p>
             </div>
-            <div>
-              <div className="text-[14px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-                Sabik Edavanna
-              </div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>
-                ACKO health insurance
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-
-        <div className="w-full h-px" style={{ background: 'var(--app-border)' }} />
-
-        {/* See all reviews — full width inside card */}
-        <button
-          className="w-full h-[48px] rounded-b-2xl text-[16px] font-medium"
-          style={{ background: 'var(--app-cta-bg, #141414)', color: 'var(--app-cta-text, #fbfbfb)' }}
-        >
-          See all reviews
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── App Download Banner ── */
-function AppDownloadBanner() {
-  return (
-    <div className="px-4 py-6">
-      <div
-        className="p-5 rounded-3xl text-center"
-        style={{
-          background: 'linear-gradient(160deg, #8B5CF6 0%, #7C3AED 40%, #6D28D9 100%)',
-        }}
-      >
-        <h3 className="text-[28px] font-bold text-white leading-[34px] tracking-[-0.5px]">
-          Get India&apos;s #1<br />insurance app
-        </h3>
-        <p className="text-[14px] mt-2 leading-[20px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          12+ million app downloads
-        </p>
-
-        {/* Store rating cards */}
-        <div className="flex gap-3 mt-5">
-          {/* Play Store */}
-          <div
-            className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          >
-            {/* Play Store icon */}
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'white' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M3.18 23.76c.36.19.77.2 1.15.04l12.01-6.77-2.71-2.71L3.18 23.76z" fill="#EA4335"/>
-                <path d="M21.26 10.35L18.4 8.74l-3.07 3.08 3.07 3.07 2.88-1.62c.82-.46.82-1.65-.02-2.12v.2z" fill="#FBBC04"/>
-                <path d="M2.1.5C1.68.71 1.4 1.16 1.4 1.73v20.54c0 .57.28 1.02.7 1.23l.08.04 11.51-11.51v-.27L2.18.46 2.1.5z" fill="#4285F4"/>
-                <path d="M13.69 12l2.71-2.71-12-6.76c-.38-.16-.8-.15-1.15.04l11.44 9.43z" fill="#34A853"/>
-              </svg>
-            </div>
-            <div className="text-left">
-              <div className="text-[22px] font-bold text-white leading-[26px]">4.6</div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Play Store</div>
-            </div>
-          </div>
-
-          {/* App Store */}
-          <div
-            className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          >
-            {/* App Store icon */}
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#1B9BE8' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/>
-              </svg>
-            </div>
-            <div className="text-left">
-              <div className="text-[22px] font-bold text-white leading-[26px]">4.8</div>
-              <div className="text-[12px] leading-[16px]" style={{ color: 'rgba(255,255,255,0.6)' }}>App Store</div>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <button
-          className="w-full h-[52px] rounded-2xl text-[16px] font-bold mt-4"
-          style={{ background: 'white', color: '#1a1a1a' }}
-        >
-          Get the app
-        </button>
       </div>
     </div>
   );
@@ -1102,12 +974,7 @@ function GlobalHomepageInner() {
                 ))}
               </div>
 
-              <TrustDisclaimer />
-              <AwardBadges />
-              <TrustHeading />
-              <StatsSection />
-              <TestimonialSection />
-              <AppDownloadBanner />
+              <WhyAckoSection />
             </div>
             <PageFooter />
           </motion.div>

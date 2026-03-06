@@ -6,10 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AckoLogo from '../../components/AckoLogo';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
+import { readSessionCookie, writeSessionCookie, clearSessionCookie } from '../../lib/sessionCookie';
 import { useThemeStore } from '../../lib/themeStore';
-import dynamic from 'next/dynamic';
-
-const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const VALID_OTP = '0000';
@@ -80,9 +78,7 @@ function OtpInput({ onComplete, error }: { onComplete: (val: string) => void; er
   };
 
   const handleKeyDown = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      refs[i - 1].current?.focus();
-    }
+    if (e.key === 'Backspace' && !digits[i] && i > 0) refs[i - 1].current?.focus();
   };
 
   return (
@@ -113,6 +109,22 @@ function OtpInput({ onComplete, error }: { onComplete: (val: string) => void; er
   );
 }
 
+/* ── Logo animation ── */
+function LogoAnimation() {
+  return (
+    <div className="w-[84px] h-[84px]">
+      <video
+        src={`${BASE}/offerings/logo-animation.webm`}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{ width: 84, height: 84, objectFit: 'contain' }}
+      />
+    </div>
+  );
+}
+
 /* ── Main login form content ── */
 function LoginContent() {
   const router = useRouter();
@@ -122,39 +134,76 @@ function LoginContent() {
   const { theme } = useThemeStore();
   const isLight = theme === 'light';
 
+  // step 0 = phone (new) | returning recognition
+  // step 1 = OTP
+  // step 2 = name (new user only)
+  // step 3 = welcome
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpError, setOtpError] = useState(false);
-  const [animationData, setAnimationData] = useState<object | null>(null);
+  // Cookie stores name only — phone is always re-entered for security
+  const [returningUser, setReturningUser] = useState<{ firstName: string } | null>(null);
 
-  // If already logged in, redirect away
+  // Redirect if already logged in
   useEffect(() => {
     if (isLoggedIn) router.replace(nextRoute);
   }, [isLoggedIn, router, nextRoute]);
 
+  // Check session cookie on mount
   useEffect(() => {
-    fetch(`${BASE}/offerings/logo-animation.json`)
-      .then(r => r.json())
-      .then(d => setAnimationData(d))
-      .catch(() => {});
+    const session = readSessionCookie();
+    if (session) {
+      setReturningUser(session);
+      setName(session.firstName);
+    }
   }, []);
 
   const handleOtp = (val: string) => {
     if (val === VALID_OTP) {
       setOtpError(false);
       const state = detectPostLoginState(phone);
-      setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
-      buildPoliciesForState(state).forEach(p => addPolicy(p));
-      setStep(3);
-      setTimeout(() => router.replace('/'), 1200);
+      if (returningUser) {
+        // Returning user: name already known from cookie, skip name step → welcome
+        setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+        buildPoliciesForState(state).forEach(p => addPolicy(p));
+        writeSessionCookie({ firstName: name.trim() });
+        setStep(3);
+        setTimeout(() => router.replace(nextRoute), 1200);
+      } else {
+        // New user: collect name next
+        setStep(2);
+      }
     } else {
       setOtpError(true);
       setTimeout(() => setOtpError(false), 600);
     }
   };
 
-  const canContinue = step === 0 ? name.trim().length > 0 : step === 1 ? phone.replace(/\D/g, '').length === 10 : false;
+  const handleNameSubmit = () => {
+    if (!name.trim()) return;
+    const state = detectPostLoginState(phone);
+    setProfile({ firstName: name.trim(), phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName: name.trim() });
+    setStep(3);
+    setTimeout(() => router.replace(nextRoute), 1200);
+  };
+
+  const handleNotMe = () => {
+    clearSessionCookie();
+    setReturningUser(null);
+    setName('');
+    setPhone('');
+    setStep(0);
+  };
+
+  // canContinue drives the Continue button visibility
+  const canContinue =
+    step === 0 && !returningUser ? phone.replace(/\D/g, '').length === 10 :
+    step === 0 && returningUser ? false : // returning recognition screen uses its own buttons
+    step === 2 ? name.trim().length > 0 :
+    false;
 
   const stepVariants = {
     initial: { opacity: 0, y: 24 },
@@ -182,44 +231,48 @@ function LoginContent() {
         {/* Step content */}
         <div className="flex-1 flex flex-col px-5 pt-12">
           <AnimatePresence mode="wait">
-            {step === 0 && (
-              <motion.div key="step0" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
-                <div className="w-[84px] h-[84px]">
-                  {animationData
-                    ? <Lottie animationData={animationData} loop autoplay style={{ width: 84, height: 84 }} />
-                    : <div className="w-full h-full rounded-full" style={{ background: '#4e29bb' }} />
-                  }
+
+            {/* ── Returning user recognition ── */}
+            {step === 0 && returningUser && (
+              <motion.div key="returning" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
+                <LogoAnimation />
+                <div className="text-center space-y-1">
+                  <h1 className="text-[22px] font-semibold leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
+                    Welcome back,<br />{returningUser.firstName}! 👋
+                  </h1>
+                  <p className="text-[15px] leading-[22px]" style={{ color: 'var(--app-text-muted)' }}>
+                    Looks like you&apos;ve been here before.
+                  </p>
                 </div>
-                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  Hello,<br />What would you like us to call you?
-                </h1>
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Enter your name here"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canContinue && setStep(1)}
-                  className="w-full h-[52px] rounded-xl px-4 text-[16px] outline-none"
-                  style={{
-                    background: 'var(--app-surface)',
-                    border: '1.5px solid var(--app-border-strong)',
-                    color: 'var(--app-text)',
-                  }}
-                />
+                <div className="w-full flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      // Keep name, clear recognition screen → show phone input
+                      setReturningUser(prev => prev ? { ...prev } : null);
+                      setStep(1);
+                    }}
+                    className="w-full h-[52px] rounded-2xl text-[16px] font-semibold"
+                    style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+                  >
+                    Continue as {returningUser.firstName}
+                  </button>
+                  <button
+                    onClick={handleNotMe}
+                    className="w-full h-[44px] rounded-xl text-[14px] font-medium"
+                    style={{ color: 'var(--app-text-muted)' }}
+                  >
+                    Not me
+                  </button>
+                </div>
               </motion.div>
             )}
 
-            {step === 1 && (
-              <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
-                <div className="w-[84px] h-[84px]">
-                  {animationData
-                    ? <Lottie animationData={animationData} loop autoplay style={{ width: 84, height: 84 }} />
-                    : <div className="w-full h-full rounded-full" style={{ background: '#4e29bb' }} />
-                  }
-                </div>
+            {/* ── Step 0: Phone (new user) ── */}
+            {step === 0 && !returningUser && (
+              <motion.div key="step0" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
+                <LogoAnimation />
                 <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  Glad to have you here, {name}.<br />Can we get your phone number?
+                  What&apos;s your<br />mobile number?
                 </h1>
                 <div
                   className="w-full h-[52px] rounded-xl flex items-center overflow-hidden"
@@ -231,10 +284,10 @@ function LoginContent() {
                     autoFocus
                     type="tel"
                     inputMode="numeric"
-                    placeholder="Enter your phone number here"
+                    placeholder="Enter your phone number"
                     value={phone}
                     onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    onKeyDown={e => e.key === 'Enter' && canContinue && setStep(2)}
+                    onKeyDown={e => e.key === 'Enter' && canContinue && setStep(1)}
                     className="flex-1 h-full px-3 text-[16px] outline-none bg-transparent"
                     style={{ color: 'var(--app-text)' }}
                   />
@@ -245,22 +298,18 @@ function LoginContent() {
                 >
                   <LightbulbIcon />
                   <p className="text-[13px] leading-[18px]" style={{ color: 'var(--app-text-muted)' }}>
-                    This helps us save your progress, so you can continue from where you left off.
+                    We&apos;ll save your progress and help you pick up right where you left off.
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {step === 2 && (
-              <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
-                <div className="w-[84px] h-[84px]">
-                  {animationData
-                    ? <Lottie animationData={animationData} loop autoplay style={{ width: 84, height: 84 }} />
-                    : <div className="w-full h-full rounded-full" style={{ background: '#4e29bb' }} />
-                  }
-                </div>
+            {/* ── Step 1: OTP ── */}
+            {step === 1 && (
+              <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
+                <LogoAnimation />
                 <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  Please type in the OTP sent to your phone number.
+                  Enter the OTP sent<br />to +91 {phone}
                 </h1>
                 <OtpInput onComplete={handleOtp} error={otpError} />
                 {otpError && (
@@ -271,6 +320,31 @@ function LoginContent() {
               </motion.div>
             )}
 
+            {/* ── Step 2: Name (new user only) ── */}
+            {step === 2 && (
+              <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
+                <LogoAnimation />
+                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
+                  Almost there!<br />What should we call you?
+                </h1>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && name.trim() && handleNameSubmit()}
+                  className="w-full h-[52px] rounded-xl px-4 text-[16px] outline-none"
+                  style={{
+                    background: 'var(--app-surface)',
+                    border: '1.5px solid var(--app-border-strong)',
+                    color: 'var(--app-text)',
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* ── Step 3: Welcome ── */}
             {step === 3 && (
               <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <SuccessBadge />
@@ -279,12 +353,13 @@ function LoginContent() {
                 </p>
               </motion.div>
             )}
+
           </AnimatePresence>
         </div>
 
-        {/* Continue button — appears only once user has typed something */}
+        {/* Continue button */}
         <AnimatePresence>
-          {step < 2 && canContinue && (
+          {canContinue && (
             <motion.div
               key={`cta-step-${step}`}
               initial={{ opacity: 0, y: 16 }}
@@ -294,7 +369,7 @@ function LoginContent() {
               className="px-5 pb-10 pt-4"
             >
               <button
-                onClick={() => setStep(s => s + 1)}
+                onClick={step === 0 ? () => setStep(1) : handleNameSubmit}
                 className="w-full h-[52px] rounded-2xl text-[16px] font-semibold"
                 style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
               >
@@ -303,13 +378,15 @@ function LoginContent() {
             </motion.div>
           )}
         </AnimatePresence>
-        {step === 2 && (
+
+        {step === 1 && (
           <div className="px-5 pb-10 pt-4">
             <p className="text-center text-[13px]" style={{ color: 'var(--app-text-muted)' }}>
               Enter <strong>0000</strong> to verify
             </p>
           </div>
         )}
+
       </div>
     </div>
   );
