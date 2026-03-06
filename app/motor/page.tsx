@@ -188,7 +188,7 @@ function seedDemoPolicy(vehicleType: VehicleType) {
 
 function MotorJourneyInner() {
   const store = useMotorStore();
-  const { updateState, resetJourney, setLanguage } = store;
+  const { updateState, resetJourney, setLanguage, addMessage } = store;
   const userName = store.userName;
   const theme = useThemeStore((s) => s.theme);
   const globalLanguage = useLanguageStore((s) => s.language);
@@ -378,12 +378,28 @@ function MotorJourneyInner() {
               <LoginChatFlow
                 onSuccess={(intent) => {
                   const vt: VehicleType = vehicleParam === 'bike' ? 'bike' : 'car';
+                  const profileName = useUserProfileStore.getState().firstName || '';
+                  const vLabel = vt === 'bike' ? 'bike' : 'car';
+
                   if (intent === 'insure_new') {
                     handleJumpTo('manual_entry.congratulations', vt);
+                    updateState({ vehicleEntryType: 'brand_new' } as Partial<MotorJourneyState>);
                   } else if (intent === 'continue_quote') {
                     handleJumpTo('quote.plan_selection', vt);
                   } else {
-                    handleJumpTo('registration.has_number', vt);
+                    handleJumpTo('registration.enter_number', vt);
+                    updateState({ vehicleEntryType: 'existing' } as Partial<MotorJourneyState>);
+                  }
+
+                  // Seed the motor chat with LoginChatFlow messages for a seamless single-thread experience
+                  const greeting = profileName ? `Nice to meet you, ${profileName}!` : 'Nice to meet you!';
+                  addMessage({ type: 'bot', content: `Hello! What would you like us to call you?`, stepId: 'login.name', module: 'registration' });
+                  addMessage({ type: 'user', content: profileName || 'User', stepId: 'login.name', module: 'registration' });
+                  addMessage({ type: 'bot', content: `${greeting} What would you like to do today?`, stepId: 'login.intent', module: 'registration' });
+                  if (intent === 'insure_new') {
+                    addMessage({ type: 'user', content: `Insure a new ${vLabel}`, stepId: 'login.intent', module: 'registration' });
+                  } else if (intent !== 'continue_quote') {
+                    addMessage({ type: 'user', content: 'Renew my insurance', stepId: 'login.intent', module: 'registration' });
                   }
                 }}
                 onBack={() => window.history.back()}

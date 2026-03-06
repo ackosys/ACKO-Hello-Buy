@@ -112,8 +112,29 @@ const entryNameAck: ConversationStep = {
     };
   },
   processResponse: () => ({}),
+  getNextStep: () => 'login.early_gate',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: LOGIN EARLY GATE — Skippable phone+OTP right after name
+   ═══════════════════════════════════════════════ */
+
+const loginEarlyGate: ConversationStep = {
+  id: 'login.early_gate',
+  module: 'entry',
+  widgetType: 'login_gate_skippable',
+  getScript: (_persona, state) => {
+    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const greeting = name ? `Nice to meet you, ${name}!` : 'Great!';
+    return {
+      botMessages: [
+        greeting,
+        `Verify your mobile number to save your progress — or skip for now.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
   getNextStep: (_, state) => {
-    // If coming from landing page with specific intent, skip the intent selection
     if (state.intent === 'check_gaps') return 'gap_analysis.intro';
     if (state.intent === 'switch') return 'gap_analysis.switch_intro';
     return 'intent.readiness';
@@ -1152,6 +1173,30 @@ const customizationSIRebuttal: ConversationStep = {
 };
 
 /* ═══════════════════════════════════════════════
+   MODULE: LOGIN GATE — Phone+OTP before showing plans
+   Shown only when the user has not logged in yet.
+   ═══════════════════════════════════════════════ */
+
+const loginPhoneGate: ConversationStep = {
+  id: 'login.phone_gate',
+  module: 'recommendation',
+  widgetType: 'login_gate',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: (persona, state) => {
+    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const greeting = name ? `Almost there, ${name}!` : 'Almost there!';
+    return {
+      botMessages: [
+        greeting,
+        `To show your personalized plans and save your progress, please verify your mobile number.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'recommendation.result',
+};
+
+/* ═══════════════════════════════════════════════
    MODULE: RECOMMENDATION
    ═══════════════════════════════════════════════ */
 
@@ -1166,7 +1211,7 @@ const recommendationCalculating: ConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'recommendation.result',
+  getNextStep: () => 'login.phone_gate',
 };
 
 const recommendationResult: ConversationStep = {
@@ -1668,6 +1713,10 @@ export const STEPS: Record<string, ConversationStep> = {
   /* Sum Insured */
   'customization.si_selection': customizationSI,
   'customization.si_rebuttal': customizationSIRebuttal,
+
+  /* Login Gates */
+  'login.early_gate': loginEarlyGate,
+  'login.phone_gate': loginPhoneGate,
 
   /* Recommendation */
   'recommendation.calculating': recommendationCalculating,

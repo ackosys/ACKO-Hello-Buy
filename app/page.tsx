@@ -210,6 +210,7 @@ function HeaderPill({
   onThemeCycle,
   onLangCycle,
   onResetFTU,
+  onLogout,
   langLabel,
 }: {
   isLoggedIn: boolean;
@@ -220,6 +221,7 @@ function HeaderPill({
   onThemeCycle: () => void;
   onLangCycle: () => void;
   onResetFTU: () => void;
+  onLogout: () => void;
   langLabel: string;
 }) {
   const router = useRouter();
@@ -335,6 +337,21 @@ function HeaderPill({
                       </svg>
                       Lang: {langLabel}
                     </button>
+                    {isLoggedIn && (
+                      <button
+                        onClick={() => { onToggleMenu(); onLogout(); }}
+                        className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
+                        style={{
+                          color: isLight ? '#121212' : 'rgba(255,255,255,0.85)',
+                          borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                        </svg>
+                        Log out
+                      </button>
+                    )}
                     <button
                       onClick={onResetFTU}
                       className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
@@ -720,7 +737,7 @@ function WhyAckoSection() {
           {WHY_ITEMS.map((item) => (
             <div
               key={item.title}
-              className="flex items-center gap-4 p-2 rounded-lg"
+              className="flex items-center gap-4 h-[72px] px-3 py-2 rounded-lg"
               style={{ background: isDark ? 'var(--app-surface)' : 'white' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -847,6 +864,12 @@ function GlobalHomepageInner() {
     setJourneyLang(next);
   }, [language, setGlobalLang, setJourneyLang]);
 
+  const handleLogout = useCallback(() => {
+    useUserProfileStore.getState().setProfile({ isLoggedIn: false, firstName: '', phone: '' });
+    localStorage.removeItem('acko_user_profile');
+    window.location.href = BASE || '/';
+  }, []);
+
   const handleResetFTU = useCallback(() => {
     setShowMenu(false);
     clearAllSnapshots();
@@ -926,6 +949,7 @@ function GlobalHomepageInner() {
                 onThemeCycle={() => { cycleTheme(); }}
                 onLangCycle={handleLanguageCycle}
                 onResetFTU={handleResetFTU}
+                onLogout={handleLogout}
                 langLabel={LANG_LABELS[language as string] || language}
               />
 

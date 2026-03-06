@@ -185,7 +185,7 @@ const lifeNameAck: ConversationStep<LifeJourneyState> = {
     };
   },
   processResponse: (_response, _state) => ({}),
-  getNextStep: (_response, _state) => 'life_basic_gender',
+  getNextStep: (_response, _state) => 'life_login_gate',
 };
 
 // Path choice — "I know my coverage" vs "Help me decide"
@@ -605,6 +605,30 @@ const lifeDqHabits: ConversationStep<LifeJourneyState> = {
     alcoholConsumption: (response === 'drink_only' || response === 'both') ? 'occasional' as const : 'never' as const,
   }),
   getNextStep: (_response, _state) => 'life_dq_income',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: LOGIN GATE — Phone+OTP at the start of the life journey
+   Shown right after name collection, before any personal questions.
+   Skipped if the user is already logged in.
+   ═══════════════════════════════════════════════ */
+
+const lifeLoginGate: ConversationStep<LifeJourneyState> = {
+  id: 'life_login_gate',
+  module: 'basic_info',
+  widgetType: 'login_gate',
+  getScript: (_persona, state) => {
+    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const greeting = name ? `Great, ${name}!` : 'Great!';
+    return {
+      botMessages: [
+        greeting,
+        `Before we dive in, please verify your mobile number so we can save your progress and personalize your experience.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'life_basic_gender',
 };
 
 const lifeDqIncome: ConversationStep<LifeJourneyState> = {
@@ -1739,6 +1763,9 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeEducationWhatIs,
   lifeCommonMyths,
   lifeMythsDetailed,
+
+  // Login gate (shared between DQ and guided paths)
+  lifeLoginGate,
 
   // Direct quote path (legacy)
   lifeDqGender,

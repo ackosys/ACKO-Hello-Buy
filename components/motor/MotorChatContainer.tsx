@@ -81,21 +81,14 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.215, 0.61, 0.355, 1] }}
-      className="mt-2 mb-4 rounded-2xl overflow-hidden"
-      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
-    >
+    <div className="max-w-sm">
       {gateStep === 'phone' ? (
-        <div className="p-4 flex flex-col gap-3">
+        <>
           <div
-            className="w-full h-[52px] rounded-xl flex items-center overflow-hidden"
-            style={{ border: '1.5px solid var(--motor-border-strong)', background: 'var(--motor-bg)' }}
+            className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm"
           >
-            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0" style={{ color: 'var(--motor-text-muted)' }}>+91</span>
-            <div className="w-px h-5 shrink-0" style={{ background: 'var(--motor-border-strong)' }} />
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
             <input
               autoFocus
               type="tel"
@@ -104,25 +97,23 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
-              className="flex-1 h-full px-3 text-[15px] outline-none bg-transparent"
-              style={{ color: 'var(--motor-text)' }}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
             />
           </div>
-          <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
+          <p className="text-caption text-white/40 mt-1.5 text-center">
             We&apos;ll save your progress so you can continue from where you left off
           </p>
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
-            className="w-full h-[48px] rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
           >
             Send OTP
           </button>
-        </div>
+        </>
       ) : (
-        <div className="p-4 flex flex-col gap-3">
-          <p className="text-[13px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">
             OTP sent to +91 {phone}
           </p>
           <motion.div
@@ -140,23 +131,23 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
                 value={d}
                 onChange={e => handleOtpChange(i, e.target.value)}
                 onKeyDown={e => handleOtpKeyDown(i, e)}
-                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all"
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
                 style={{
-                  background: 'var(--motor-bg)',
-                  border: otpError ? '2px solid #ef4444' : d ? '2px solid var(--motor-cta-bg, #6D28D9)' : '1.5px solid var(--motor-border-strong)',
-                  color: 'var(--motor-text)',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
                 }}
               />
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-[12px] text-center" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
           ) : (
-            <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>Enter <strong>0000</strong> to verify</p>
+            <p className="text-caption text-white/40 text-center mt-2">Enter <strong>0000</strong> to verify</p>
           )}
-        </div>
+        </>
       )}
-    </motion.div>
+    </div>
   );
 }
 

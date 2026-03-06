@@ -36,6 +36,124 @@ import { LifeRiderCards } from './LifeRiderCards';
 import { useFinancialFlow, FinancialInlineMessages, FinancialInputWidget } from './FinancialChatFlow';
 import { useUnderwritingFlow, UnderwritingInlineMessages, UnderwritingInputWidget } from './UnderwritingChatFlow';
 import type { LifeJourneyState } from '../../lib/life/types';
+import { useUserProfileStore } from '../../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
+import { writeSessionCookie } from '../../lib/sessionCookie';
+
+const VALID_OTP = '0000';
+
+function LifeLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
+  const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const ref0 = useRef<HTMLInputElement>(null);
+  const ref1 = useRef<HTMLInputElement>(null);
+  const ref2 = useRef<HTMLInputElement>(null);
+  const ref3 = useRef<HTMLInputElement>(null);
+  const otpRefs = [ref0, ref1, ref2, ref3];
+
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
+  const handlePhoneSubmit = () => {
+    if (!phoneCanSubmit) return;
+    setGateStep('otp');
+    setTimeout(() => otpRefs[0].current?.focus(), 150);
+  };
+
+  const handleOtpChange = (i: number, val: string) => {
+    const d = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[i] = d;
+    setDigits(next);
+    if (d && i < 3) otpRefs[i + 1].current?.focus();
+    if (next.every(x => x !== '')) {
+      const otp = next.join('');
+      if (otp === VALID_OTP) {
+        setOtpError(false);
+        onSuccess(phone);
+      } else {
+        setOtpError(true);
+        setTimeout(() => { setOtpError(false); setDigits(['', '', '', '']); }, 600);
+        setTimeout(() => otpRefs[0].current?.focus(), 650);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) otpRefs[i - 1].current?.focus();
+  };
+
+  return (
+    <div className="max-w-sm">
+      {gateStep === 'phone' ? (
+        <>
+          <div
+            className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm"
+          >
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
+            <input
+              autoFocus
+              type="tel"
+              inputMode="numeric"
+              placeholder="Enter your mobile number"
+              value={phone}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
+            />
+          </div>
+          <p className="text-caption text-white/40 mt-1.5 text-center">
+            We&apos;ll save your progress so you can continue from where you left off
+          </p>
+          <button
+            onClick={handlePhoneSubmit}
+            disabled={!phoneCanSubmit}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+          >
+            Send OTP
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">
+            OTP sent to +91 {phone}
+          </p>
+          <motion.div
+            className="flex gap-2 justify-center"
+            animate={otpError ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleOtpChange(i, e.target.value)}
+                onKeyDown={e => handleOtpKeyDown(i, e)}
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
+                }}
+              />
+            ))}
+          </motion.div>
+          {otpError ? (
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+          ) : (
+            <p className="text-caption text-white/40 text-center mt-2">Enter <strong>0000</strong> to verify</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function LifeChatContainer() {
   const {
@@ -303,6 +421,26 @@ export default function LifeChatContainer() {
     }, 300);
   }, [currentStepId, resolvedPersona, router]);
 
+  const { setProfile, addPolicy } = useUserProfileStore();
+
+  const handleLoginGateSuccess = useCallback((phone: string) => {
+    const loginState = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName });
+
+    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'life_login_gate', module: 'basic_info' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'life_basic_gender',
+        currentModule: 'basic_info',
+      } as Partial<LifeJourneyState>);
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState]);
+
   // Determine if widget is large (renders inline in chat) or small (bottom sheet)
   const isLargeWidget = () => {
     const step = getLifeStep(currentStepId);
@@ -387,6 +525,8 @@ export default function LifeChatContainer() {
         return <LifeNpsFeedback onSubmit={(data) => handleResponse(data)} />;
       case 'app_download_cta':
         return <LifeAppDownloadCta onComplete={() => handleResponse({})} />;
+      case 'login_gate':
+        return <LifeLoginGate onSuccess={handleLoginGateSuccess} />;
       case 'financial_screen':
       case 'underwriting_status':
         return null;
