@@ -1999,47 +1999,199 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
    Payment
    ═══════════════════════════════════════════════════════ */
 
-export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
-  const t = useT();
+const HEALTH_PAYMENT_METHODS = [
+  { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: (
+    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+  )},
+  { id: 'card', label: 'Card', desc: 'Visa, Mastercard, RuPay', icon: (
+    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+  )},
+  { id: 'netbanking', label: 'Net Banking', desc: 'All major banks', icon: (
+    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
+  )},
+  { id: 'wallet', label: 'Wallet', desc: 'Paytm, Amazon Pay', icon: (
+    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 110-6h5.25A2.25 2.25 0 0121 6v6zm0 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5" /></svg>
+  )},
+];
+
+export function HealthPaymentSheet({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) {
   const selectedPlan = useJourneyStore(s => s.selectedPlan);
   const sumInsured = useJourneyStore(s => s.sumInsured);
   const members = useJourneyStore(s => s.members);
   const hasConditions = useJourneyStore(s => s.hasConditions);
   const paymentFrequency = useJourneyStore(s => s.paymentFrequency);
-  const [processing, setProcessing] = useState(false);
-  const [complete, setComplete] = useState(false);
   const language = useJourneyStore(s => s.language);
   const plan = selectedPlan ? getPlanDetails(selectedPlan.tier, sumInsured, members, hasConditions, language) : null;
-  const premium = plan ? (paymentFrequency === 'monthly' ? plan.monthlyPremium : plan.yearlyPremium) : 0;
+  const isMonthly = paymentFrequency === 'monthly';
+  const premium = plan ? (isMonthly ? plan.monthlyPremium : plan.yearlyPremium) : 0;
+
+  const [stage, setStage] = useState<'payment_select' | 'payment_processing' | 'payment_success'>('payment_select');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
 
   const handlePay = () => {
-    setProcessing(true);
-    setTimeout(() => { setProcessing(false); setComplete(true); setTimeout(onSuccess, 800); }, 2500);
+    if (!selectedPaymentMethod) return;
+    setStage('payment_processing');
+    setTimeout(() => {
+      setStage('payment_success');
+      setTimeout(() => onComplete(), 2200);
+    }, 2000);
+  };
+
+  const handleClose = () => {
+    if (stage === 'payment_processing' || stage === 'payment_success') return;
+    onSkip();
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md">
-      <div className="bg-white border-2 border-onyx-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-baseline justify-between mb-5 pb-4 border-b border-onyx-100">
-          <span className="text-body-md text-onyx-500">{t.widgets.amount}</span>
-          <span className="text-heading-md text-purple-700">{formatCurrency(premium)}<span className="text-body-sm text-onyx-500 ml-1">{paymentFrequency === 'monthly' ? '/mo' : '/yr'}</span></span>
-        </div>
-        {complete ? (
-          <div className="text-center py-4">
-            <svg className="w-10 h-10 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <p className="text-heading-sm text-green-600 mt-2">{t.widgets.paymentSuccessful}</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+      onClick={handleClose}
+    >
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-t-3xl flex flex-col"
+        style={{ height: '95vh', background: '#1C1C1F', border: '1px solid rgba(255,255,255,0.12)', borderBottom: 'none' }}
+      >
+        <div className="px-5 pt-5 pb-3 flex-shrink-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-[13px] text-white/40 font-medium">Payment Gateway</p>
+            </div>
+            {stage === 'payment_select' && (
+              <button onClick={handleClose} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-white/10">
+                <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            )}
           </div>
-        ) : (
-          <button onClick={handlePay} disabled={processing}
-            className="w-full py-3.5 bg-purple-600 text-white rounded-xl text-label-lg font-semibold hover:bg-purple-700 disabled:opacity-60 transition-all active:scale-[0.97]">
-            {processing ? t.common.processing : t.widgets.pay(formatCurrency(premium))}
-          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 pb-4">
+          {stage !== 'payment_success' && (
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              {/* Merchant header */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8">
+                <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white">ACKO Insurance</p>
+                  <p className="text-xs text-white/40">Health Insurance &middot; {selectedPlan?.name || 'Plan'}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[10px] text-white/40 uppercase">Amount</p>
+                  <p className="text-lg font-bold text-white">{formatCurrency(premium)}</p>
+                </div>
+              </div>
+
+              <div className="px-5 py-4">
+                {stage === 'payment_select' && (
+                  <>
+                    <h3 className="text-lg font-bold text-white mb-1">Payment Method</h3>
+                    <p className="text-xs text-white/40 mb-4">Choose how you&apos;d like to pay</p>
+                    <div className="space-y-2.5">
+                      {HEALTH_PAYMENT_METHODS.map(method => (
+                        <button
+                          key={method.id}
+                          onClick={() => setSelectedPaymentMethod(method.id)}
+                          className="w-full flex items-center gap-3.5 px-4 py-4 rounded-xl transition-all text-left"
+                          style={{
+                            background: selectedPaymentMethod === method.id ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
+                            border: selectedPaymentMethod === method.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                          }}
+                        >
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                            {method.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white">{method.label}</p>
+                            <p className="text-xs text-white/40 mt-0.5">{method.desc}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedPaymentMethod === method.id ? 'border-purple-400 bg-purple-500' : 'border-white/20'}`}>
+                            {selectedPaymentMethod === method.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {stage === 'payment_processing' && (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'rgba(124,58,237,0.4)', borderTopColor: 'transparent' }} />
+                    <p className="text-sm text-white/50">Redirecting to payment gateway...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {stage === 'payment_success' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            >
+              <div className="rounded-2xl overflow-hidden py-10 px-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
+                <div className="flex flex-col items-center text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.15 }}
+                    className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-5"
+                  >
+                    <motion.svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <motion.path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.3 }} />
+                    </motion.svg>
+                  </motion.div>
+                  <motion.h3 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-xl font-bold text-white mb-1">
+                    Payment Successful!
+                  </motion.h3>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="text-white/50 text-sm">
+                    {selectedPlan?.name} plan secured
+                  </motion.p>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-5 flex items-center gap-2 text-white/40 text-xs">
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" /></svg>
+                    Setting up your policy...
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {stage === 'payment_select' && (
+          <div className="px-5 py-4 flex-shrink-0">
+            <button
+              onClick={handlePay}
+              disabled={!selectedPaymentMethod}
+              className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-600/30"
+              style={{ background: selectedPaymentMethod ? 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' : 'rgba(124,58,237,0.3)', color: '#fff' }}
+            >
+              Pay {formatCurrency(premium)}{isMonthly ? '/mo' : ''}
+            </button>
+            <p className="text-[11px] text-white/30 text-center mt-2">Secure payment &middot; 30-day free look period</p>
+          </div>
         )}
-      </div>
-      <p className="text-caption text-onyx-400 text-center mt-2 flex items-center justify-center gap-1">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-        {t.common.securedBy}
-      </p>
+
+        {stage === 'payment_processing' && (
+          <div className="px-5 py-4 flex-shrink-0">
+            <button
+              onClick={onComplete}
+              className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] shadow-lg shadow-purple-600/30"
+              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', color: '#fff' }}
+            >
+              I&apos;ve Completed
+            </button>
+          </div>
+        )}
+      </motion.div>
     </motion.div>
   );
 }

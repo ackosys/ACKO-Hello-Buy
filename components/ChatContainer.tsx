@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../lib/store';
 import { getStep, getCoverageReplyLabel } from '../lib/scripts';
@@ -17,7 +18,7 @@ import {
   ReviewSummary,
   ConsentWidget,
   HealthSummaryCard,
-  PaymentWidget,
+  HealthPaymentSheet,
   LabScheduleWidget,
   HospitalList,
   Celebration,
@@ -373,6 +374,8 @@ export default function ChatContainer() {
       userLabel = 'Date of birth submitted for all members';
     } else if (step.widgetType === 'usp_cards') {
       userLabel = 'Got it, let\'s find a plan';
+    } else if (step.widgetType === 'payment_screen') {
+      userLabel = 'Payment completed ✓';
     }
 
     addMessage({
@@ -527,8 +530,8 @@ export default function ChatContainer() {
         return <DobCollectionWidget onConfirm={(resp: string) => handleResponse(resp)} />;
       case 'usp_cards':
         return <UspCards onContinue={() => handleResponse('seen_usps')} />;
-      case 'payment_widget':
-        return <PaymentWidget onSuccess={() => handleResponse('paid')} />;
+      case 'payment_screen':
+        return null;
       case 'lab_schedule_widget':
         return <LabScheduleWidget onComplete={() => handleResponse('scheduled')} />;
       case 'hospital_list':
@@ -554,7 +557,13 @@ export default function ChatContainer() {
   const isLargeWidget = () => {
     const step = getStep(currentStepId);
     if (!step) return false;
-    return ['plan_switcher', 'review_summary', 'payment_widget', 'lab_schedule_widget', 'celebration', 'calculation', 'pdf_upload', 'gap_results', 'confirm_details', 'usp_cards'].includes(step.widgetType);
+    return ['plan_switcher', 'review_summary', 'lab_schedule_widget', 'celebration', 'calculation', 'pdf_upload', 'gap_results', 'confirm_details', 'usp_cards'].includes(step.widgetType);
+  };
+
+  const isOverlayWidget = () => {
+    const step = getStep(currentStepId);
+    if (!step) return false;
+    return ['payment_screen'].includes(step.widgetType);
   };
 
   return (
@@ -600,7 +609,7 @@ export default function ChatContainer() {
 
       {/* Sticky bottom widget for input-type widgets */}
       <AnimatePresence>
-        {showWidget && !isLargeWidget() && (
+        {showWidget && !isLargeWidget() && !isOverlayWidget() && (
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -663,6 +672,19 @@ export default function ChatContainer() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Payment Bottom Sheet Overlay */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showWidget && isOverlayWidget() && (
+            <HealthPaymentSheet
+              onComplete={() => handleResponse('paid')}
+              onSkip={() => handleResponse('paid')}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Edit Widget Bottom Sheet / Full Overlay */}
       <AnimatePresence>

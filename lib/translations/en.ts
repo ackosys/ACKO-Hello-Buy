@@ -731,8 +731,8 @@ export const en = {
   scripts: {
     // Entry
     welcomeExisting: (name: string) => `Welcome back, ${name}! You trust us with your car — now let's make sure your health is covered too.\n\nThink of this as a conversation, not a form. I'll ask you a few things to find the best plan for your family.`,
-    welcomeNew: `Hi! 👋\n\nWelcome to ACKO Health Insurance — **100% hospital bills paid** (including consumables), **no room rent limit**, and **10% Inflation Protect** so your cover grows every year automatically.\n\nLet's find the right plan for you through a quick conversation.`,
-    welcomeUsp: `Takes under 2 minutes. I'll ask a few quick questions — no jargon, no sales pitch.`,
+    welcomeNew: `Hi! 👋\n\nWelcome to ACKO Health Insurance.\n\n✅ 100% hospital bills paid (incl. consumables)\n\n✅ No room rent limit\n\n✅ 10% Inflation Protect — cover grows every year\n\nLet's find the right plan for you.\n\nThis takes under 2 minutes — just a few quick questions, no jargon.`,
+    welcomeUsp: `This takes under 2 minutes — just a few quick questions, no jargon.`,
     welcomeGapCheck: `Hi! 👋\n\nLet's check if your current coverage is truly enough. Most people find out they're underinsured only when it's too late.\n\nFirst, let me know your name.`,
     welcomeSwitch: `Hi! 👋\n\nLooking to switch to ACKO? I'll help you compare what you currently have with what ACKO offers — including preserving your waiting period credits and no-claim bonus.\n\nFirst, let me know your name.`,
     askName: "What's your full name (as per Aadhaar)? We need this for the policy — it should match your ID.",
