@@ -34,7 +34,7 @@ export default function ThemeToggle({ className }: ThemeToggleProps) {
       }}
       title={`Theme: ${theme}`}
     >
-      {THEME_ICONS[theme]}
+      {THEME_ICONS[theme as keyof typeof THEME_ICONS] ?? THEME_ICONS.dark}
     </button>
   );
 }

@@ -582,6 +582,7 @@ export const en = {
     hinglish: 'Hinglish',
     tamil: 'Tamil',
     malayalam: 'Malayalam',
+    telugu: 'Telugu',
     confirmSchedule: 'Confirm schedule',
     labVisitRequired: 'Lab visit required',
     homeSampleCollection: 'Home sample collection',

@@ -22,7 +22,7 @@ const THEME_ICONS: Record<string, React.ReactNode> = {
 const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
 
 const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം' };
+const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം', te: 'తెలుగు' };
 
 export default function MotorHeader() {
   const { currentModule, vehicleType, updateState, resetJourney } = useMotorStore();

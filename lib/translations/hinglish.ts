@@ -541,6 +541,7 @@ export const hinglish: T = {
     hinglish: 'Hinglish',
     tamil: 'Tamil',
     malayalam: 'Malayalam',
+    telugu: 'Telugu',
     confirmSchedule: 'Schedule confirm karein',
     labVisitRequired: 'Lab visit zaroori hai',
     homeSampleCollection: 'Ghar pe sample collection',
@@ -728,6 +729,26 @@ export const hinglish: T = {
     whoToCoverQ: 'Kisko cover karna chahenge? Isse mujhe sahi plan type choose karne mein madad milegi — individual plans, family floaters, aur parent plans alag-alag kaam karte hain.',
     coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
     coverageReplyOnlyParents: 'Parents only',
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `Milke bahut khushi hui, ${name}!` : 'Great!',
+    loginEarlyVerify: 'Apna mobile number verify karein aur progress save karein — ya abhi ke liye skip karein.',
+
+    // Family ages
+    spouseAgeQ: 'Aur aapke spouse ki umar kitni hai?',
+    spouseAgePlaceholder: 'Spouse ki umar',
+    parentAgeQ: (who: string, isMultiple: boolean) => `${who} ki umar kitni hai?${isMultiple ? ' Sabse bade parent ki umar enter karein.' : ''}`,
+    parentAgePlaceholder: 'Sabse bade parent ki umar',
+
+    // Customization / review
+    customizeReady: 'Samajh gaye? Coverage options dekhne ke liye ready hain?',
+
+    // Payment method
+    paymentMethodQ: 'Aap kaise payment karna chahenge? Apna preferred payment method choose karein.',
+
+    // Medical summary
+    medicalSummaryIntro: 'Yahan aapka Medical Summary evaluation se hai:',
+    medicalSummaryConfirm: 'Aage badhne se pehle please confirm karein ki yeh summary sahi hai.',
     coverAckSelf: (name: string) => `Badhiya choice, ${name}. Pehle khud ko cover karna sabse smart financial decision hai — ye kuch unexpected hone pe aapki income aur savings protect karta hai.`,
     coverAckParentsSpouse: (name: string, count: number) => `Bohot achha approach, ${name}. ${count} family members ko saath mein cover karna sabse zyada peace of mind deta hai. Chaliye sabki umar samajhte hain.`,
     coverAckParents: (name: string) => `Bohot soch-samajhke kiya, ${name}. Apne parents ko cover karna unke liye sabse achhi cheez hai. 45 ke baad, hospitalisation risk har decade mein double ho jaata hai.`,

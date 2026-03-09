@@ -513,7 +513,7 @@ export const kn: T = {
     speaking: 'ಮಾತನಾಡುತ್ತಿದ್ದಾರೆ...', listening: 'ಆಲಿಸುತ್ತಿದ್ದಾರೆ',
     listeningEllipsis: 'ಆಲಿಸುತ್ತಿದ್ದಾರೆ...',
     langPreference: 'ಭಾಷಾ ಆದ್ಯತೆ',
-    english: 'English', hindi: 'हिन्दी', kannada: 'ಕನ್ನಡ', hinglish: 'Hinglish', tamil: 'Tamil', malayalam: 'Malayalam',
+    english: 'English', hindi: 'हिन्दी', kannada: 'ಕನ್ನಡ', hinglish: 'Hinglish', tamil: 'Tamil', malayalam: 'Malayalam', telugu: 'Telugu',
     confirmSchedule: 'ವೇಳಾಪಟ್ಟಿ ದೃಢೀಕರಿಸಿ',
     labVisitRequired: 'ಲ್ಯಾಬ್ ಭೇಟಿ ಅಗತ್ಯ', homeSampleCollection: 'ಮನೆ ಮಾದರಿ ಸಂಗ್ರಹ',
     ecgTests: 'ECG, Echo, USG + ರಕ್ತ ಮತ್ತು ಮೂತ್ರ ಪರೀಕ್ಷೆ',
@@ -688,6 +688,26 @@ export const kn: T = {
     whoToCoverQ: 'ಯಾರನ್ನು ಕವರ್ ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?',
     coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
     coverageReplyOnlyParents: 'Parents only',
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `ಭೇಟಿಯಾಗಿ ಸಂತೋಷವಾಯಿತು, ${name}!` : 'ಒಳ್ಳೆಯದು!',
+    loginEarlyVerify: 'ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಪರಿಶೀಲಿಸಿ ಪ್ರಗತಿ ಉಳಿಸಿ — ಅಥವಾ ಈಗ ಬಿಟ್ಟುಬಿಡಿ.',
+
+    // Family ages
+    spouseAgeQ: 'ನಿಮ್ಮ ಸಂಗಾತಿಯ ವಯಸ್ಸೆಷ್ಟು?',
+    spouseAgePlaceholder: 'ಸಂಗಾತಿಯ ವಯಸ್ಸು',
+    parentAgeQ: (who: string, isMultiple: boolean) => `${who} ಎಷ್ಟು ವರ್ಷ?${isMultiple ? ' ಹಿರಿಯ ಪೋಷಕರ ವಯಸ್ಸು ನಮೂದಿಸಿ.' : ''}`,
+    parentAgePlaceholder: 'ಹಿರಿಯ ಪೋಷಕರ ವಯಸ್ಸು',
+
+    // Customization / review
+    customizeReady: 'ಅರ್ಥವಾಯಿತಾ? ಕವರೇಜ್ ಆಯ್ಕೆಗಳನ್ನು ನೋಡಲು ತಯಾರಾ?',
+
+    // Payment method
+    paymentMethodQ: 'ನೀವು ಹೇಗೆ ಪಾವತಿಸಲು ಬಯಸುತ್ತೀರಿ? ನಿಮ್ಮ ಇಚ್ಛೆಯ ಪಾವತಿ ವಿಧಾನ ಆಯ್ಕೆ ಮಾಡಿ.',
+
+    // Medical summary
+    medicalSummaryIntro: 'ಮೌಲ್ಯಮಾಪನದಿಂದ ನಿಮ್ಮ ವೈದ್ಯಕೀಯ ಸಾರಾಂಶ ಇಲ್ಲಿದೆ:',
+    medicalSummaryConfirm: 'ಮುಂದುವರಿಯುವ ಮೊದಲು ಈ ಸಾರಾಂಶ ನಿಖರವಾಗಿದೆ ಎಂದು ದಯವಿಟ್ಟು ಖಚಿತಪಡಿಸಿ.',
     coverAckSelf: (name: string) => `ಉತ್ತಮ ಆಯ್ಕೆ, ${name}. ಮೊದಲು ನಿಮ್ಮನ್ನು ಕವರ್ ಮಾಡುವುದು ಅತ್ಯಂತ ಬುದ್ಧಿವಂತ ಹಣಕಾಸು ನಿರ್ಧಾರ.`,
     coverAckParentsSpouse: (name: string, count: number) => `ಅತ್ಯಂತ ಒಳ್ಳೆಯ ವಿಧಾನ, ${name}. ${count} ಕುಟುಂಬ ಸದಸ್ಯರನ್ನು ಒಟ್ಟಿಗೆ ಕವರ್ ಮಾಡುವುದು ಅತ್ಯುತ್ತಮ ಮನಶ್ಶಾಂತಿ ನೀಡುತ್ತದೆ.`,
     coverAckParents: (name: string) => `ಬಹಳ ವಿಚಾರವಂತ, ${name}. ನಿಮ್ಮ ಹೆತ್ತವರನ್ನು ಕವರ್ ಮಾಡುವುದು ಅವರಿಗೆ ಮಾಡಬಹುದಾದ ಅತ್ಯುತ್ತಮ ಕೆಲಸ.`,

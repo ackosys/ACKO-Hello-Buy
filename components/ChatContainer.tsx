@@ -377,8 +377,6 @@ export default function ChatContainer() {
       userLabel = t.chat.dobSubmitted;
     } else if (step.widgetType === 'usp_cards') {
       userLabel = t.chat.gotItFindPlan;
-    } else if (step.widgetType === 'payment_screen') {
-      userLabel = 'Payment completed ✓';
     }
 
     addMessage({
@@ -533,8 +531,6 @@ export default function ChatContainer() {
         return <DobCollectionWidget onConfirm={(resp: string) => handleResponse(resp)} />;
       case 'usp_cards':
         return <UspCards onContinue={() => handleResponse('seen_usps')} />;
-      case 'payment_screen':
-        return null;
       case 'lab_schedule_widget':
         return <LabScheduleWidget onComplete={() => handleResponse('scheduled')} />;
       case 'hospital_list':
@@ -563,11 +559,7 @@ export default function ChatContainer() {
     return ['plan_switcher', 'review_summary', 'lab_schedule_widget', 'celebration', 'calculation', 'pdf_upload', 'gap_results', 'confirm_details', 'usp_cards'].includes(step.widgetType);
   };
 
-  const isOverlayWidget = () => {
-    const step = getStep(currentStepId);
-    if (!step) return false;
-    return ['payment_screen'].includes(step.widgetType);
-  };
+  const isOverlayWidget = () => false;
 
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--app-chat-gradient, var(--motor-chat-gradient))' }}>

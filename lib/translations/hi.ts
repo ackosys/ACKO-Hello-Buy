@@ -558,6 +558,7 @@ export const hi: T = {
     hinglish: 'Hinglish',
     tamil: 'Tamil',
     malayalam: 'Malayalam',
+    telugu: 'Telugu',
     confirmSchedule: 'शेड्यूल पुष्टि करें',
     labVisitRequired: 'लैब विज़िट ज़रूरी',
     homeSampleCollection: 'घर पर सैंपल कलेक्शन',
@@ -809,6 +810,26 @@ export const hi: T = {
     completionMsg: (name: string) => `${name}, सब तैयार है! आपका हेल्थ इवैल्यूएशन शेड्यूल हो गया है। पूरा होने पर आपकी पॉलिसी लाइव हो जाएगी।`,
     coverageReply: (count: number, parts: string) => `Family of ${count} that includes ${parts}`,
     coverageReplyOnlyParents: 'Parents only',
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `मिलकर खुशी हुई, ${name}!` : 'बढ़िया!',
+    loginEarlyVerify: 'अपना मोबाइल नंबर वेरिफाई करें और अपनी प्रगति सेव करें — या अभी के लिए छोड़ दें।',
+
+    // Family ages
+    spouseAgeQ: 'और आपके जीवनसाथी की उम्र क्या है?',
+    spouseAgePlaceholder: 'जीवनसाथी की आयु',
+    parentAgeQ: (who: string, isMultiple: boolean) => `${who} की उम्र कितनी है?${isMultiple ? ' सबसे बड़े अभिभावक की आयु दर्ज करें।' : ''}`,
+    parentAgePlaceholder: 'सबसे बड़े अभिभावक की आयु',
+
+    // Customization / review
+    customizeReady: 'समझ गए? कवरेज विकल्प देखने के लिए तैयार हैं?',
+
+    // Payment method
+    paymentMethodQ: 'आप कैसे भुगतान करना चाहेंगे? अपना पसंदीदा भुगतान तरीका चुनें।',
+
+    // Medical summary
+    medicalSummaryIntro: 'यहाँ मूल्यांकन से आपका मेडिकल सारांश है:',
+    medicalSummaryConfirm: 'आगे बढ़ने से पहले कृपया पुष्टि करें कि यह सारांश सटीक है।',
   },
 
   ppScripts: {

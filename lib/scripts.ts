@@ -1390,7 +1390,7 @@ const paymentMethodSelection: ConversationStep = {
 const paymentProcess: ConversationStep = {
   id: 'payment.process',
   module: 'payment',
-  widgetType: 'payment_screen',
+  widgetType: 'payment_widget',
   getScript: (_, state) => {
     const t = getT(state.language);
     const freq = state.paymentFrequency === 'monthly' ? t.common.monthly.toLowerCase() : 'annual';
