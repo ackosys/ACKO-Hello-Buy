@@ -2,7 +2,7 @@
    LOB-agnostic types shared across all insurance verticals.
    Each LOB extends BaseJourneyState with its own fields. */
 
-export type Language = 'en' | 'hi' | 'hinglish' | 'kn' | 'ta' | 'ml';
+export type Language = 'en' | 'hi' | 'hinglish' | 'kn' | 'ta' | 'ml' | 'te';
 export type PaymentFrequency = 'monthly' | 'yearly';
 
 export interface Option {
