@@ -954,31 +954,33 @@ function GlobalHomepageInner() {
             className="min-h-screen relative overflow-hidden"
             style={{ background: 'var(--app-bg)' }}
           >
-            {/* Animated video background — last layer */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none max-w-[430px] w-full">
-              <video
-                key={theme}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="mx-auto object-cover"
-                style={{ width: 410, height: 300 }}
-                src={`${BASE}/Animated_BG/${theme === 'light' ? 'Light theme-BG' : 'Dark theme-BG'}.mp4`}
-              />
-              {theme !== 'light' && (
-                <div
-                  className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none"
-                  style={{
-                    width: 410,
-                    height: 300,
-                    background: theme === 'midnight'
-                      ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #1C0B47 88.12%)'
-                      : 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #0F0F10 88.12%)',
-                  }}
+            {/* Animated video background — newhomepage only */}
+            {process.env.NEXT_PUBLIC_VIDEO_BG === 'true' && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none max-w-[430px] w-full">
+                <video
+                  key={theme}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="mx-auto object-cover"
+                  style={{ width: 410, height: 300 }}
+                  src={`${BASE}/Animated_BG/${theme === 'light' ? 'Light theme-BG' : 'Dark theme-BG'}.mp4`}
                 />
-              )}
-            </div>
+                {theme !== 'light' && (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none"
+                    style={{
+                      width: 410,
+                      height: 300,
+                      background: theme === 'midnight'
+                        ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #1C0B47 88.12%)'
+                        : 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #0F0F10 88.12%)',
+                    }}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Content — always on top */}
             <div className="max-w-[430px] mx-auto pb-4 relative z-10">

@@ -11,6 +11,7 @@ const nextConfig = {
   images: { unoptimized: true },
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXT_PUBLIC_VIDEO_BG: subPath === 'newhomepage' ? 'true' : 'false',
   },
   ...(isGhPages && {
     basePath,
