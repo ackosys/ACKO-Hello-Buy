@@ -631,11 +631,14 @@ const ownerDetailsGstInput: MotorConversationStep = {
   id: 'owner_details.gst_input',
   module: 'owner_details',
   widgetType: 'text_input',
-  getScript: () => ({
-    botMessages: ['Enter your GST number'],
-    placeholder: 'e.g., 22AAAAA0000A1Z5',
-    inputType: 'text' as const,
-  }),
+  getScript: (state) => {
+    const t = getT(state.language || getCurrentLang());
+    return {
+      botMessages: [t.motorScripts.gstInputQ],
+      placeholder: t.motorScripts.gstInputPlaceholder,
+      inputType: 'text' as const,
+    };
+  },
   processResponse: (response) => ({ gstNumber: response }),
   getNextStep: () => 'owner_details.loan_check',
 };
@@ -662,11 +665,14 @@ const ownerDetailsLoanProvider: MotorConversationStep = {
   id: 'owner_details.loan_provider',
   module: 'owner_details',
   widgetType: 'text_input',
-  getScript: () => ({
-    botMessages: ['Enter your loan provider name'],
-    placeholder: 'e.g., HDFC Bank, SBI, ICICI',
-    inputType: 'text' as const,
-  }),
+  getScript: (state) => {
+    const t = getT(state.language || getCurrentLang());
+    return {
+      botMessages: [t.motorScripts.loanProviderQ],
+      placeholder: t.motorScripts.loanProviderPlaceholder,
+      inputType: 'text' as const,
+    };
+  },
   processResponse: (response) => ({ loanProvider: response }),
   getNextStep: () => 'review.premium_breakdown',
 };

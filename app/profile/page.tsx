@@ -6,31 +6,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { useThemeStore } from '../../lib/themeStore';
+import { useT } from '../../lib/translations';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const APP_FEATURES = [
-  {
-    icon: '/icons/Policy.svg',
-    title: 'Manage all your policies',
-    desc: 'Car, bike, health & life — everything in one place',
-  },
-  {
-    icon: '/icons/Claim.svg',
-    title: 'Instant claims in 3 taps',
-    desc: 'File, track and settle claims directly from the app',
-  },
-  {
-    icon: '/icons/Alarm.svg',
-    title: 'Smart reminders',
-    desc: 'Renewal alerts, FASTag balance, challan updates & more',
-  },
-  {
-    icon: '/icons/Towing.svg',
-    title: 'Roadside assistance',
-    desc: '24/7 emergency help with real-time tracking',
-  },
-];
+const APP_FEATURE_ICONS = ['/icons/Policy.svg', '/icons/Claim.svg', '/icons/Alarm.svg', '/icons/Towing.svg'];
 
 function BackArrow({ color }: { color: string }) {
   return (
@@ -64,7 +44,15 @@ export default function ProfilePage() {
   const router = useRouter();
   const { firstName } = useUserProfileStore();
   const { theme } = useThemeStore();
+  const t = useT();
   const isLight = theme === 'light';
+
+  const APP_FEATURES = [
+    { icon: APP_FEATURE_ICONS[0], title: t.appDownload.feature1Title, desc: t.appDownload.feature1Desc },
+    { icon: APP_FEATURE_ICONS[1], title: t.appDownload.feature2Title, desc: t.appDownload.feature2Desc },
+    { icon: APP_FEATURE_ICONS[2], title: t.appDownload.feature3Title, desc: t.appDownload.feature3Desc },
+    { icon: APP_FEATURE_ICONS[3], title: t.appDownload.feature4Title, desc: t.appDownload.feature4Desc },
+  ];
 
   const handleGetApp = useCallback(() => {
     window.open('https://acko.onelink.me/app', '_blank');
@@ -101,19 +89,19 @@ export default function ProfilePage() {
                 className="text-[13px] font-medium tracking-[0.5px] uppercase"
                 style={{ color: '#7C47E1' }}
               >
-                Trusted by 12+ million users
+                {t.appDownload.trustedBy}
               </p>
               <h1
                 className="text-[24px] font-semibold tracking-[-0.1px] leading-[32px] text-center mt-2"
                 style={{ color: isLight ? '#040222' : 'var(--app-text)' }}
               >
-                Your journey continues on the ACKO App
+                {t.appDownload.title}
               </h1>
               <p
                 className="text-[14px] leading-[22px] text-center mt-2"
                 style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}
               >
-                More features, faster claims, and everything you need — all in one app
+                {t.appDownload.subtitle}
               </p>
             </div>
 
@@ -189,7 +177,7 @@ export default function ProfilePage() {
             <PlayStoreIcon />
             <div>
               <p className="text-[18px] font-bold leading-[22px]" style={{ color: isLight ? '#040222' : 'var(--app-text)' }}>4.6</p>
-              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>Play Store</p>
+              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>{t.appDownload.playStore}</p>
             </div>
           </div>
           <div
@@ -202,7 +190,7 @@ export default function ProfilePage() {
             <AppStoreIcon />
             <div>
               <p className="text-[18px] font-bold leading-[22px]" style={{ color: isLight ? '#040222' : 'var(--app-text)' }}>4.8</p>
-              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>App Store</p>
+              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>{t.appDownload.appStore}</p>
             </div>
           </div>
         </motion.div>
@@ -227,7 +215,7 @@ export default function ProfilePage() {
               boxShadow: '0 4px 14px rgba(124,71,225,0.4)',
             }}
           >
-            Download the app
+            {t.appDownload.downloadCta}
           </button>
         </div>
       </div>

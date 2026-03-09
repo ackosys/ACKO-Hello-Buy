@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useUserProfileStore, type PolicyLob, type UserPolicy } from '../../lib/userProfileStore';
 import { useThemeStore } from '../../lib/themeStore';
+import { useT } from '../../lib/translations';
 
 export interface PolicyStatusInfo {
   badge: string;
@@ -66,6 +67,7 @@ const STATUS_COLORS: Record<string, { bg: string; bgLight: string; text: string;
 };
 
 export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManagePolicy, onBack, statusInfo, dropOffInfo, onContinueJourney }: PolicyActionScreenProps) {
+  const pa = useT().policyAction;
   const theme = useThemeStore((s) => s.theme);
   const isLight = theme === 'light';
   const existingPolicies = useUserProfileStore((s) => s.getActivePoliciesForLob(lobId as PolicyLob));
@@ -116,13 +118,13 @@ export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManage
             className="text-2xl font-bold mb-2"
             style={{ color: 'var(--app-text)' }}
           >
-            {firstName ? `${firstName}, you` : 'You'} already have {lobLabel} with us
+            {pa.alreadyHave(firstName, lobLabel)}
           </h1>
           <p
             className="text-sm"
             style={{ color: 'var(--app-text-muted)' }}
           >
-            What would you like to do?
+            {pa.whatToDo}
           </p>
         </motion.div>
 
@@ -166,7 +168,7 @@ export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManage
                         color: isLight ? '#065F46' : '#34D399',
                       }}
                     >
-                      Active
+                      {pa.activeStatus}
                     </span>
                   </div>
                   {policy.details && (
@@ -175,7 +177,7 @@ export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManage
                     </p>
                   )}
                   <p className="text-[11px]" style={{ color: 'var(--app-text-subtle)' }}>
-                    {policy.policyNumber} · Since {formatDate(policy.purchasedAt)}
+                    {policy.policyNumber} · {pa.since(formatDate(policy.purchasedAt))}
                   </p>
                 </div>
                 <svg className="w-5 h-5 shrink-0 mt-2" style={{ color: 'var(--app-text-subtle)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -239,7 +241,7 @@ export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManage
                   {dropOffInfo!.title || `New ${lobLabel} purchase`}
                 </p>
                 <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
-                  {dropOffInfo!.subtitle || 'Continue where you left off'}
+                  {dropOffInfo!.subtitle || pa.continueWhereLeft}
                 </p>
               </div>
               <span
@@ -286,10 +288,10 @@ export default function PolicyActionScreen({ lobId, lobLabel, onBuyNew, onManage
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold" style={{ color: isLight ? '#FFFFFF' : 'var(--app-text)' }}>
-                  Buy another {lobLabel} policy
+                  {pa.buyAnother(lobLabel)}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: isLight ? 'rgba(255,255,255,0.7)' : 'var(--app-text-muted)' }}>
-                  Start a new purchase journey
+                  {pa.startNewPurchase}
                 </p>
               </div>
               <svg className="w-5 h-5 shrink-0" style={{ color: isLight ? 'rgba(255,255,255,0.6)' : 'var(--app-text-subtle)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

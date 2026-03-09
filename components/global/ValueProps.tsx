@@ -35,11 +35,11 @@ export default function ValueProps() {
   const t = useT();
   const isLight = theme === 'light';
 
-  const cardBg     = isLight ? '#FFFFFF' : theme === 'dark' ? '#1E1E22' : 'rgba(255,255,255,0.03)';
-  const cardBorder = isLight ? 'rgba(0,0,0,0.06)' : theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)';
-  const accentBar  = isLight ? '#7C3AED' : theme === 'dark' ? '#A78BFA' : 'rgba(255,255,255,0.2)';
-  const iconBg     = isLight ? '#F5F3FF' : theme === 'dark' ? '#2D2D35' : 'rgba(255,255,255,0.06)';
-  const iconColor  = isLight ? '#7C3AED' : theme === 'dark' ? '#A78BFA' : 'rgba(255,255,255,0.6)';
+  const cardBg     = isLight ? '#FFFFFF' : 'var(--app-surface)';
+  const cardBorder = isLight ? 'rgba(0,0,0,0.06)' : 'var(--app-border)';
+  const accentBar  = isLight ? '#7C3AED' : '#A78BFA';
+  const iconBg     = isLight ? '#F5F3FF' : 'var(--app-surface-2, #2D2D35)';
+  const iconColor  = isLight ? '#7C3AED' : '#A78BFA';
 
   const PROPS = [
     { icon: 'award',   title: t.global.prop1Title, description: t.global.prop1Desc },

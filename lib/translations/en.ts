@@ -19,6 +19,8 @@ export const en = {
     kannadaSub: 'ಕನ್ನಡದಲ್ಲಿ ಮುಂದುವರಿಸಿ',
     tamilSub: 'தமிழில் தொடரவும்',
     malayalamSub: 'മലയാളത്തിൽ തുടരുക',
+    telugu: 'తెలుగు',
+    teluguSub: 'తెలుగులో కొనసాగించు',
   },
 
   /* ── Common ── */
@@ -130,6 +132,23 @@ export const en = {
     editWarning: 'The conversation will continue from this point with your updated answer. All messages after this will be regenerated.',
     editAnswer: 'Edit answer',
     updateAnswer: 'Update your answer',
+    cancel: 'Cancel',
+
+    // HealthLoginGate widget
+    loginPhonePlaceholder: 'Enter your mobile number',
+    loginSaveProgress: "We'll save your progress so you can continue from where you left off",
+    loginSendOtp: 'Send OTP',
+    loginSkipForNow: 'Skip for now',
+    loginOtpSentTo: (phone: string) => `OTP sent to +91 ${phone}`,
+    loginOtpIncorrect: 'Incorrect OTP. Try 0000.',
+    loginOtpHint: 'Enter 0000 to verify',
+
+    // User response labels shown in chat bubble
+    phoneVerified: 'Phone verified ✓',
+    skippedForNow: 'Skipped for now',
+    dobSubmitted: 'Date of birth submitted for all members',
+    gotItFindPlan: "Got it, let's find a plan",
+    updatedPrefix: (label: string) => `✏️ Updated: ${label}`,
   },
 
   /* ── Widgets ── */
@@ -849,6 +868,26 @@ export const en = {
     evening: 'Evening (4pm - 7pm)',
     // Completion
     completionMsg: (name: string) => `You're all set, ${name}! Your health evaluation is scheduled. Once complete, your policy goes live.\n\nYou can explore your dashboard, browse the hospital network, or download the ACKO app.`,
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `Nice to meet you, ${name}!` : 'Great!',
+    loginEarlyVerify: 'Verify your mobile number to save your progress — or skip for now.',
+
+    // Family ages
+    spouseAgeQ: 'And how old is your spouse?',
+    spouseAgePlaceholder: "Spouse's age",
+    parentAgeQ: (who: string, isMultiple: boolean) => `How old is ${who}?${isMultiple ? ' Enter the age of the eldest parent.' : ''}`,
+    parentAgePlaceholder: "Eldest parent's age",
+
+    // Customization / review
+    customizeReady: 'Got it? Ready to look at coverage options?',
+
+    // Payment method
+    paymentMethodQ: 'How would you like to pay? Choose your preferred payment method.',
+
+    // Medical summary
+    medicalSummaryIntro: "Here's your Medical Summary from the evaluation:",
+    medicalSummaryConfirm: 'Please confirm this summary is accurate before we proceed.',
   },
 
   /* ── Post-Payment Scripts ── */
@@ -1020,6 +1059,12 @@ export const en = {
     summaryReview: 'Here\'s your final premium breakdown.',
     proceedToPayment: 'Tap below to proceed to payment.',
     paymentSuccess: (v: string) => `Payment successful! Your ${v} insurance policy is being issued.`,
+
+    // Owner details
+    gstInputQ: 'Enter your GST number',
+    gstInputPlaceholder: 'e.g., 22AAAAA0000A1Z5',
+    loanProviderQ: 'Enter your loan provider name',
+    loanProviderPlaceholder: 'e.g., HDFC Bank, SBI, ICICI',
   },
 
   /* ── Life Insurance Scripts ── */
@@ -1101,6 +1146,384 @@ export const en = {
     // Payment
     lifePaySuccess: 'Payment successful! Your life insurance policy is being processed.',
     lifeWelcome: 'Welcome to ACKO Life Insurance.',
+
+    // Ask name
+    askNameQ: "Before we begin, what's your first name?",
+    namePlaceholder: 'Your first name',
+    nameAck: (name: string) => `Nice to meet you, ${name}! Let's find the right coverage for you.`,
+
+    // Flexi cover explanation
+    flexiHowItWorks: "Here's how it works:",
+    flexiMaybeLaterSub: 'Explore other options',
+
+    // No need explanation
+    noNeedTitle: "That's perfectly fine!",
+    noNeedSub: 'Term insurance is primarily for protecting dependents and covering financial obligations.',
+    noNeedFuture: "If your situation changes in the future, you can always come back and we'll help you find the right plan.",
+    noNeedWhatNext: 'What would you like to do?',
+    noNeedLearn: 'Learn about term insurance',
+    noNeedLearnSub: 'Understand how it works for future planning',
+    noNeedExplore: 'Explore other insurance',
+    noNeedExploreSub: 'Health, Car & Bike insurance',
+
+    // Explore other LOBs
+    exploreOtherIntro: 'No problem! Here are other ways ACKO can help you:',
+    exploreHealth: 'Health Insurance',
+    exploreHealthSub: 'Cover for hospitalisation, surgeries & more — plans from ₹436/month',
+    exploreMotor: 'Car & Bike Insurance',
+    exploreMotorSub: 'Comprehensive cover, instant policy, hassle-free claims',
+    exploreHome: 'Go back to homepage',
+    exploreHomeSub: 'Explore all ACKO products',
+
+    // Need discussion
+    needDiscIntro: "Let's think about it together.",
+    needDiscTermMakesSense: 'Term insurance makes sense if:',
+    needDiscBullet1: '• You have family members who depend on your income',
+    needDiscBullet2: '• You have loans (home loan, car loan, etc.)',
+    needDiscBullet3: "• You want to secure your children's education",
+    needDiscBullet4: "• You want to ensure your spouse's financial security",
+    needDiscQ: 'Does any of this apply to you?',
+    needDiscYes: 'Yes, some apply',
+    needDiscYesSub: 'Continue with term insurance',
+    needDiscNo: 'No, none apply',
+    needDiscNoSub: 'I may not need it',
+
+    // Education
+    eduWhatIs: 'Let me explain what life insurance actually is.',
+    eduIncome: 'Life insurance = Income replacement',
+    eduNotInvestment: '• Not investment',
+    eduNotSavings: '• Not savings',
+    eduNotTax: '• Not tax product',
+    eduDesigned: "It's designed to replace your income if something happens to you,",
+    eduSoFamily: 'so your family can maintain their lifestyle and meet financial obligations.',
+    eduComparison: "Here's a simple comparison:",
+    eduTermTitle: 'Term Insurance:',
+    eduTermCover: '• High cover (₹1 Cr+)',
+    eduTermPremium: '• Low premium (₹5K-10K/year)',
+    eduTermProtection: '• Pure protection',
+    eduInvestTitle: 'Investment-Linked Plans:',
+    eduInvestCover: '• Lower cover for same premium',
+    eduInvestPremium: '• Higher premium',
+    eduInvestMixed: '• Mixed purpose (protection + investment)',
+    eduGrowthClose: "We'll show you why separating them works better.",
+
+    // Myths
+    mythsIntro: 'Let me address a common concern:',
+    mythStatement: 'Myth: "If I survive the term, my money is wasted."',
+    mythRealityTitle: "Reality: Insurance is like a seatbelt.",
+    mythRealitySub: "You don't regret not crashing — you're grateful you were protected.",
+    mythTermProtects: 'Term insurance protects you during your earning years,',
+    mythQ: 'Does this make sense?',
+    mythYes: 'Yes, I understand',
+    mythYesSub: 'Continue',
+    mythMore: 'Tell me more',
+    mythMoreSub: 'Explain further',
+
+    // Growth seeker myths
+    growthMythIntro: "Here's why term insurance makes sense even if you \"don't get money back\":",
+    growthMythThinkOf: 'Think of it this way:',
+    growthMythTerm: 'Term insurance = Protection',
+    growthMythMF: 'Mutual funds = Growth',
+    growthMythSeparate: 'Keep them separate for better results.',
+
+    // Pincode
+    pincodeQ: "What's your pin code?",
+    pincodePlaceholder: 'Enter 6-digit pin code',
+    dobPlaceholder: 'Select date of birth',
+
+    // Lifestyle
+    lifestyleQ: 'Do you smoke or consume alcohol?',
+    lifestyleSub: 'This directly impacts your premium calculation.',
+    lifestyleNone: 'No, neither',
+    lifestyleBoth: 'Both',
+
+    // Life login gate
+    lifeLoginGreeting: (name: string) => name ? `Great, ${name}!` : 'Great!',
+    lifeLoginVerify: 'Before we dive in, please verify your mobile number so we can save your progress and personalize your experience.',
+
+    // Income
+    incomePlaceholder: 'Enter annual income (₹)',
+
+    // Occupation
+    occupationQ: 'What do you do for a living?',
+    occupationSalaried: 'Salaried',
+    occupationSalariedSub: 'I work for an organisation',
+    occupationSelfEmployed: 'Self-employed',
+    occupationSelfEmployedSub: 'I work as a freelancer/contractor',
+    occupationBusiness: 'Business owner',
+    occupationBusinessSub: 'I run a registered business',
+
+    // Coverage
+    coverageSelectQ: 'Almost there! Select your desired coverage and policy term.',
+
+    // Gender
+    genderPersonalQ: (name: string) => name ? `${name}, what's your gender?` : "What's your gender?",
+    genderPremiumNote: 'Premiums differ by gender — women typically pay less due to longer life expectancy.',
+    genderMale: 'Male',
+    genderFemale: 'Female',
+    genderWomenNote: "Did you know? Women typically pay less for life insurance due to their longer life expectancy.",
+
+    // DOB
+    dobAskQ: "What's your date of birth?",
+    dobAgeFactor: 'Age is the biggest factor in premium pricing — the younger you start, the less you pay.',
+
+    // Marital status
+    maritalStatusQ: 'Are you married?',
+    maritalStatusSub: 'Your marital status helps us understand who depends on you financially.',
+    maritalMarried: 'Yes',
+    maritalSingle: 'No',
+    maritalSeparated: 'I am separated or divorced',
+    maritalWidowed: 'I am widowed',
+
+    // Residential status
+    residentialStatusQ: 'Are you an Indian resident?',
+    residentialStatusSub: 'Residency status affects plan eligibility and regulatory requirements.',
+    residentialYes: 'Yes',
+    residentialNo: 'No',
+
+    // Pincode (basic)
+    basicPincodeQ: "What's your pin code?",
+    basicPincodeSub: 'Location helps us check serviceability and tailor your plan.',
+    basicPincodePlaceholder: 'Enter 6-digit pin code',
+
+    // Name check
+    nameCheckQ: 'Great! Just check your name before proceeding.',
+    nameCheckPlaceholder: 'Your full name',
+
+    // Habits
+    habitsQ: 'Have you smoked or consumed tobacco in the last 12 months?',
+    habitsSub: 'Tobacco use directly impacts premium pricing — non-smokers typically pay significantly less.',
+    habitsNo: "No, I haven't",
+    habitsYes: 'Yes, I have',
+
+    // Need recommendation (coverage)
+    needRecTitle: "Here's your recommended plan.",
+
+    // Financial dependents
+    financialDependentsQ: 'Who depends on you financially?',
+
+    // Children
+    childrenQ: 'How many kids do you have?',
+
+    // Occupation (basic guided)
+    occupationBasicQ: 'What do you do for a living?',
+
+    // Review
+    reviewTitle: 'Ready to proceed?',
+    reviewPlanTitle: 'Your plan is ready.',
+
+    // Riders
+    accidentRiderTitle: 'Accidental Death Benefit Rider',
+    accidentRiderAddQ: 'Would you like to add this?',
+    criticalRiderTitle: 'Critical Illness Benefit Rider',
+    riderAddQ: 'Add this rider?',
+    riderYes: 'Yes, add this rider',
+    riderNo: 'No, skip',
+
+    // Myths continuation
+    mythsWhenDependsQ: 'Does this make sense?',
+    mythWhenDepends: 'when your family depends on your income most.',
+
+    // Growth seeker myths detailed
+    growthMythDetail1Title: '1. Maximum protection at minimum cost',
+    growthMythDetail1Sub: '   ₹5,000/year for ₹1 Cr coverage vs ₹50,000/year for same coverage in mixed plans',
+    growthMythDetail2Title: '2. You can invest the difference separately',
+    growthMythDetail2Sub: '   ₹45,000/year invested in mutual funds typically gives better returns than insurance-linked plans',
+    growthMythDetail3Title: '3. Flexibility',
+    growthMythDetail3Sub1: '   You can adjust coverage as life changes (ACKO Flexi)',
+    growthMythDetail3Sub2: '   You can stop/change investments anytime',
+
+    // Lifestyle options
+    lifestyleSmoke: 'I smoke / use tobacco',
+    lifestyleDrink: 'I drink alcohol',
+
+    // Occupation — not earning
+    occupationNotEarning: "I don't earn",
+    occupationNotEarningSub: 'I am student, homemaker or retired',
+
+    // Age ineligible
+    ageIneligibleMsg: (age: number) => `I see you're ${age} years old.`,
+    ageNotEligible: 'ACKO Life Insurance is available for ages 18-65.',
+    ageTooYoung: "You'll be eligible once you turn 18. Until then, consider talking to your parents about family coverage.",
+    ageTooOld: 'For ages above 65, please contact our support team for alternative options.',
+
+    // Coverage recommendation messages
+    needRecWithName: (name: string) => name ? `${name}, here's your recommended term life cover` : `Here's your recommended term life cover`,
+    needRecMultiplier: (min: number, max: number) => `Your coverage is approximately ${min}–${max}x your annual income — ideal for your family to maintain their lifestyle.`,
+    needRecFlexible: 'This plan is flexible — you can adjust your coverage up or down anytime.',
+    needRecCoversTill: (age: number) => `We're suggesting cover until age ${age}, based on your dependents and distance from retirement.`,
+
+    // Coverage breakdown labels
+    breakdownIncome: 'Income replacement',
+    breakdownLoans: 'Outstanding loans',
+    breakdownChildren: "Children's future needs",
+    breakdownBuffer: 'Emergency buffer',
+    breakdownExisting: 'Existing cover (deducted)',
+
+    // Buying intent
+    buyingIntentQ: 'One last thing. Let us know how far along you are in your life insurance journey.',
+    buyingIntentWithName: (name: string) => `One last thing, ${name}. Let us know how far along you are in your life insurance journey.`,
+    buyingExploring: "I'm just exploring options",
+    buyingFewMonths: "I'm planning to buy in the next few months",
+    buyingVerySoon: "I'm planning to buy a policy very soon",
+
+    // Monthly income
+    monthlyIncomeQ: 'What is your average monthly income?',
+    monthlyIncomeSub: 'Your income is the basis for calculating how much coverage your family would need — an approximate figure works.',
+    monthlyIncomePlaceholder: 'Monthly income (₹)',
+
+    // Growth seeker education
+    growthEduIntro: "I understand you're thinking about returns. Let me explain why separating protection from investment works better.",
+    growthEduMixTitle: 'When you mix insurance and investment (like ULIPs):',
+    growthEduMixBullet1: '• Part of your premium goes to mortality charges',
+    growthEduMixBullet2: '• Part goes to agent commissions',
+    growthEduMixBullet3: '• Part goes to fund management charges',
+    growthEduMixBullet4: '• You get lower coverage AND lower returns',
+    growthEduTermTitle: 'With term insurance + separate investment:',
+    growthEduTermBullet1: '• ₹5,000/year for ₹1 Cr term coverage',
+    growthEduTermBullet2: '• ₹45,000/year invested separately in mutual funds',
+    growthEduTermBullet3: '• You get maximum protection + better growth potential',
+    growthEduConclusion: 'Does this make sense?',
+    growthEduYes: 'Yes, I understand',
+    growthEduYesSub: 'Continue with term insurance',
+    growthEduNo: 'I still have questions',
+    growthEduNoSub: "Let's discuss more",
+
+    // Dependent types
+    depSpouse: 'Spouse',
+    depKids: 'Kids',
+    depParents: 'Parents',
+    depParentsInLaw: 'Parents-in-law',
+    depExtended: 'Extended family',
+    depNone: 'No one right now',
+    depCoreSub: 'Your dependents are the people your coverage needs to protect — this is the core of your plan.',
+
+    // Children
+    childrenSub: 'Their education and future needs are a big part of planning the right coverage.',
+    child1: '1 child',
+    child2: '2 children',
+    child3Plus: '3 or more',
+
+    // Youngest child
+    youngChildQ: "What's your youngest child's age?",
+    youngChildSub: 'This helps us estimate when education costs will arise.',
+    youngChildPlaceholder: 'Age in years',
+
+    // Loans
+    loansQ: 'Do you have any outstanding loans?',
+    loansSub: 'Home loan, car loan, education loan, personal loan — include all.',
+    loansNote: 'Your term cover should at minimum clear these obligations.',
+    loansNone: 'No loans',
+    loansSmall: 'Under ₹25 lakh',
+    loansSmallDesc: 'Car/personal/education loan',
+    loansMedium: '₹25L – ₹75L',
+    loansMediumDesc: 'Home loan or multiple loans',
+    loansLarge: '₹75L – ₹1.5 Cr',
+    loansLargeDesc: 'Large home loan',
+    loansVeryLarge: 'Above ₹1.5 Cr',
+    loansVeryLargeDesc: 'Multiple properties or large EMIs',
+
+    // Monthly expenses
+    expensesQ: 'What are your monthly household expenses?',
+    expensesSub: 'Include rent/EMI, groceries, utilities, school fees, etc.',
+    expensesNote: 'This helps us add an emergency buffer to your coverage.',
+    expensesRange1: '₹20K – ₹40K/month',
+    expensesRange2: '₹40K – ₹80K/month',
+    expensesRange3: '₹80K – ₹1.2L/month',
+    expensesRange4: '₹1.2L – ₹2L/month',
+    expensesRange5: 'Above ₹2L/month',
+
+    // Existing cover
+    existingCoverQ: 'Do you have any existing life insurance or significant savings?',
+    existingCoverSub: 'This includes term plans, employer group cover, EPF, PPF, or mutual fund corpus.',
+    existingCoverNote: "We'll subtract this from your coverage need — no point over-insuring.",
+    existingCoverNone: 'None / negligible',
+    existingCoverSmall: 'Under ₹25L',
+    existingCoverSmallDesc: 'Small savings or employer cover',
+    existingCoverMedium: '₹25L – ₹75L',
+    existingCoverMediumDesc: 'EPF + some savings',
+    existingCoverLarge: '₹75L – ₹1.5 Cr',
+    existingCoverLargeDesc: 'Significant corpus',
+    existingCoverVeryLarge: 'Above ₹1.5 Cr',
+    existingCoverVeryLargeDesc: 'Large corpus / existing term plan',
+
+    // Education level
+    educationQ: "What's your highest education level?",
+    educationSub: 'Education level is one of the factors insurers use during underwriting.',
+    eduBelow10: 'Below 10th class',
+    eduSSC: 'SSC / 10th class',
+    eduHSC: 'HSC / 12th class',
+    eduGraduate: 'Diploma / Graduate and above',
+
+    // Occupation risk sub
+    occupationRiskSub: 'Your occupation helps us assess risk profile and recommend the right plan.',
+
+    // Medical history
+    medicalQ: 'Do you have any pre-existing medical conditions?',
+    medicalSub: 'Honest disclosure helps us offer accurate pricing and avoids issues at claim time.',
+
+    // Lifestyle summary
+    lifestyleSummaryIntro: 'Great! I have all the information I need.',
+    lifestyleSummarySub: 'Now let me calculate your personalized premium quote.',
+
+    // Quote display
+    quoteDisplayIntro: 'Here is a starter quote based on your details.',
+    quoteDisplaySub: 'You can adjust the coverage and term below to match your needs.',
+
+    // Addons intro
+    addonsIntroQ: 'Would you like to strengthen your coverage with additional protection?',
+    addonsAccidentBullet: '**Accidental protection** — extra payout for accidental death or disability',
+    addonsCriticalBullet: '**Critical illness protection** — lump sum payment if diagnosed with major illnesses',
+    addonsNote: 'All add-ons are optional and can be modified later.',
+
+    // Rider descriptions
+    accidentRiderDesc: 'Provides additional payout (up to 3x your base coverage) if death occurs due to an accident.',
+    criticalRiderDesc: "Pays a lump sum if you're diagnosed with any of 21 critical illnesses (cancer, heart attack, stroke, etc.).",
+    criticalRiderNote: 'This helps cover treatment costs without waiting for death benefit.',
+    disabilityRiderTitle: 'Accidental Total Permanent Disability Rider',
+    disabilityRiderDesc: 'Provides financial support if an accident leaves you permanently disabled and unable to work.',
+
+    // Review
+    reviewSummaryIntro: "Here's a summary of your life insurance plan:",
+    reviewCoverageLabel: (amt: string) => `• Coverage: ${amt}`,
+    reviewTermLabel: (term: number, tillAge: number) => `• Term: ${term} years (till age ${tillAge})`,
+    reviewRidersLabel: (count: number) => `• Riders: ${count} selected`,
+    reviewPremiumLabel: (yearly: string, monthly: string) => `• Premium: ${yearly}/year (${monthly}/month)`,
+    reviewReadyQ: 'Ready to proceed?',
+    reviewPayBtn: (amt: string) => `Proceed to payment · ₹${amt}`,
+
+    // Payment
+    paymentReadyMsg: 'Your plan is ready.',
+    paymentDetailsMsg: (coverage: string, premium: string) => `Coverage: ${coverage} | Premium: ₹${premium}/year`,
+
+    // eKYC
+    ekycIntro: "Now let's verify your identity. This is mandatory for policy issuance.",
+    ekycSkippedNote: "No worries — you can complete e-KYC later. But please note, it's mandatory for policy issuance. Make sure you complete it within 5–7 days to avoid any delays in activating your coverage.",
+    ekycSkippedContinue: "We'll send you a reminder. Let's continue with the next steps for now.",
+
+    // Financial verification
+    ekycVerified: 'e-KYC verified! ✅',
+    financialVerifyIntro: "Next, we need to verify your income. This helps us confirm the coverage amount you've selected.\n\nYou can verify via **EPFO/PF**, **Account Aggregator** (bank statements), or by **uploading salary slips** — pick whichever works best for you.",
+
+    // Medical evaluation
+    medicalEvalIntro: 'Now for your **Video Medical Evaluation (VMER)** — a 15–20 minute video call with a licensed doctor. You can join instantly or schedule at your convenience.',
+
+    // Underwriting
+    underwritingDone: 'All done! 🎉 Your application is now with our underwriting team.',
+    underwritingTimeline: "They'll review your KYC, financial verification, and medical evaluation — typically takes **3–5 business days**.\n\nYou'll be notified by Email & WhatsApp the moment a decision is made.",
+
+    // NPS
+    npsQ: 'Quick question — how was your experience getting life insurance through this conversation?',
+
+    // App download
+    appDownloadThankYou: 'Thanks for the feedback! Download the ACKO app to track your application status, manage your policy, and get instant support.',
+
+    // Journey end
+    journeyEndMsg: "You're all set! Your application is being reviewed. What would you like to do next?",
+    journeyEndHome: 'Go to Home',
+    journeyEndHomeDesc: 'Back to the main page',
+    journeyEndTrack: 'Track application',
+    journeyEndTrackDesc: 'Check your application status',
   },
 
   /* ── Drop-off / Journey Persist ── */
@@ -1179,6 +1602,99 @@ export const en = {
     menuUser3Sub: 'Existing customer · bike + car',
     menuUser4: 'Kiran S.',
     menuUser4Sub: 'Renewal due · testing scenario',
+
+    /* ── Homepage menu/header ── */
+    menuLogin: 'Login',
+    menuLogout: 'Log out',
+    menuMode: 'Mode:',
+    menuLang: 'Lang:',
+    menuResetFtu: 'Reset to FTU',
+
+    /* ── LOB card taglines (Bento grid) ── */
+    carCardDesc: 'Simple prices. Super fast claims. That\'s our promise.',
+    bikeCardDesc: 'Insure your bike or scooter in just 1 min',
+    healthCardDesc: '100% hospital bill payments. No surprises.',
+    healthCardFrom: 'From ₹534/month',
+    lifeCardDesc: 'Secure your loved ones with term life insurance',
+
+    /* ── PWILO section ── */
+    pwiloTitle: 'Continue where you left off',
+    pwiloContinue: 'Continue',
+    pwiloStartNew: 'Start new',
+    pwiloExploreTitle: 'Explore another insurance',
+    pwiloExploreDesc: 'Find the right cover for your needs',
+    pwiloContinueInsuring: (title: string) => `Continue insuring your ${title}`,
+
+    /* ── Footer ── */
+    footerCompany: 'ACKO Technology & Services Private Limited',
+    footerCin: 'CIN: U74110KA2016PTC120161',
+    footerNote1: '*Listed #1 for "insurance" on the Apple App Store',
+    footerDisclaimer: 'The use of images and brands are only for the purpose of indication and illustration. ACKO claims no rights on the IP rights of any third parties.',
+    footerTagline: 'UID: 6484 | ARN: L0110 | T&C apply',
+  },
+
+  /* ── Login Page ── */
+  login: {
+    mobileTitle: 'What\'s your\nmobile number?',
+    mobilePlaceholder: 'Enter your phone number',
+    mobileHint: 'We\'ll save your progress and help you pick up right where you left off.',
+    otpTitle: (phone: string) => `Enter the OTP sent\nto +91 ${phone}`,
+    otpError: 'Incorrect OTP. Please try again.',
+    otpHint: 'Enter 0000 to verify',
+    nameTitle: 'Almost there!\nWhat should we call you?',
+    namePlaceholder: 'Enter your name',
+    welcomeBack: (name: string) => `Welcome back,\n${name}! 👋`,
+    welcomeBackSub: 'Looks like you\'ve been here before.',
+    continueAs: (name: string) => `Continue as ${name}`,
+    notMe: 'Not me',
+    welcomeSuccess: (name: string) => `Welcome, ${name}!`,
+    continueBtn: 'Continue',
+
+    // LoginChatFlow conversational messages
+    chatGreet: 'Hello! What would you like us to call you?',
+    chatNamePlaceholder: 'Enter your name',
+    chatNiceToMeet: (name: string) => `Nice to meet you, ${name}! What would you like to do today?`,
+    chatReturningGreet: (name: string) => `Welcome back, ${name}! 👋 Looks like you've been here before.`,
+    chatReturningConfirm: (name: string) => `Shall we continue as ${name}?`,
+    chatVerifyMobile: 'To verify it\'s you, please enter your mobile number.',
+    chatOtpSent: (phone: string) => `We've sent an OTP to +91 ${phone}. Please enter it below.`,
+    chatOtpVerified: 'OTP Verified ✓',
+    chatWelcomeNew: (name: string) => `Welcome to ACKO, ${name}! Great to have you here.`,
+    chatWelcomeReturning: (name: string) => `Welcome back, ${name}!`,
+    chatInsureToday: 'What are you looking to insure today?',
+    chatFoundQuote: 'I found an insurance quote you started earlier.',
+    chatFoundPolicy: 'I found a policy linked to your account. What would you like to do?',
+    chatFound2Policies: 'I found 2 policies linked to your account. What would you like to do?',
+    chatFoundPolicyAndQuote: 'I found a policy linked to your account, and a quote you started earlier.',
+    chatAnotherCar: 'Or need insurance for another car?',
+    chatInsureAnother: 'Insure another car',
+    chatRenewLabel: 'Renew my insurance',
+    chatRenewSub: 'I already have a car',
+    chatInsureNewLabel: 'Insure a new car',
+    chatInsureNewSub: 'Just bought a new car',
+    chatValidTill: (date: string) => `Valid till ${date}`,
+    chatMobilePlaceholder: 'Enter your mobile number',
+    chatSendOtp: 'Send OTP',
+    chatOtpIncorrect: (code: string) => `Incorrect OTP. Try ${code}.`,
+    chatEnterCode: (code: string) => `Enter ${code} to verify`,
+  },
+
+  /* ── App Download / Profile Page ── */
+  appDownload: {
+    trustedBy: 'Trusted by 12+ million users',
+    title: 'Your journey continues on the ACKO App',
+    subtitle: 'More features, faster claims, and everything you need — all in one app',
+    downloadCta: 'Download the app',
+    playStore: 'Play Store',
+    appStore: 'App Store',
+    feature1Title: 'Manage all your policies',
+    feature1Desc: 'Car, bike, health & life — everything in one place',
+    feature2Title: 'Instant claims in 3 taps',
+    feature2Desc: 'File, track and settle claims directly from the app',
+    feature3Title: 'Smart reminders',
+    feature3Desc: 'Renewal alerts, FASTag balance, challan updates & more',
+    feature4Title: 'Roadside assistance',
+    feature4Desc: '24/7 emergency help with real-time tracking',
   },
 
   /* ── Motor Hello Entry ── */
@@ -1219,5 +1735,342 @@ export const en = {
     drivePickModel: (make: string) => `Which ${make} model catches your eye?`,
     drivePickVariant: (model: string) => `Which variant of the ${model}?`,
     driveReadyQuote: (make: string, model: string, variant: string) => `Great choice — ${make} ${model} ${variant}. Let me pull up insurance options for you.`,
+  },
+
+  /* ── Motor Widgets ── */
+  motorWidgets: {
+    // Registration input
+    regSearchingVaahan: 'Searching Vaahan portal...',
+    regFetching: 'Fetching vehicle details...',
+    regCheckingRC: 'Checking registration certificate...',
+    regLoadingPolicy: 'Loading existing policy data...',
+    regAlmostThere: 'Almost there...',
+    regErrorInvalid: 'Please enter a valid registration number',
+    regErrorEmpty: 'Please enter a value',
+
+    // Vehicle confirmation
+    thisIsCorrect: 'This is correct',
+    confirmed: 'Confirmed',
+
+    // Vehicle details card
+    registration: 'Registration',
+    currentInsurance: 'Current Insurance',
+    policyExpiry: 'Policy expiry',
+
+    // NCB
+    ncbApplied: 'NCB Reward Applied!',
+    ncbStayClaim: 'For staying claim-free',
+
+    // Vehicle summary
+    labelMake: 'Make',
+    labelModel: 'Model',
+    labelVariant: 'Variant',
+    labelFuel: 'Fuel',
+    labelRegNumber: 'Registration number',
+    labelRegYear: 'Registration year',
+    labelNcb: 'NCB',
+    labelPolicyStatus: 'Policy status',
+    statusActive: 'Active',
+    statusExpired: 'Expired',
+
+    // Unable to insure
+    unableToInsure: 'Unable to insure',
+
+    // Risk labels
+    highRisk: 'High Risk',
+    lowRisk: 'Low Risk',
+
+    // Plan types
+    zeroDep: 'Zero Depreciation Plans',
+    thirdParty: 'Third-party Plan',
+    thirdPartySub: 'Minimum coverage required by law',
+    planBestValue: 'Best value',
+    planRecommended: 'Recommended for you',
+    recommended: 'Recommended',
+    mandatoryByLaw: 'Mandatory by law',
+
+    // Garage selection
+    chooseGarageNetwork: 'Choose your garage network',
+    networkGarages: 'Network Garages',
+    allGarages: 'All Garages',
+    allGaragesSub: 'Get repairs at any garage of your choice',
+    cashlessNetworkGarages: 'Cashless Network Garages',
+    searchGarage: 'Search by garage name or area...',
+    noGaragesFound: 'No garages found',
+    noGaragesFoundSub: 'Try adjusting your search or filters',
+    searchInsurer: 'Search insurer',
+
+    // Add-ons
+    cutDownOOP: 'Cut down your out-of-pocket expenses',
+    basePremium: 'Base Premium',
+    addOns: 'Add-ons',
+    gst18: 'GST (18%)',
+    total: 'Total',
+    continueWithoutAddons: 'Continue without add-ons',
+    continueBtn: 'Continue',
+    cancel: 'Cancel',
+
+    // PA cover
+    forYou: 'For you',
+    forLovedOnes: 'For your loved ones',
+    forDriver: 'For your driver',
+    selectPATitle: 'Select Personal Accident coverage amount',
+    selectPADesc: 'Accidents can result in death or permanent disability. A Personal Accident Cover protects the owner-driver in such situations.',
+
+    // Documents upload
+    uploadDocTitle: 'Upload important documents',
+    regHolder: 'Registration holder',
+    vehicleNumber: 'Vehicle number',
+    chassisNo: 'Chassis no.',
+    uploading: 'Uploading...',
+    optional: 'Optional',
+    optionalHelp: 'Helps speed up claim processing',
+    updateHere: 'Update here',
+    selectSource: 'Select a source',
+
+    // Technician / agent visit
+    onDuty: 'On duty',
+    expectedVisit: 'Expected visit',
+    contact: 'Contact',
+    expires: 'Expires',
+
+    // KYC
+    kycTitle: 'KYC Verification',
+    kycSubtitle: 'Complete the steps below to verify your identity and activate your policy',
+    kycStep1Title: 'Verify your identity',
+    kycStep1Desc: 'Upload PAN card or Aadhaar',
+    kycStep2Title: 'Take a quick selfie',
+    kycStep2Desc: 'Face match for security',
+    kycStep3Title: 'Instant confirmation',
+    kycStep3Desc: 'Approved in most cases',
+
+    // IDV
+    idvLabel: (idv: string) => `IDV ₹${idv}L`,
+  },
+
+  /* ── Life Chat Widgets ── */
+  lifeWidgets: {
+    // Date input placeholders
+    dobDayPlaceholder: 'DD',
+    dobMonthPlaceholder: 'MM',
+    dobYearPlaceholder: 'YYYY',
+    dobDayLabel: 'Day',
+    dobMonthLabel: 'Month',
+    dobYearLabel: 'Year',
+    dobErrorIncomplete: 'Please enter a complete date',
+    dobErrorDay: 'Invalid day',
+    dobErrorMonth: 'Invalid month',
+    textErrorEmpty: 'Please enter a value',
+
+    // Coverage card
+    incomeGrowsOverTime: 'Your income grows over time',
+    loansChange: 'Your loans change',
+
+    // Summary labels
+    summaryName: 'Name',
+    summaryAge: (age: number) => `${age} years`,
+    summaryGenderMale: 'Male',
+    summaryGenderFemale: 'Female',
+    summaryPhone: 'Phone',
+    summaryPinCode: 'Pin Code',
+    summarySmoker: 'Smoker',
+    summaryAnnualIncome: 'Annual Income',
+    summaryCoverage: 'Coverage',
+    summaryRiders: 'Riders',
+    summaryRidersNone: 'None',
+    summaryPremium: 'Premium',
+    summaryNameLabel: 'Name',
+    summaryAgeLabel: 'Age',
+    summaryGenderLabel: 'Gender',
+    summaryPhoneLabel: 'Phone',
+    summaryPinLabel: 'Pin Code',
+    summarySmokerLabel: 'Smoker',
+    summaryIncomeLabel: 'Annual Income',
+    summaryCoverageLabel: 'Coverage',
+    summaryRidersLabel: 'Riders',
+    summaryPremiumLabel: 'Premium',
+
+    // Post payment timeline
+    teleMedTitle: 'Tele-Medical Call',
+    teleMedDesc: 'A quick call to understand your health better',
+    teleMedTime: 'Within 24 hrs',
+    incomeVerifyTitle: 'Income Verification',
+    incomeVerifyDesc: 'Submit income proof documents',
+    incomeVerifyTime: 'Upload anytime',
+    uwReviewTitle: 'Underwriting Review',
+    uwReviewDesc: 'Our team reviews everything',
+    uwReviewTime: '2-3 business days',
+    finalApprovalTitle: 'Final Approval',
+    finalApprovalDesc: 'Your policy becomes active!',
+    finalApprovalTime: 'Same day as approval',
+    nextSteps1: 'Tele-medical call within 24 hours',
+    nextSteps2: 'Document upload link via SMS',
+    nextSteps3: 'Approval notification in 3-5 days',
+
+    // KYC
+    startKyc: 'Start KYC Verification',
+    completedKyc: "I've Completed",
+    kycStep1Title: 'Verify your identity',
+    kycStep1Sub: 'Upload PAN card or Aadhaar',
+    kycStep2Title: 'Take a quick selfie',
+    kycStep2Sub: 'Face match for security',
+    kycStep3Title: 'Instant confirmation',
+    kycStep3Sub: 'Approved in most cases',
+
+    // VMER
+    vmerScheduleTitle: 'Choose a date and time for your VMER call',
+    vmerInstantTitle: 'Instant video call',
+    vmerInstantSub: 'Jump on a call with an available doctor now',
+    vmerScheduleOptionTitle: 'Schedule for later',
+    vmerScheduleOptionSub: 'Pick a convenient date and time slot',
+    vmerPrep1: 'Video call with a doctor',
+    vmerPrep1Desc: '15–20 mins, camera & mic required',
+    vmerPrep2: 'Quiet location needed',
+    vmerPrep2Desc: 'Find a private space before joining',
+    vmerPrep3: 'Post-call review',
+    vmerPrep3Desc: "You'll confirm the answers discussed",
+    vmerChecklist1: 'Ensure camera & microphone are working',
+    vmerChecklist2: 'Move to a quiet, private location',
+    vmerChecklist3: 'Keep your Aadhaar / PAN card nearby',
+    vmerChecklist4: 'List of current medications (if any)',
+    vmerChecklist5: 'Comfortable clothing for brief physical check if asked',
+
+    // Home visit
+    homeVisitTitle: 'When should the technician visit?',
+
+    // OTP
+    otpSentTo: (mobile: string) => `OTP sent to ${mobile}`,
+    otpExpires: (secs: number) => `OTP expires in ${secs}s`,
+    otpExpired: 'OTP expired',
+    otpResend: (left: number) => `Resend OTP (${left} left)`,
+    otpMobileNotLinked: 'Mobile not linked? Try alternatives',
+
+    // eKYC options
+    digilockerLabel: 'DigiLocker',
+    digilockerDesc: 'Link your DigiLocker account',
+    videoKycLabel: 'Video KYC',
+    uploadDocsLabel: 'Upload Documents',
+    verifyDigilocker: 'Verify via DigiLocker',
+    verifyDigilockerDesc: 'Instant verification using your DigiLocker Aadhaar',
+    verifyVideoKyc: 'Video KYC with an agent',
+    verifyUpload: 'Upload documents',
+    aadhaarVerification: 'Aadhaar-based identity verification',
+    verificationIssue: 'Verification issue',
+    alternativeKyc: 'Alternative KYC',
+    digilockerSteps1: 'Log in to your DigiLocker account',
+    digilockerSteps2: 'Authorise ACKO to access your Aadhaar',
+    digilockerSteps3: 'Verified instantly — no documents to upload',
+    videoKycInfo1: 'Available Mon–Sat, 9 AM to 6 PM',
+    videoKycInfo2: 'Camera and microphone required',
+    videoKycInfo3: 'Keep original PAN and Aadhaar handy',
+    panCardLabel: 'PAN Card',
+    panCardDesc: 'Front side, clear photo',
+    selfieLabel: 'Selfie',
+    selfieDesc: 'Face clearly visible, bright light',
+
+    // VMER header states
+    vmerHeaderIntro: 'Medical Evaluation',
+    vmerHeaderIntroSub: 'VMER — Video Medical Evaluation',
+    vmerHeaderAvailable: 'Doctor Available',
+    vmerHeaderAvailableSub: 'Join in ~5 minutes',
+    vmerHeaderNone: 'No Doctor Available',
+    vmerHeaderNoneSub: 'Schedule for later',
+    vmerHeaderSlotPicker: 'Schedule Your Call',
+    vmerHeaderSlotPickerSub: 'Pick a date & time',
+    vmerHeaderSlotConflict: 'Slot Taken',
+    vmerHeaderSlotConflictSub: 'Please pick another time',
+    vmerHeaderCallActive: 'Video Call',
+    vmerHeaderCallActiveSub: 'In progress with doctor',
+    vmerHeaderSubmitting: 'Submitting',
+    vmerHeaderSubmittingSub: 'Saving your responses…',
+    vmerHeaderUnderReview: 'Under Review',
+    vmerHeaderUnderReviewSub: 'Medical info submitted',
+    vmerHeaderPpmcIntro: 'Additional Tests',
+    vmerHeaderPpmcIntroSub: 'Home health test required',
+    vmerHeaderPpmcAddress: 'Test Location',
+    vmerHeaderPpmcAddressSub: 'Choose address for home test',
+    vmerHeaderPpmcAddressNew: 'New Address',
+    vmerHeaderPpmcAddressNewSub: 'Where should we come?',
+    vmerHeaderPpmcSlot: 'Schedule Home Test',
+    vmerHeaderPpmcSlotSub: 'Pick a date & time',
+    vmerHeaderPpmcOffline: "We'll Reach Out",
+    vmerHeaderPpmcOfflineSub: 'Manual scheduling',
+    vmerHeaderDocsRequired: 'Upload Documents',
+    vmerHeaderDocsConfirm: 'Confirm Upload',
+    vmerHeaderDocsConfirmSub: 'Double-check before submitting',
+    vmerHeaderDocsSubmitted: 'Documents Uploaded',
+    vmerHeaderDocsSubmittedSub: 'Under review',
+    vmerHeaderComplete: 'Evaluation Complete',
+    vmerHeaderCompleteSub: 'All done!',
+
+    // Additional medical fields
+    additionalComments: 'Additional comments (optional)',
+    activityDetails: 'Activity, type, frequency — e.g. Skydiving, solo, twice a year',
+    travelDetails: 'Countries, purpose, duration, accommodation type',
+    enterMobileNumber: 'Enter 10-digit number',
+    dependentsLabel: 'Dependents',
+
+    // Plan card
+    termLifePlan: 'Term Life Plan',
+  },
+
+  /* ── Policy Action Screen ── */
+  policyAction: {
+    alreadyHave: (name: string, lob: string) => name ? `${name}, you already have ${lob} with us` : `You already have ${lob} with us`,
+    whatToDo: 'What would you like to do?',
+    activeStatus: 'Active',
+    since: (date: string) => `Since ${date}`,
+    continueWhereLeft: 'Continue where you left off',
+    buyAnother: (lob: string) => `Buy another ${lob} policy`,
+    startNewPurchase: 'Start a new purchase journey',
+  },
+
+  /* ── Policy Dashboard ── */
+  policyDashboard: {
+    dashboardLabel: 'Dashboard',
+    welcomeGlance: (name: string) => `Welcome back, ${name}! Here's your policy at a glance:`,
+    planLabel: (label: string) => `Plan: ${label}`,
+    premiumLabel: (amount: string) => `Premium: ${amount}`,
+    activeStatus: 'Active',
+    policyStart: (date: string) => `Policy start: ${date}`,
+    whatToDoLife: 'What would you like to update?',
+    whatToDo: 'What would you like to do?',
+    // Life actions
+    actionPersonal: 'Personal information',
+    actionPersonalSub: 'Name, address and bank details',
+    actionNominee: 'Nominee and payout details',
+    actionNomineeSub: "Nominee's details, bank details and payout options",
+    actionCoverage: 'Policy coverage',
+    actionCoverageSub: 'Sum assured, policy term and additional coverage',
+    // Health/motor actions
+    actionClaim: 'Raise a claim',
+    actionClaimSub: 'Cashless or reimbursement',
+    actionAnswers: 'Get answers',
+    actionAnswersSub: "What's covered & not",
+    actionDocs: 'Download documents',
+    actionDocsSub: 'Policy, health card, tax cert',
+    actionEdit: 'Edit policy',
+    actionEditSub: 'Add/remove members, change SI',
+  },
+
+  /* ── e-KYC Chat Flow ── */
+  ekycFlow: {
+    paymentReceived: (cover: string) => `Payment received – your coverage of ${cover} is reserved for you. 🎉`,
+    kycIntroStep1: "Now let's complete your e-KYC. It's mandatory for policy issuance and takes under 2 minutes.",
+    kycIntroStep2: "You'll need your **Aadhaar number** and access to the **mobile linked with Aadhaar**.",
+    sendingOtp: 'Sending OTP to your Aadhaar-linked mobile...',
+    otpSentToMobile: (mobile: string) => `OTP sent to your mobile linked with ${mobile}`,
+    verifyingOtp: 'Verifying OTP...',
+    identityVerified: 'Identity Verified',
+    kycCompleted: 'e-KYC completed successfully',
+    aadhaarKycComplete: 'Aadhaar KYC Complete',
+    linkedTo: (mobile: string) => `Linked to ${mobile}`,
+    proceedingNextStep: 'Proceeding to next step...',
+    resendingOtp: 'Resending OTP...',
+    newOtpSent: (mobile: string) => `New OTP sent to ${mobile}`,
+    otpExpiredError: '❌ OTP has expired. Please request a new one.',
+    otpIncompleteError: '❌ Please enter the complete 6-digit OTP',
+    otpMaxAttemptsError: '❌ Maximum OTP attempts reached. Please try again later or contact support at 1800 266 5433.',
+    otpIncorrect: (left: number) => `❌ Incorrect OTP. ${left} attempt${left > 1 ? 's' : ''} remaining.`,
   },
 };

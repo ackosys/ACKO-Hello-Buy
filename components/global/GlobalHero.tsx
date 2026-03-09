@@ -148,7 +148,7 @@ export default function GlobalHero({ userName, hideHeadline }: GlobalHeroProps) 
     setMenuOpen(false);
   };
 
-  const menuBg   = isLight ? '#FFFFFF' : theme === 'dark' ? '#18181C' : '#1a0a3e';
+  const menuBg   = isLight ? '#FFFFFF' : 'var(--app-surface)';
   const menuBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.1)';
   const sectionLabel = isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)';
 
@@ -163,7 +163,7 @@ export default function GlobalHero({ userName, hideHeadline }: GlobalHeroProps) 
       >
         <Link href="/">
           <AckoLogo
-            variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'}
+            variant={isLight ? 'color' : 'white'}
             className="h-8"
           />
         </Link>

@@ -8,6 +8,7 @@ import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
 import { readSessionCookie, writeSessionCookie, clearSessionCookie } from '../../lib/sessionCookie';
 import { useThemeStore } from '../../lib/themeStore';
+import { useT } from '../../lib/translations';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const VALID_OTP = '0000';
@@ -132,6 +133,7 @@ function LoginContent() {
   const nextRoute = searchParams.get('next') || '/';
   const { setProfile, addPolicy, isLoggedIn } = useUserProfileStore();
   const { theme } = useThemeStore();
+  const t = useT();
   const isLight = theme === 'light';
 
   // step 0 = phone (new) | returning recognition
@@ -237,11 +239,11 @@ function LoginContent() {
               <motion.div key="returning" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <LogoAnimation />
                 <div className="text-center space-y-1">
-                  <h1 className="text-[22px] font-semibold leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                    Welcome back,<br />{returningUser.firstName}! 👋
+                  <h1 className="text-[22px] font-semibold leading-[30px] tracking-[-0.2px] whitespace-pre-line" style={{ color: 'var(--app-text)' }}>
+                    {t.login.welcomeBack(returningUser.firstName)}
                   </h1>
                   <p className="text-[15px] leading-[22px]" style={{ color: 'var(--app-text-muted)' }}>
-                    Looks like you&apos;ve been here before.
+                    {t.login.welcomeBackSub}
                   </p>
                 </div>
                 <div className="w-full flex flex-col gap-3">
@@ -254,14 +256,14 @@ function LoginContent() {
                     className="w-full h-[52px] rounded-2xl text-[16px] font-semibold"
                     style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                   >
-                    Continue as {returningUser.firstName}
+                    {t.login.continueAs(returningUser.firstName)}
                   </button>
                   <button
                     onClick={handleNotMe}
                     className="w-full h-[44px] rounded-xl text-[14px] font-medium"
                     style={{ color: 'var(--app-text-muted)' }}
                   >
-                    Not me
+                    {t.login.notMe}
                   </button>
                 </div>
               </motion.div>
@@ -271,8 +273,8 @@ function LoginContent() {
             {step === 0 && !returningUser && (
               <motion.div key="step0" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <LogoAnimation />
-                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  What&apos;s your<br />mobile number?
+                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px] whitespace-pre-line" style={{ color: 'var(--app-text)' }}>
+                  {t.login.mobileTitle}
                 </h1>
                 <div
                   className="w-full h-[52px] rounded-xl flex items-center overflow-hidden"
@@ -284,7 +286,7 @@ function LoginContent() {
                     autoFocus
                     type="tel"
                     inputMode="numeric"
-                    placeholder="Enter your phone number"
+                    placeholder={t.login.mobilePlaceholder}
                     value={phone}
                     onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     onKeyDown={e => e.key === 'Enter' && canContinue && setStep(1)}
@@ -298,7 +300,7 @@ function LoginContent() {
                 >
                   <LightbulbIcon />
                   <p className="text-[13px] leading-[18px]" style={{ color: 'var(--app-text-muted)' }}>
-                    We&apos;ll save your progress and help you pick up right where you left off.
+                    {t.login.mobileHint}
                   </p>
                 </div>
               </motion.div>
@@ -308,13 +310,13 @@ function LoginContent() {
             {step === 1 && (
               <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <LogoAnimation />
-                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  Enter the OTP sent<br />to +91 {phone}
+                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px] whitespace-pre-line" style={{ color: 'var(--app-text)' }}>
+                  {t.login.otpTitle(phone)}
                 </h1>
                 <OtpInput onComplete={handleOtp} error={otpError} />
                 {otpError && (
                   <p className="text-[13px] text-center" style={{ color: '#ef4444' }}>
-                    Incorrect OTP. Please try again.
+                    {t.login.otpError}
                   </p>
                 )}
               </motion.div>
@@ -324,13 +326,13 @@ function LoginContent() {
             {step === 2 && (
               <motion.div key="step2" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <LogoAnimation />
-                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px]" style={{ color: 'var(--app-text)' }}>
-                  Almost there!<br />What should we call you?
+                <h1 className="text-[22px] font-semibold text-center leading-[30px] tracking-[-0.2px] whitespace-pre-line" style={{ color: 'var(--app-text)' }}>
+                  {t.login.nameTitle}
                 </h1>
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder={t.login.namePlaceholder}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && name.trim() && handleNameSubmit()}
@@ -349,7 +351,7 @@ function LoginContent() {
               <motion.div key="step3" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.3 }} className="flex flex-col items-center gap-6">
                 <SuccessBadge />
                 <p className="text-[18px] font-semibold" style={{ color: 'var(--app-text)' }}>
-                  Welcome, {name}!
+                  {t.login.welcomeSuccess(name)}
                 </p>
               </motion.div>
             )}
@@ -373,8 +375,8 @@ function LoginContent() {
                 className="w-full h-[52px] rounded-2xl text-[16px] font-semibold"
                 style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
               >
-                Continue
-              </button>
+              {t.login.continueBtn}
+            </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -382,7 +384,7 @@ function LoginContent() {
         {step === 1 && (
           <div className="px-5 pb-10 pt-4">
             <p className="text-center text-[13px]" style={{ color: 'var(--app-text-muted)' }}>
-              Enter <strong>0000</strong> to verify
+              {t.login.otpHint}
             </p>
           </div>
         )}

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUserProfileStore, type PolicyLob } from '../../lib/userProfileStore';
 import { useThemeStore } from '../../lib/themeStore';
+import { useT } from '../../lib/translations';
 
 interface PolicyDashboardProps {
   lobId: PolicyLob;
@@ -87,30 +88,31 @@ const ICONS = {
 
 type ActionItem = { id: string; label: string; sub: string; icon: React.ReactNode };
 
-function getActionsForLob(lobId: PolicyLob): ActionItem[] {
+function getActionsForLob(lobId: PolicyLob, pd: ReturnType<typeof useT>['policyDashboard']): ActionItem[] {
   if (lobId === 'life') {
     return [
-      { id: 'personal', label: 'Personal information', sub: 'Name, address and bank details', icon: ICONS.person },
-      { id: 'nominee', label: 'Nominee and payout details', sub: "Nominee's details, bank details and payout options", icon: ICONS.nominee },
-      { id: 'coverage', label: 'Policy coverage', sub: 'Sum assured, policy term and additional coverage', icon: ICONS.coverage },
+      { id: 'personal', label: pd.actionPersonal, sub: pd.actionPersonalSub, icon: ICONS.person },
+      { id: 'nominee', label: pd.actionNominee, sub: pd.actionNomineeSub, icon: ICONS.nominee },
+      { id: 'coverage', label: pd.actionCoverage, sub: pd.actionCoverageSub, icon: ICONS.coverage },
     ];
   }
   return [
-    { id: 'claim', label: 'Raise a claim', sub: 'Cashless or reimbursement', icon: ICONS.claim },
-    { id: 'answers', label: 'Get answers', sub: "What's covered & not", icon: ICONS.answers },
-    { id: 'docs', label: 'Download documents', sub: 'Policy, health card, tax cert', icon: ICONS.docs },
-    { id: 'edit', label: 'Edit policy', sub: 'Add/remove members, change SI', icon: ICONS.edit },
+    { id: 'claim', label: pd.actionClaim, sub: pd.actionClaimSub, icon: ICONS.claim },
+    { id: 'answers', label: pd.actionAnswers, sub: pd.actionAnswersSub, icon: ICONS.answers },
+    { id: 'docs', label: pd.actionDocs, sub: pd.actionDocsSub, icon: ICONS.docs },
+    { id: 'edit', label: pd.actionEdit, sub: pd.actionEditSub, icon: ICONS.edit },
   ];
 }
 
 export default function PolicyDashboard({ lobId, lobLabel }: PolicyDashboardProps) {
+  const pd = useT().policyDashboard;
   const router = useRouter();
   const theme = useThemeStore((s) => s.theme);
   const isLight = theme === 'light';
   const firstName = useUserProfileStore((s) => s.firstName);
   const policies = useUserProfileStore((s) => s.getActivePoliciesForLob(lobId));
   const policy = policies[0];
-  const actions = getActionsForLob(lobId);
+  const actions = getActionsForLob(lobId, pd);
 
   if (!policy) {
     router.back();
@@ -141,7 +143,7 @@ export default function PolicyDashboard({ lobId, lobLabel }: PolicyDashboardProp
               <rect width="40" height="40" rx="8" fill="#7C3AED" />
               <path d="M12 20c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8" stroke="white" strokeWidth="3" strokeLinecap="round" />
             </svg>
-            <span className="text-xs font-medium" style={{ color: 'var(--app-text-muted)' }}>Dashboard</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--app-text-muted)' }}>{pd.dashboardLabel}</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -197,10 +199,10 @@ export default function PolicyDashboard({ lobId, lobLabel }: PolicyDashboardProp
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs mb-1" style={{ color: 'var(--app-text-muted)' }}>
-                Welcome back, {firstName || 'there'}! Here&apos;s your policy at a glance:
+                {pd.welcomeGlance(firstName || 'there')}
               </p>
               <p className="text-base font-semibold mb-1" style={{ color: 'var(--app-text)' }}>
-                Plan: {policy.label}
+                {pd.planLabel(policy.label)}
               </p>
               {policy.details && (
                 <p className="text-sm mb-1" style={{ color: 'var(--app-text-muted)' }}>{policy.details}</p>
@@ -210,19 +212,19 @@ export default function PolicyDashboard({ lobId, lobLabel }: PolicyDashboardProp
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{
                     background: isLight ? '#EDE9FE' : 'rgba(124,58,237,0.2)',
                     color: isLight ? '#7C3AED' : '#A78BFA',
-                  }}>
-                    Premium: {formatPremium(policy.premium, policy.premiumFrequency)}
+                  }}                  >
+                    {pd.premiumLabel(formatPremium(policy.premium, policy.premiumFrequency))}
                   </span>
                 )}
                 <span className="text-xs px-2 py-0.5 rounded-full" style={{
                   background: isLight ? '#D1FAE5' : 'rgba(16,185,129,0.2)',
                   color: isLight ? '#065F46' : '#6EE7B7',
                 }}>
-                  Active
+                  {pd.activeStatus}
                 </span>
               </div>
               <p className="text-[11px] mt-2" style={{ color: 'var(--app-text-subtle)' }}>
-                {policy.policyNumber} &middot; Policy start: {formatDate(policy.purchasedAt)}
+                {policy.policyNumber} &middot; {pd.policyStart(formatDate(policy.purchasedAt))}
               </p>
             </div>
           </div>
@@ -236,7 +238,7 @@ export default function PolicyDashboard({ lobId, lobLabel }: PolicyDashboardProp
           className="text-sm font-medium mb-4 pl-1"
           style={{ color: 'var(--app-text-muted)' }}
         >
-          {lobId === 'life' ? 'What would you like to update?' : 'What would you like to do?'}
+          {lobId === 'life' ? pd.whatToDoLife : pd.whatToDo}
         </motion.p>
 
         {/* Action cards */}

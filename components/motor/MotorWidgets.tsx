@@ -12,6 +12,7 @@ import { useThemeStore } from '../../lib/themeStore';
 import { MotorJourneyState, NcbPercentage } from '../../lib/motor/types';
 import { getMotorAddOns } from '../../lib/motor/plans';
 import Image from 'next/image';
+import { useT } from '../../lib/translations';
 
 const ADDON_ICONS: Record<string, string> = {
   engine_protection:     'Engine_protect.svg',
@@ -133,6 +134,7 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
    ═══════════════════════════════════════════════ */
 
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
+  const tw = useT().motorWidgets;
   const [selected, setSelected] = useState<string | null>(null);
   const [showKycSheet, setShowKycSheet] = useState(false);
   const theme = useThemeStore((s) => s.theme);
@@ -355,7 +357,7 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                       <p className="text-[13px] mt-1.5 leading-snug" style={{ color: 'var(--motor-text-muted)' }}>
                         {kycStage === 'info'
                           ? 'HyperVerge, our reliable partner, will handle the KYC process for you with 100% security'
-                          : 'Complete the steps below to verify your identity and activate your policy'}
+                          : tw.kycSubtitle}
                       </p>
                     </div>
                     <button
@@ -375,9 +377,9 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                     {/* Steps */}
                     <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2">
                       {[
-                        { step: '1', title: 'Verify your identity', desc: 'Upload PAN card or Aadhaar' },
-                        { step: '2', title: 'Take a quick selfie', desc: 'Face match for security' },
-                        { step: '3', title: 'Instant confirmation', desc: 'Approved in most cases' },
+                        { step: '1', title: tw.kycStep1Title, desc: tw.kycStep1Desc },
+                        { step: '2', title: tw.kycStep2Title, desc: tw.kycStep2Desc },
+                        { step: '3', title: tw.kycStep3Title, desc: tw.kycStep3Desc },
                       ].map((item) => (
                         <div key={item.step} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
                           <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-500/20 border border-purple-400/30">
@@ -589,18 +591,19 @@ export function MotorTextInput({
    Progressive Loader — Finding your vehicle
    ═══════════════════════════════════════════════ */
 
-const LOADING_STAGES = [
-  { message: 'Searching Vaahan portal...', duration: 1500 },
-  { message: 'Fetching vehicle details...', duration: 1500 },
-  { message: 'Checking registration certificate...', duration: 1200 },
-  { message: 'Loading existing policy data...', duration: 1200 },
-  { message: 'Almost there...', duration: 800 },
-];
-
 export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'success' | 'failed') => void }) {
   const [currentStage, setCurrentStage] = useState(0);
   const [stagesComplete, setStagesComplete] = useState(false);
   const { vehicleType, registrationNumber } = useMotorStore();
+  const tw = useT().motorWidgets;
+
+  const LOADING_STAGES = [
+    { message: tw.regSearchingVaahan, duration: 1500 },
+    { message: tw.regFetching, duration: 1500 },
+    { message: tw.regCheckingRC, duration: 1200 },
+    { message: tw.regLoadingPolicy, duration: 1200 },
+    { message: tw.regAlmostThere, duration: 800 },
+  ];
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -638,7 +641,7 @@ export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'succes
             <MotorIcon icon={vehicleType === 'bike' ? 'bike' : 'car'} className="w-5 h-5 text-purple-300" />
           </div>
           <div>
-            <p className="text-[11px] text-white/40 uppercase tracking-wider">Registration</p>
+            <p className="text-[11px] text-white/40 uppercase tracking-wider">{tw.registration}</p>
             <p className="text-[16px] font-bold text-white tracking-wider">{registrationNumber || 'N/A'}</p>
           </div>
         </div>
@@ -744,6 +747,7 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
   const [confirmed, setConfirmed] = useState(false);
   const vehicleImg = getVehicleImage(v.make, state.vehicleType || 'car');
   const isLight = state.theme === 'light';
+  const tw = useT().motorWidgets;
 
   const formatRegistration = (value: string) => {
     const clean = value.replace(/\s+/g, '').toUpperCase();
@@ -799,20 +803,20 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
         {/* Details */}
         <div className="px-4 py-4 space-y-4">
           <div>
-            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Registration</p>
+            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.registration}</p>
             <p className="text-[14px] font-semibold mt-1 tracking-[0.01em]" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>
               {formatRegistration(state.registrationNumber)}
             </p>
           </div>
           {p.insurer && (
             <div>
-              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Current Insurance</p>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.currentInsurance}</p>
               <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.insurer}</p>
             </div>
           )}
           {p.expiryDate && (
             <div>
-              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Policy expiry</p>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.policyExpiry}</p>
               <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.expiryDate}</p>
             </div>
           )}
@@ -830,7 +834,7 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
               className="w-full h-12 rounded-lg text-[14px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-60"
               style={{ background: isLight ? '#0A0A0F' : 'var(--btn-primary-bg)', color: '#FFFFFF', boxShadow: isLight ? undefined : 'var(--btn-primary-shadow)' }}
             >
-              {confirmed ? 'Confirmed' : 'This is correct'}
+              {confirmed ? tw.confirmed : tw.thisIsCorrect}
             </button>
 
             <button
@@ -1306,6 +1310,7 @@ export function NcbSelector({ onSelect }: { onSelect: (ncb: string) => void }) {
 export function NcbReward({ onContinue }: { onContinue: () => void }) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const [show, setShow] = useState(false);
+  const tw = useT().motorWidgets;
 
   useEffect(() => {
     setTimeout(() => setShow(true), 300);
@@ -1326,12 +1331,12 @@ export function NcbReward({ onContinue }: { onContinue: () => void }) {
         >
           <span className="text-3xl">🎉</span>
         </motion.div>
-        <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>NCB Reward Applied!</h3>
+        <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>{tw.ncbApplied}</h3>
         <p className="text-[14px] mb-3" style={{ color: 'var(--motor-text-muted)' }}>
           {state.newNcbPercentage}% discount on your Own Damage premium
         </p>
         <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2)' }}>
-          <p className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>For staying claim-free</p>
+          <p className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>{tw.ncbStayClaim}</p>
           <p className="text-[20px] font-bold text-green-400">{state.newNcbPercentage}% OFF</p>
         </div>
       </div>
@@ -1340,7 +1345,7 @@ export function NcbReward({ onContinue }: { onContinue: () => void }) {
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
         style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
-        Continue
+        {tw.continueBtn}
       </button>
     </motion.div>
   );
@@ -1360,6 +1365,7 @@ const INSURERS = [
 export function InsurerSelector({ onSelect }: { onSelect: (insurer: string) => void }) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const tw = useT().motorWidgets;
 
   const filtered = search
     ? INSURERS.filter(i => i.toLowerCase().includes(search.toLowerCase()))
@@ -1380,7 +1386,7 @@ export function InsurerSelector({ onSelect }: { onSelect: (insurer: string) => v
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search insurer"
+          placeholder={tw.searchInsurer}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl text-[14px] focus:outline-none focus:border-purple-400/50 transition-colors"
           style={{ background: 'var(--motor-input-bg)', border: '1px solid var(--motor-input-border)', color: 'var(--motor-input-text)' }}
           autoFocus
@@ -1441,6 +1447,7 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
   const v = state.vehicleData;
   const isLight = state.theme === 'light';
   const editable = !!onEditField;
+  const tw = useT().motorWidgets;
 
   return (
     <motion.div
@@ -1459,14 +1466,14 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
           Vehicle Summary
         </h3>
 
-        {v.make && <SummaryRow label="Make" value={v.make} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
-        {v.model && <SummaryRow label="Model" value={v.model} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
-        {v.variant && <SummaryRow label="Variant" value={v.variant} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
-        {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
-        {!isBrandNew && state.registrationNumber && <SummaryRow label="Registration number" value={state.registrationNumber} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_number')} />}
-        {!isBrandNew && v.registrationYear && <SummaryRow label="Registration year" value={String(v.registrationYear)} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_year')} />}
-        {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} isLight={isLight} editable={editable} onEdit={() => onEditField?.('ncb')} />}
-        {!isBrandNew && state.policyStatus && <SummaryRow label="Policy status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} isLight={isLight} />}
+        {v.make && <SummaryRow label={tw.labelMake} value={v.make} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
+        {v.model && <SummaryRow label={tw.labelModel} value={v.model} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
+        {v.variant && <SummaryRow label={tw.labelVariant} value={v.variant} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
+        {v.fuelType && <SummaryRow label={tw.labelFuel} value={v.fuelType} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
+        {!isBrandNew && state.registrationNumber && <SummaryRow label={tw.labelRegNumber} value={state.registrationNumber} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_number')} />}
+        {!isBrandNew && v.registrationYear && <SummaryRow label={tw.labelRegYear} value={String(v.registrationYear)} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_year')} />}
+        {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label={tw.labelNcb} value={`${state.previousPolicy.ncbPercentage}%`} isLight={isLight} editable={editable} onEdit={() => onEditField?.('ncb')} />}
+        {!isBrandNew && state.policyStatus && <SummaryRow label={tw.labelPolicyStatus} value={state.policyStatus === 'active' ? tw.statusActive : tw.statusExpired} isLight={isLight} />}
 
         <button
           onClick={onConfirm}
@@ -1507,6 +1514,7 @@ function SummaryRow({ label, value, isLight, highlight, editable, onEdit }: { la
    ═══════════════════════════════════════════════ */
 
 export function RejectionScreen() {
+  const tw = useT().motorWidgets;
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -1519,7 +1527,7 @@ export function RejectionScreen() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <h3 className="text-[16px] font-bold text-white mb-2">Unable to insure</h3>
+        <h3 className="text-[16px] font-bold text-white mb-2">{tw.unableToInsure}</h3>
         <p className="text-[13px] text-white/50">
           We're currently unable to offer insurance for commercial vehicles. We'll notify you when this changes.
         </p>
@@ -1793,6 +1801,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const vehicleType = useMotorStore((s) => s.vehicleType);
   const isBrandNew = vehicleEntryType === 'brand_new';
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
+  const tw = useT().motorWidgets;
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [showGarageTier, setShowGarageTier] = useState(false);
@@ -1937,9 +1946,9 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             {!isBrandNew && zeroDepLowest && (
               <PlanCard
                 plan={zeroDepLowest}
-                title="Zero Depreciation Plans"
+                title={tw.zeroDep}
                 subtitle="2 options starting from"
-                badge="Best value"
+                badge={tw.planBestValue}
                 price={formatPrice(zeroDepLowest.totalPrice)}
                 description="This plan includes fire, theft, accident, and third party liability cover and covers 100% cost of replaced parts during repairs."
                 onSelect={() => handlePlanClick(zeroDepLowest)}
@@ -1951,8 +1960,8 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             {!isBrandNew && thirdPartyPlan && (
               <PlanCard
                 plan={thirdPartyPlan}
-                title="Third-party Plan"
-                subtitle="Minimum coverage required by law"
+                title={tw.thirdParty}
+                subtitle={tw.thirdPartySub}
                 price={`${formatPrice(thirdPartyPlan.totalPrice)} (Same across all insurers)`}
                 description={`It covers damage caused by your ${vType} to others and their property, but does not cover any damage caused to your ${vType}.`}
                 onSelect={() => handlePlanClick(thirdPartyPlan)}
@@ -1999,7 +2008,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
               >
                 <div className="p-5">
                   <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                  <h3 className="text-[18px] font-bold text-white mb-1">Choose your garage network</h3>
+                  <h3 className="text-[18px] font-bold text-white mb-1">{tw.chooseGarageNetwork}</h3>
                   <p className="text-[12px] text-white/50 mb-5">Comprehensive plan lets you pick where your {vType} gets repaired</p>
 
                   <div className="space-y-3">
@@ -2016,7 +2025,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                             </svg>
                           </div>
                           <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">Network Garages</h4>
+                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">{tw.networkGarages}</h4>
                             <p className="text-[11px] text-white/50">Cashless repairs at 5,400+ ACKO partner garages</p>
                           </div>
                         </div>
@@ -2045,8 +2054,8 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                             </svg>
                           </div>
                           <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">All Garages</h4>
-                            <p className="text-[11px] text-white/50">Get repairs at any garage of your choice</p>
+                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">{tw.allGarages}</h4>
+                            <p className="text-[11px] text-white/50">{tw.allGaragesSub}</p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
@@ -2055,7 +2064,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                         </div>
                       </div>
                       <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-400/20">
-                        Recommended
+                        {tw.recommended}
                       </span>
                     </button>
                   </div>
@@ -2064,7 +2073,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                     onClick={() => setShowGarageTier(false)}
                     className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors"
                   >
-                    Cancel
+                    {tw.cancel}
                   </button>
                 </div>
               </motion.div>
@@ -2429,6 +2438,7 @@ function PlanCard({
 function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('all');
+  const tw = useT().motorWidgets;
 
   // Mock garage data
   const garages = [
@@ -2496,7 +2506,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div>
-            <h2 className="text-[18px] font-bold text-white">Cashless Network Garages</h2>
+            <h2 className="text-[18px] font-bold text-white">{tw.cashlessNetworkGarages}</h2>
             <p className="text-[12px] text-white/50 mt-0.5">5,400+ garages across India</p>
           </div>
           <button
@@ -2523,7 +2533,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
             </svg>
             <input
               type="text"
-              placeholder="Search by garage name or area..."
+              placeholder={tw.searchGarage}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-[13px] text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/50"
@@ -2584,8 +2594,8 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
-              <p className="text-[14px] text-white/50">No garages found</p>
-              <p className="text-[12px] text-white/30 mt-1">Try adjusting your search or filters</p>
+              <p className="text-[14px] text-white/50">{tw.noGaragesFound}</p>
+              <p className="text-[12px] text-white/30 mt-1">{tw.noGaragesFoundSub}</p>
             </div>
           )}
         </div>
@@ -2608,6 +2618,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
 export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => void }) {
   const { availablePlans, recommendedPlanType, vehicleEntryType } = useMotorStore();
   const isBrandNew = vehicleEntryType === 'brand_new';
+  const tw = useT().motorWidgets;
 
   const planType = recommendedPlanType || 'comprehensive';
   const planLabel = planType === 'zero_dep' ? 'Zero Depreciation' : planType === 'comprehensive' ? 'Comprehensive' : 'Third-party';
@@ -2633,7 +2644,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
             <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--motor-plan-rec-badge)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>Recommended for you</span>
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>{tw.planRecommended}</span>
           </div>
           <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{planLabel} Plan</h3>
           {matchedPlan && (
@@ -2681,6 +2692,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
   const { updateState, selectedAddOns = [], selectedPlan } = useMotorStore();
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
+  const tw = useT().motorWidgets;
 
   const addons = getMotorAddOns().filter((a: any) => a.category === 'out_of_pocket');
 
@@ -2737,8 +2749,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
         <div className="mb-4">
-          <h3 className="text-[16px] font-bold text-white mb-1">Cut down your out-of-pocket expenses</h3>
-          <p className="text-[12px] text-white/50">Recommended for you</p>
+          <h3 className="text-[16px] font-bold text-white mb-1">{tw.cutDownOOP}</h3>
+          <p className="text-[12px] text-white/50">{tw.planRecommended}</p>
         </div>
 
         {addons.map((addon: any, index: number) => {
@@ -2778,7 +2790,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       />
                     )}
                     <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">Recommended</span>}
+                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
                     {selected && (
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
@@ -2823,15 +2835,15 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
           className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10"
         >
           <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between text-white/70"><span>Base Premium</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
-            {totals.addonTotal > 0 && (<><div className="flex justify-between text-white/70"><span>Add-ons</span><span>₹{totals.addonTotal.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>GST (18%)</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
-            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>Total</span><span>₹{totals.total.toLocaleString()}</span></div>
+            <div className="flex justify-between text-white/70"><span>{tw.basePremium}</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
+            {totals.addonTotal > 0 && (<><div className="flex justify-between text-white/70"><span>{tw.addOns}</span><span>₹{totals.addonTotal.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>{tw.gst18}</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
+            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>{tw.total}</span><span>₹{totals.total.toLocaleString()}</span></div>
           </div>
         </motion.div>
 
         <div className="flex gap-3 mt-4">
-          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
+          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">{tw.continueWithoutAddons}</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>{tw.continueBtn}</button>
         </div>
         <p className="text-[11px] text-white/40 text-center mt-2">Next: Additional covers to reduce medical expenses</p>
       </motion.div>
@@ -2850,7 +2862,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
+                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
                           {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
@@ -2863,7 +2875,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -2879,6 +2891,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
+  const tw = useT().motorWidgets;
 
   const addons = getMotorAddOns().filter((a: any) => a.category === 'protect_everyone');
 
@@ -2970,7 +2983,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                 />
               )}
               <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
-              {addon.mandatory && <span className="text-[10px] text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full">Mandatory by law</span>}
+              {addon.mandatory && <span className="text-[10px] text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full">{tw.mandatoryByLaw}</span>}
               {selected && (
                 <motion.span
                   initial={{ scale: 0, opacity: 0 }}
@@ -3015,17 +3028,17 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For you</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forYou}</p>
           {addons.filter((a: any) => a.id === 'personal_accident').map((a, i) => renderAddonCard(a, i))}
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For your loved ones</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forLovedOnes}</p>
           {addons.filter((a: any) => a.id === 'passenger_protection').map((a, i) => renderAddonCard(a, i))}
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For your driver</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forDriver}</p>
           {addons.filter((a: any) => a.id === 'paid_driver').map((a, i) => renderAddonCard(a, i))}
         </div>
 
@@ -3037,15 +3050,15 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
           className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10"
         >
           <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between text-white/70"><span>Base Premium</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
-            {totals.totalAddons > 0 && (<><div className="flex justify-between text-white/70"><span>Add-ons</span><span>₹{totals.totalAddons.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>GST (18%)</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
-            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>Total</span><span>₹{totals.total.toLocaleString()}</span></div>
+            <div className="flex justify-between text-white/70"><span>{tw.basePremium}</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
+            {totals.totalAddons > 0 && (<><div className="flex justify-between text-white/70"><span>{tw.addOns}</span><span>₹{totals.totalAddons.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>{tw.gst18}</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
+            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>{tw.total}</span><span>₹{totals.total.toLocaleString()}</span></div>
           </div>
         </motion.div>
 
         <div className="flex gap-3 mt-4">
-          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
+          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">{tw.continueWithoutAddons}</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>{tw.continueBtn}</button>
         </div>
       </motion.div>
 
@@ -3055,15 +3068,15 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
             <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md max-h-[45vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl" style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}>
               <div className="p-5">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                <h3 className="text-[18px] font-bold text-white mb-1">Select Personal Accident coverage amount</h3>
-                <p className="text-[12px] text-white/50 mb-5">Accidents can result in death or permanent disability. A Personal Accident Cover protects the owner-driver in such situations.</p>
+                <h3 className="text-[18px] font-bold text-white mb-1">{tw.selectPATitle}</h3>
+                <p className="text-[12px] text-white/50 mb-5">{tw.selectPADesc}</p>
                 <div className="space-y-3">
                   {showVariantModal.addon.variants?.map((variant: any) => (
                     <button key={variant.id} onClick={() => selectVariant(showVariantModal.addon, variant)} className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
+                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
                           {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
@@ -3076,7 +3089,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -3108,6 +3121,7 @@ const DOC_SOURCE_OPTIONS: { id: DocSource; label: string; iconFile: string; acce
 export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocUploadResult) => void }) {
   const state = useMotorStore() as MotorJourneyState;
   const hasAutoRC = !!(state.registrationNumber && state.vehicleData?.make);
+  const tw = useT().motorWidgets;
 
   const [rcUploaded, setRcUploaded] = useState(hasAutoRC);
   const [dlUploaded, setDlUploaded] = useState(false);
@@ -3185,7 +3199,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
         animate={{ opacity: 1, y: 0 }}
         className="space-y-3 w-full max-w-sm"
       >
-        <p className="text-[13px] font-semibold text-white/50 uppercase tracking-wide px-1 mb-1">Upload important documents</p>
+        <p className="text-[13px] font-semibold text-white/50 uppercase tracking-wide px-1 mb-1">{tw.uploadDocTitle}</p>
 
         {/* RC Card */}
         <div className={`rounded-2xl border transition-all overflow-hidden ${rcUploaded ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/5'}`}>
@@ -3215,15 +3229,15 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             {hasAutoRC && rcUploaded && (
               <div className="bg-white/5 rounded-xl px-3 py-2.5 mb-3 space-y-1.5">
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Registration holder</span>
+                  <span className="text-white/50">{tw.regHolder}</span>
                   <span className="text-white font-medium">{ownerName}</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Vehicle number</span>
+                  <span className="text-white/50">{tw.vehicleNumber}</span>
                   <span className="text-white font-medium">{regNo}</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Chassis no.</span>
+                  <span className="text-white/50">{tw.chassisNo}</span>
                   <span className="text-white font-medium">{chassisNo}</span>
                 </div>
               </div>
@@ -3232,7 +3246,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             {uploadingFor === 'rc' ? (
               <div className="flex items-center gap-2 py-1">
                 <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-[13px] text-white/60">Uploading...</span>
+                <span className="text-[13px] text-white/60">{tw.uploading}</span>
               </div>
             ) : (
               <button
@@ -3296,9 +3310,9 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
                   {prevPolicyUploaded && (
                     <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Uploaded ✓</span>
                   )}
-                  <span className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded-full">Optional</span>
+                  <span className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded-full">{tw.optional}</span>
                 </div>
-                <p className="text-[12px] text-white/50">Helps speed up claim processing</p>
+                <p className="text-[12px] text-white/50">{tw.optionalHelp}</p>
               </div>
             </div>
 
@@ -3321,7 +3335,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
         {/* Incorrect details link */}
         <p className="text-[12px] text-center text-white/40 py-1">
           Incorrect details?{' '}
-          <button className="text-purple-400 underline underline-offset-2">Update here</button>
+          <button className="text-purple-400 underline underline-offset-2">{tw.updateHere}</button>
         </p>
 
         {/* Proceed CTA */}
@@ -3364,7 +3378,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             >
               <div className="p-5">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                <p className="text-[16px] font-semibold text-white mb-1">Select a source</p>
+                <p className="text-[16px] font-semibold text-white mb-1">{tw.selectSource}</p>
                 <p className="text-[12px] text-white/50 mb-5">in PNG, JPEG, or PDF format (Max 10 MB)</p>
               <div className="space-y-2">
                 {DOC_SOURCE_OPTIONS.map((opt) => (
@@ -3389,7 +3403,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
                   </button>
                 ))}
               </div>
-              <button onClick={() => setSourceSheet(null)} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+              <button onClick={() => setSourceSheet(null)} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -3407,6 +3421,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
 const SURVEYOR = { name: 'Rajesh Nair', id: 'SRV-4821', eta: '~90 mins', phone: '98XX XXXX 34', rating: 4.8 };
 
 export function SurveyorDetailsCard({ onContinue }: { onContinue: () => void }) {
+  const tw = useT().motorWidgets;
   useEffect(() => {
     const timer = setTimeout(() => onContinue(), 2500);
     return () => clearTimeout(timer);
@@ -3433,17 +3448,17 @@ export function SurveyorDetailsCard({ onContinue }: { onContinue: () => void }) 
           </div>
           <div className="text-right">
             <div className="w-2 h-2 rounded-full bg-green-400 ml-auto mb-1 animate-pulse" />
-            <p className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">On duty</p>
+            <p className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">{tw.onDuty}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2, var(--motor-surface))' }}>
-            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>Expected visit</p>
+            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>{tw.expectedVisit}</p>
             <p className="text-[13px] font-bold" style={{ color: 'var(--motor-text)' }}>{SURVEYOR.eta}</p>
           </div>
           <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2, var(--motor-surface))' }}>
-            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>Contact</p>
+            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>{tw.contact}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-[13px] font-bold" style={{ color: 'var(--motor-text)' }}>{SURVEYOR.phone}</p>
               <svg className="w-3.5 h-3.5 text-[#A855F7] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -3472,6 +3487,7 @@ function daysLeft(iso: string): number {
 }
 
 export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) => void }) {
+  const tw = useT().motorWidgets;
   const policies = useMotorStore((s) => s.dashboardPolicies);
   const vehicleType = useMotorStore((s) => s.vehicleType);
   const [selected, setSelected] = useState<string | null>(null);
@@ -3518,7 +3534,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                     {isExpired ? (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
-                        Expired
+                        {tw.statusExpired}
                       </span>
                     ) : isUrgent ? (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full animate-pulse"
@@ -3528,7 +3544,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                     ) : (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>
-                        Active
+                        {tw.statusActive}
                       </span>
                     )}
                     <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -3550,7 +3566,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                 {!isExpired && (
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Expires</p>
+                      <p className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>{tw.expires}</p>
                       <p className="text-[11px] font-semibold" style={{ color: isUrgent ? '#EA580C' : 'var(--motor-text-muted)' }}>
                         {new Date(policy.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
@@ -3709,7 +3725,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                   className="w-full mt-4 py-3 text-[13px] transition-colors"
                   style={{ color: 'var(--motor-text-muted)' }}
                 >
-                  Cancel
+                  {tw.cancel}
                 </button>
               </div>
             </motion.div>

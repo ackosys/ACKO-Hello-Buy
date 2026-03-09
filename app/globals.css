@@ -114,8 +114,6 @@
    Applied via .app-dark, .app-light on root
    ══════════════════════════════════════════════════ */
 
-/* .app-midnight theme removed — only dark and light are active */
-/*
 .app-midnight {
   --app-bg: #1C0B47;
   --app-surface: rgba(255,255,255,0.06);
@@ -126,11 +124,16 @@
   --app-text-subtle: rgba(255,255,255,0.4);
   --app-border: rgba(255,255,255,0.1);
   --app-border-strong: rgba(255,255,255,0.2);
+  --app-stats-accent: #ac93ff;
+  --app-cta-bg: #fbfbfb;
+  --app-cta-text: #1C0B47;
+  --app-pill-bg: #1C0B47;
+  --app-pill-shadow: rgba(0,0,0,0.3);
   --app-shadow: rgba(0,0,0,0.3);
   --app-glass-bg: rgba(30,15,70,0.85);
   --app-overlay-bg: rgba(255,255,255,0.08);
   --app-chat-gradient: linear-gradient(180deg, #1C0B47 0%, #2A1463 40%, #1C0B47 100%);
-  --app-home-gradient: linear-gradient(135deg, #1a0a3e 0%, #3a1d8e 30%, #6C4DE8 60%, #9b7bf7 100%);
+  --app-home-gradient: #1C0B47;
   --app-header-bg: #1C0B47;
   --app-user-bubble-bg: #FFFFFF;
   --app-user-bubble-text: #1C0B47;
@@ -153,19 +156,40 @@
   --app-tab-bg: rgba(255,255,255,0.06);
   --app-tab-inactive: rgba(255,255,255,0.4);
   --app-divider: rgba(255,255,255,0.08);
+  --circle-arrow-bg: #6841e6;
+  --circle-arrow-icon: #FFFFFF;
+  --app-pwilo-start-bg: rgba(104,65,230,0.15);
+  --app-pwilo-start-border: rgba(104,65,230,0.3);
+  --app-pwilo-start-text: #c4b5fd;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: rgba(255,255,255,0.06);
+  --btn-secondary-border: #6841e6;
+  --btn-secondary-text: #fbfbfb;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
+  --btn-inverted-bg: rgba(255,255,255,0.06);
+  --btn-inverted-text: #fbfbfb;
+  --btn-inverted-shadow: inset 0px 2px 4px rgba(255,255,255,0.04);
+  --btn-ghost-text: #c4b5fd;
+  --btn-link-text: #3b82f6;
+  --btn-disabled-bg: rgba(255,255,255,0.06);
+  --btn-disabled-text: rgba(255,255,255,0.3);
+  --btn-danger-bg: #7f1d1d;
+  --btn-danger-text: #fecaca;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
 }
-*/
 
 .app-dark {
-  --app-bg: #0f0f10;
-  --app-surface: #191919;
-  --app-surface-2: #141414;
+  --app-bg: #0F0F10;
+  --app-surface: #141414;
+  --app-surface-2: #191919;
   --app-surface-hover: #222222;
   --app-text: rgba(255,255,255,0.88);
   --app-text-muted: rgba(255,255,255,0.56);
   --app-text-subtle: rgba(255,255,255,0.36);
-  --app-border: rgba(255,255,255,0.07);
-  --app-border-strong: rgba(255,255,255,0.12);
+  --app-border: #191919;
+  --app-border-strong: #222222;
   --app-stats-accent: #ac93ff;
   --app-cta-bg: #fbfbfb;
   --app-cta-text: #141414;
@@ -322,8 +346,15 @@
 .app-light .bg-white\/\[0\.06\] { background-color: var(--app-surface-2) !important; }
 .app-light .bg-white\/5 { background-color: var(--app-surface) !important; }
 
+/* ── Midnight Tailwind utility overrides ── */
+/* Midnight uses white text / white-alpha surfaces on deep purple — most Tailwind
+   white-alpha classes work natively. Only overrides needed are the same as dark. */
+.app-midnight .bg-\[\#1C0B47\] { background-color: #1C0B47 !important; }
+.app-midnight .border-\[\#1C0B47\] { border-color: #1C0B47 !important; }
+
 /* ── Award badge dark-mode inversion ── */
 .app-dark .award-badge { filter: invert(1); }
+.app-midnight .award-badge { filter: invert(1); }
 
 /* ── Typing animation ── */
 @keyframes typing {
@@ -410,9 +441,8 @@
   font-family: var(--font-euclid), 'Euclid Circular B', system-ui, -apple-system, sans-serif;
 }
 
-/* .motor-midnight theme removed — only dark and light are active */
-/*
 .motor-midnight {
+  --app-bg: #1C0B47;
   --motor-bg: #1C0B47;
   --motor-surface: rgba(255,255,255,0.06);
   --motor-surface-2: rgba(255,255,255,0.1);
@@ -445,8 +475,24 @@
   --motor-cta-bg: #7C3AED;
   --motor-cta-hover: #6D28D9;
   --motor-cta-text: #FFFFFF;
+  --btn-primary-bg: #6841e6;
+  --btn-primary-text: #ffffff;
+  --btn-primary-shadow: inset 0px 2px 2px rgba(255,255,255,0.12);
+  --btn-secondary-bg: rgba(255,255,255,0.06);
+  --btn-secondary-border: #6841e6;
+  --btn-secondary-text: #fbfbfb;
+  --btn-secondary-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
+  --btn-inverted-bg: rgba(255,255,255,0.06);
+  --btn-inverted-text: #fbfbfb;
+  --btn-inverted-shadow: inset 0px 2px 4px rgba(255,255,255,0.04);
+  --btn-ghost-text: #c4b5fd;
+  --btn-link-text: #3b82f6;
+  --btn-disabled-bg: rgba(255,255,255,0.06);
+  --btn-disabled-text: rgba(255,255,255,0.3);
+  --btn-danger-bg: #7f1d1d;
+  --btn-danger-text: #fecaca;
+  --btn-danger-shadow: inset 0px 2px 4px rgba(255,255,255,0.12);
 }
-*/
 
 .motor-dark {
   --app-bg: #0f0f10;

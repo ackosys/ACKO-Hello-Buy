@@ -4,15 +4,14 @@ import { motion } from 'framer-motion';
 import { useJourneyStore } from '../lib/store';
 import { useLanguageStore } from '../lib/languageStore';
 import { Language } from '../lib/types';
+import { useThemeStore } from '../lib/themeStore';
 import AckoLogo from './AckoLogo';
 import Link from 'next/link';
+import { useT } from '../lib/translations';
 
-const LANGUAGES: { id: Language; label: string; sublabel: string; script: string }[] = [
-  { id: 'en', label: 'English', sublabel: 'Continue in English', script: 'latin' },
-  { id: 'hi', label: 'हिन्दी', sublabel: 'हिंदी में जारी रखें', script: 'devanagari' },
-  { id: 'hinglish', label: 'Hinglish', sublabel: 'Hindi in English script', script: 'latin' },
-  { id: 'kn', label: 'ಕನ್ನಡ', sublabel: 'ಕನ್ನಡದಲ್ಲಿ ಮುಂದುವರಿಸಿ', script: 'kannada' },
-];
+const LANGUAGE_ICONS: Record<Language, string> = {
+  en: 'A', hi: 'अ', hinglish: 'Hi', kn: 'ಅ', ta: 'அ', ml: 'അ', te: 'అ',
+};
 
 interface LanguageSelectorProps {
   onSelect: () => void;
@@ -21,6 +20,19 @@ interface LanguageSelectorProps {
 export default function LanguageSelector({ onSelect }: LanguageSelectorProps) {
   const { setLanguage: setJourneyLanguage } = useJourneyStore();
   const { setLanguage } = useLanguageStore();
+  const { theme } = useThemeStore();
+  const t = useT();
+  const isLight = theme === 'light';
+
+  const LANGUAGES: { id: Language; label: string; sublabel: string; icon: string }[] = [
+    { id: 'en', label: t.langSelect.english, sublabel: t.langSelect.englishSub, icon: LANGUAGE_ICONS.en },
+    { id: 'hi', label: t.langSelect.hindi, sublabel: t.langSelect.hindiSub, icon: LANGUAGE_ICONS.hi },
+    { id: 'hinglish', label: t.langSelect.hinglish, sublabel: t.langSelect.hinglishSub, icon: LANGUAGE_ICONS.hinglish },
+    { id: 'kn', label: t.langSelect.kannada, sublabel: t.langSelect.kannadaSub, icon: LANGUAGE_ICONS.kn },
+    { id: 'ta', label: t.langSelect.tamil, sublabel: t.langSelect.tamilSub, icon: LANGUAGE_ICONS.ta },
+    { id: 'ml', label: t.langSelect.malayalam, sublabel: t.langSelect.malayalamSub, icon: LANGUAGE_ICONS.ml },
+    { id: 'te', label: t.langSelect.telugu, sublabel: t.langSelect.teluguSub, icon: LANGUAGE_ICONS.te },
+  ];
 
   const handleSelect = (lang: Language) => {
     setLanguage(lang);
@@ -28,15 +40,24 @@ export default function LanguageSelector({ onSelect }: LanguageSelectorProps) {
     onSelect();
   };
 
+  const cardBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.08)';
+  const cardBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)';
+  const cardHoverBg = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.14)';
+  const iconBg = isLight ? 'rgba(109,40,217,0.08)' : 'rgba(255,255,255,0.12)';
+  const titleColor = isLight ? 'rgba(0,0,0,0.88)' : '#FFFFFF';
+  const subColor = isLight ? 'rgba(0,0,0,0.5)' : 'var(--app-text-muted, rgba(255,255,255,0.6))';
+  const headingColor = isLight ? 'rgba(0,0,0,0.88)' : '#FFFFFF';
+  const subheadColor = isLight ? 'rgba(0,0,0,0.5)' : 'var(--app-text-muted, rgba(255,255,255,0.6))';
+  const footerColor = isLight ? 'rgba(0,0,0,0.3)' : 'var(--app-text-subtle, rgba(255,255,255,0.4))';
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ background: 'var(--app-home-gradient)' }}
+      style={{ background: 'var(--app-bg)' }}
     >
-      {/* Logo */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -44,59 +65,68 @@ export default function LanguageSelector({ onSelect }: LanguageSelectorProps) {
         className="mb-10"
       >
         <Link href="/">
-          <AckoLogo variant="full-white" className="h-8 mx-auto" />
+          <AckoLogo variant={isLight ? 'color' : 'white'} className="h-8 mx-auto" />
         </Link>
       </motion.div>
 
-      {/* Title */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-center mb-10"
+        className="text-center mb-8"
       >
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Choose your language</h1>
-        <p className="text-purple-200 text-sm">You can change this anytime</p>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: headingColor }}>
+          {t.langSelect.title}
+        </h1>
+        <p className="text-sm" style={{ color: subheadColor }}>{t.langSelect.subtitle}</p>
       </motion.div>
 
-      {/* Language Cards */}
-      <div className="w-full max-w-sm space-y-3">
+      <div className="w-full max-w-sm grid grid-cols-2 gap-2.5">
         {LANGUAGES.map((lang, i) => (
           <motion.button
             key={lang.id}
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 + i * 0.08, type: 'spring', stiffness: 300, damping: 25 }}
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.25 + i * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
             onClick={() => handleSelect(lang.id)}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 hover:bg-white/20 hover:border-white/30 transition-all duration-200 group cursor-pointer"
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl backdrop-blur-sm transition-all duration-200 cursor-pointer"
+            style={{
+              background: cardBg,
+              border: `1px solid ${cardBorder}`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = cardHoverBg;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = cardBg;
+            }}
           >
-            {/* Language icon circle */}
-            <div className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center text-xl font-semibold text-white shrink-0 group-hover:bg-white/25 transition-colors">
-              {lang.id === 'en' ? 'A' : lang.id === 'hi' ? 'अ' : lang.id === 'hinglish' ? 'Hi' : 'ಅ'}
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center text-base font-semibold shrink-0"
+              style={{ background: iconBg, color: titleColor }}
+            >
+              {lang.icon}
             </div>
-
-            {/* Text */}
-            <div className="text-left flex-1">
-              <div className="text-white font-semibold text-lg leading-tight">{lang.label}</div>
-              <div className="text-purple-200 text-sm mt-0.5">{lang.sublabel}</div>
+            <div className="text-center">
+              <div className="font-semibold text-[15px] leading-tight" style={{ color: titleColor }}>
+                {lang.label}
+              </div>
+              <div className="text-[11px] mt-0.5" style={{ color: subColor }}>
+                {lang.sublabel}
+              </div>
             </div>
-
-            {/* Arrow */}
-            <svg className="w-5 h-5 text-white/50 group-hover:text-white/80 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
           </motion.button>
         ))}
       </div>
 
-      {/* Bottom subtle text */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="mt-10 text-purple-300/60 text-xs text-center"
+        className="mt-10 text-xs text-center"
+        style={{ color: footerColor }}
       >
-        Powered by ACKO • IRDAI Licensed
+        {t.global.poweredBy}
       </motion.p>
     </motion.div>
   );

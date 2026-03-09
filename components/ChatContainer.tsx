@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../lib/store';
 import { getStep, getCoverageReplyLabel } from '../lib/scripts';
 import { saveSnapshot, HEALTH_SAVE_STEPS } from '../lib/journeyPersist';
+import { useT } from '../lib/translations';
 import ChatMessage, { TypingIndicator } from './ChatMessage';
 import {
   SelectionCards,
@@ -36,6 +37,7 @@ import { writeSessionCookie } from '../lib/sessionCookie';
 const VALID_OTP = '0000';
 
 function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
   const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState(['', '', '', '']);
@@ -90,7 +92,7 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
               autoFocus
               type="tel"
               inputMode="numeric"
-              placeholder="Enter your mobile number"
+              placeholder={t.chat.loginPhonePlaceholder}
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
@@ -98,28 +100,28 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
             />
           </div>
           <p className="text-caption text-white/40 mt-1.5 text-center">
-            We&apos;ll save your progress so you can continue from where you left off
+            {t.chat.loginSaveProgress}
           </p>
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
             className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
           >
-            Send OTP
+            {t.chat.loginSendOtp}
           </button>
           {onSkip && (
             <button
               onClick={onSkip}
               className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
             >
-              Skip for now
+              {t.chat.loginSkipForNow}
             </button>
           )}
         </>
       ) : (
         <>
           <p className="text-caption text-white/40 text-center mb-3">
-            OTP sent to +91 {phone}
+            {t.chat.loginOtpSentTo(phone)}
           </p>
           <motion.div
             className="flex gap-2 justify-center"
@@ -146,9 +148,9 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
           ) : (
-            <p className="text-caption text-white/40 text-center mt-2">Enter <strong>0000</strong> to verify</p>
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
           )}
         </>
       )}
@@ -157,6 +159,7 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
 }
 
 export default function ChatContainer() {
+  const t = useT();
   const {
     currentStepId,
     conversationHistory,
@@ -314,7 +317,7 @@ export default function ChatContainer() {
     // Preserve full chat history — append an "Updated" user message instead of trimming
     addMessage({
       type: 'user',
-      content: `✏️ Updated: ${userLabel}`,
+      content: t.chat.updatedPrefix(userLabel),
       stepId: editingStepId,
     });
 
@@ -371,9 +374,9 @@ export default function ChatContainer() {
       const tierLabels: Record<string, string> = { platinum: 'Platinum', platinum_lite: 'Platinum Lite', super_topup: 'Super Top-up' };
       userLabel = tierLabels[response] || response;
     } else if (step.widgetType === 'dob_collection') {
-      userLabel = 'Date of birth submitted for all members';
+      userLabel = t.chat.dobSubmitted;
     } else if (step.widgetType === 'usp_cards') {
-      userLabel = 'Got it, let\'s find a plan';
+      userLabel = t.chat.gotItFindPlan;
     } else if (step.widgetType === 'payment_screen') {
       userLabel = 'Payment completed ✓';
     }
@@ -410,7 +413,7 @@ export default function ChatContainer() {
     buildPoliciesForState(state).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.phone_gate', module: 'recommendation' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate', module: 'recommendation' });
     setShowWidget(false);
 
     setTimeout(() => {
@@ -428,7 +431,7 @@ export default function ChatContainer() {
     buildPoliciesForState(state).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.early_gate', module: 'entry' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.early_gate', module: 'entry' });
     setShowWidget(false);
 
     const currentState = useJourneyStore.getState() as JourneyState;
@@ -445,7 +448,7 @@ export default function ChatContainer() {
   }, [setProfile, addPolicy, addMessage, updateState]);
 
   const handleEarlyLoginSkip = useCallback(() => {
-    addMessage({ type: 'user', content: 'Skipped for now', stepId: 'login.early_gate', module: 'entry' });
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'login.early_gate', module: 'entry' });
     setShowWidget(false);
 
     const currentState = useJourneyStore.getState() as JourneyState;
@@ -479,7 +482,7 @@ export default function ChatContainer() {
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleEditResponse} />;
       case 'pincode_input':
-        return <PincodeInput placeholder={script.placeholder || 'Enter pincode'} onSubmit={handleEditResponse} />;
+        return <PincodeInput placeholder={script.placeholder || t.widgets.enterPincode} onSubmit={handleEditResponse} />;
       case 'frequency_select':
         return <FrequencySelect onSelect={handleEditResponse} />;
       case 'plan_switcher':
@@ -513,7 +516,7 @@ export default function ChatContainer() {
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleResponse} />;
       case 'pincode_input':
-        return <PincodeInput placeholder={script.placeholder || 'Enter pincode'} onSubmit={handleResponse} />;
+        return <PincodeInput placeholder={script.placeholder || t.widgets.enterPincode} onSubmit={handleResponse} />;
       case 'calculation':
         return <CalculationTheater onComplete={() => handleResponse('done')} />;
       case 'plan_switcher':
@@ -649,22 +652,22 @@ export default function ChatContainer() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
-                <h3 className="text-heading-sm text-white mb-2">Edit this answer?</h3>
+                <h3 className="text-heading-sm text-white mb-2">{t.chat.editThisAnswer}</h3>
                 <p className="text-body-sm text-white/50 mb-6">
-                  The conversation will continue from this point with your updated answer. Subsequent questions may change based on your new response.
+                  {t.chat.editWarning}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setEditModal({ stepId: '', visible: false })}
                     className="flex-1 py-2.5 border border-white/20 text-white/70 rounded-xl text-label-md font-medium hover:bg-white/10 transition-colors"
                   >
-                    Cancel
+                    {t.chat.cancel}
                   </button>
                   <button
                     onClick={confirmEdit}
                     className="flex-1 py-2.5 bg-purple-700 text-white rounded-xl text-label-md font-medium hover:bg-purple-600 transition-colors"
                   >
-                    Edit answer
+                    {t.chat.editAnswer}
                   </button>
                 </div>
               </div>
@@ -710,7 +713,7 @@ export default function ChatContainer() {
               style={{ background: 'var(--app-glass-bg, var(--motor-glass-bg))', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-label-md font-semibold text-white/80">Update your answer</h4>
+                <h4 className="text-label-md font-semibold text-white/80">{t.chat.updateAnswer}</h4>
                 <button onClick={() => setEditingStepId(null)} className="text-white/40 hover:text-white/70 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>

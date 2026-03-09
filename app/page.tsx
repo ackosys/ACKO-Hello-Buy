@@ -10,6 +10,7 @@ import PolicyActionScreen, { type PolicyStatusInfo } from '../components/global/
 import { useUserProfileStore, type PolicyLob } from '../lib/userProfileStore';
 import { useThemeStore } from '../lib/themeStore';
 import { useLanguageStore } from '../lib/languageStore';
+import { useT } from '../lib/translations';
 import {
   loadSnapshot,
   loadProductSnapshots,
@@ -47,9 +48,9 @@ const LOB_TO_PRODUCT: Record<LobId, ProductKey> = {
   car: 'car', bike: 'bike', health: 'health', life: 'life',
 };
 
-const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ' };
-const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
+const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'];
+const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം', te: 'తెలుగు' };
+const THEME_LABELS: Record<string, string> = { midnight: 'Midnight', dark: 'Dark', light: 'Light' };
 
 interface LobOverride {
   journeyId: string;
@@ -225,9 +226,15 @@ function HeaderPill({
   langLabel: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isLight = theme === 'light';
+  const isDark = theme !== 'light';
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  const pillBg = isLight ? '#f5f5f5' : theme === 'midnight' ? '#1C0B47' : '#121212';
+  const loginBg = isLight ? '#e0e0e1' : theme === 'midnight' ? 'rgba(255,255,255,0.06)' : '#19191a';
+  const loginBorder = isLight ? 'none' : '1px solid #6841e6';
 
   useEffect(() => {
     const onScroll = () => {
@@ -250,7 +257,7 @@ function HeaderPill({
       <div
         className="flex items-center justify-between px-3 h-[56px] rounded-2xl"
         style={{
-          background: isLight ? '#f5f5f5' : '#121212',
+          background: pillBg,
           boxShadow: '0 20px 20px rgba(0,0,0,0.02), 0 6px 6px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.02)',
         }}
       >
@@ -261,7 +268,7 @@ function HeaderPill({
             <button
               onClick={() => router.push('/profile')}
               className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[15px] font-medium"
-              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isLight ? '#121212' : 'white' }}
+              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isDark ? 'white' : '#121212' }}
             >
               {initial}
             </button>
@@ -270,12 +277,12 @@ function HeaderPill({
               onClick={() => router.push('/login')}
               className="h-[36px] px-4 rounded-lg text-[14px] font-medium tracking-[-0.28px]"
               style={{
-                background: isLight ? '#e0e0e1' : '#19191a',
+                background: loginBg,
                 color: isLight ? 'black' : '#fefefe',
-                border: isLight ? 'none' : '1px solid #6841e6',
+                border: loginBorder,
               }}
             >
-              Login
+              {t.global.menuLogin}
             </button>
           )}
 
@@ -303,7 +310,7 @@ function HeaderPill({
                     transition={{ duration: 0.15 }}
                     className="absolute right-0 top-full mt-2 z-50 rounded-xl overflow-hidden shadow-2xl min-w-[200px]"
                     style={{
-                      background: isLight ? 'white' : 'rgba(30,30,30,0.95)',
+                      background: isLight ? 'white' : theme === 'midnight' ? 'rgba(30,15,70,0.95)' : 'rgba(30,30,30,0.95)',
                       border: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.1)',
                       backdropFilter: 'blur(20px)',
                     }}
@@ -316,12 +323,14 @@ function HeaderPill({
                         borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
                       }}
                     >
-                      {theme === 'dark' ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-                      ) : (
+                      {theme === 'light' ? (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                      ) : theme === 'midnight' ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" /></svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                       )}
-                      Mode: {THEME_LABELS[theme]}
+                      {t.global.menuMode} {THEME_LABELS[theme]}
                     </button>
                     <button
                       onClick={onLangCycle}
@@ -335,7 +344,7 @@ function HeaderPill({
                         <circle cx="12" cy="12" r="10" />
                         <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                       </svg>
-                      Lang: {langLabel}
+                      {t.global.menuLang} {langLabel}
                     </button>
                     {isLoggedIn && (
                       <button
@@ -349,7 +358,7 @@ function HeaderPill({
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                           <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
                         </svg>
-                        Log out
+                        {t.global.menuLogout}
                       </button>
                     )}
                     <button
@@ -361,7 +370,7 @@ function HeaderPill({
                         <path d="M1 4v6h6M23 20v-6h-6" />
                         <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
                       </svg>
-                      Reset to FTU
+                      {t.global.menuResetFtu}
                     </button>
                   </motion.div>
                 </>
@@ -376,6 +385,7 @@ function HeaderPill({
 
 /* ── Hero Greeting with transparent-bg webm logo ── */
 function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
+  const t = useT();
   return (
     <motion.div
       className="flex flex-col items-center gap-2 px-6 pt-8 pb-10"
@@ -398,13 +408,13 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
           className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
           style={{ color: 'var(--app-text)' }}
         >
-          {firstName ? `Hello ${firstName}` : 'Hello'}
+          {firstName ? t.global.welcomeBack(firstName) : t.global.heroTitle}
         </h1>
         <p
           className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
           style={{ color: 'var(--app-text-muted)' }}
         >
-          {subtitle || 'What insurance are you interested in?'}
+          {subtitle || t.global.heroSubtitle}
         </p>
       </div>
     </motion.div>
@@ -429,6 +439,7 @@ function PwiloSection({
   onContinue: (entry: LobOverride) => void;
   onStartNew: (entry: LobOverride) => void;
 }) {
+  const t = useT();
   if (entries.length === 0) return null;
 
   const isSingle = entries.length === 1;
@@ -458,7 +469,7 @@ function PwiloSection({
               style={{ color: 'var(--app-text)' }}
             >
               {(entry.lobId === 'car' || entry.lobId === 'bike')
-                ? `Continue insuring your ${entry.title}`
+                ? t.global.pwiloContinueInsuring(entry.title)
                 : entry.title}
             </h3>
             {entry.subtitle && (
@@ -476,7 +487,7 @@ function PwiloSection({
               style={{ background: '#6841e6', color: 'white' }}
               onClick={(e) => { e.stopPropagation(); onContinue(entry); }}
             >
-              Continue
+              {t.global.pwiloContinue}
             </button>
             <button
               className="h-[32px] px-4 rounded-lg text-[12px] font-medium whitespace-nowrap"
@@ -487,7 +498,7 @@ function PwiloSection({
               }}
               onClick={(e) => { e.stopPropagation(); onStartNew(entry); }}
             >
-              Start new
+              {t.global.pwiloStartNew}
             </button>
           </div>
         </div>
@@ -511,7 +522,7 @@ function PwiloSection({
         className="text-[16px] font-semibold leading-[22px] text-center mb-4"
         style={{ color: 'var(--app-text)' }}
       >
-        Continue where you left off
+        {t.global.pwiloTitle}
       </p>
 
       {isSingle ? (
@@ -527,6 +538,7 @@ function PwiloSection({
 
 /* ── Bento LOB Grid ── */
 function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) {
+  const t = useT();
   const car = LOB_CARDS.find(c => c.id === 'car')!;
   const bike = LOB_CARDS.find(c => c.id === 'bike')!;
   const health = LOB_CARDS.find(c => c.id === 'health')!;
@@ -564,16 +576,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
             whileTap={{ scale: 0.98 }}
           >
             <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-              {car.title}
+              {t.global.carLabel}
             </h3>
             <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
-              Simple prices. Super fast claims. That&apos;s our promise.
+              {t.global.carCardDesc}
             </p>
             <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={car.heroImage}
-              alt={car.title}
+              alt={t.global.carLabel}
               className="absolute object-contain pointer-events-none"
               style={{ bottom: -1, right: -1, width: 80, height: 80 }}
               draggable={false}
@@ -591,16 +603,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
             whileTap={{ scale: 0.98 }}
           >
             <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-              {bike.title}
+              {t.global.bikeLabel}
             </h3>
             <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
-              Insure your bike or scooter in just 1 min
+              {t.global.bikeCardDesc}
             </p>
             <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={bike.heroImage}
-              alt={bike.title}
+              alt={t.global.bikeLabel}
               className="absolute object-contain pointer-events-none"
               style={{ bottom: -1, right: -1, width: 80, height: 80 }}
               draggable={false}
@@ -619,10 +631,10 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
           whileTap={{ scale: 0.98 }}
         >
           <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-            Health insurance
+            {t.global.healthLabel}
           </h3>
           <p className="text-[10px] leading-[12px] mt-1.5" style={{ color: 'var(--app-text-muted)' }}>
-            100% hospital bill payments. No surprises.
+            {t.global.healthCardDesc}
           </p>
           <div
             className="inline-flex items-center px-2 py-1.5 rounded-full mt-1.5"
@@ -631,14 +643,14 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
             }}
           >
             <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--app-text)' }}>
-              From &#x20B9;534/month
+              {t.global.healthCardFrom}
             </span>
           </div>
           <div className="absolute left-3 bottom-3">{arrowBtn}</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={health.heroImage}
-            alt={health.title}
+            alt={t.global.healthLabel}
             className="absolute object-cover pointer-events-none"
             style={{ bottom: -1, right: -1, width: 90, height: 131, transform: 'scaleX(-1)' }}
             draggable={false}
@@ -657,16 +669,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
         whileTap={{ scale: 0.98 }}
       >
         <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-          {life.title}
+          {t.global.lifeLabel}
         </h3>
         <p className="text-[10px] leading-[12px] mt-1.5 max-w-[200px]" style={{ color: 'var(--app-text-muted)' }}>
-          Secure your loved ones with term life insurance
+          {t.global.lifeCardDesc}
         </p>
         <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={life.heroImage}
-          alt={life.title}
+          alt={t.global.lifeLabel}
           className="absolute object-contain pointer-events-none"
           style={{ bottom: -1, right: -1, width: 150, height: 120 }}
           draggable={false}
@@ -679,28 +691,29 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
 /* ── Why ACKO Section ── */
 function WhyAckoSection() {
   const { theme } = useThemeStore();
-  const isDark = theme === 'dark';
+  const t = useT();
+  const isDark = theme !== 'light';
 
   const WHY_ITEMS = [
     {
       icon: `${BASE}/icons/100%25 digital.svg`,
-      title: '100% Digital',
-      description: 'Buy, manage and claim - all online',
+      title: t.global.prop2Title,
+      description: t.global.prop2Desc,
     },
     {
       icon: `${BASE}/icons/24X7 support.svg`,
-      title: '24x7 claim support',
-      description: 'Available for you always',
+      title: t.global.supportSub,
+      description: t.global.support,
     },
     {
       icon: `${BASE}/icons/Honest pricing.svg`,
-      title: 'Honest Pricing',
-      description: 'No middle men & no hidden costs',
+      title: t.global.needHelp,
+      description: t.global.talkExpert,
     },
     {
       icon: `${BASE}/icons/Claims settled.svg`,
-      title: '98.8% Claims settled',
-      description: 'Average claim settled in 1 week',
+      title: t.global.claimsStat,
+      description: t.global.claimsStatSub,
     },
   ];
 
@@ -721,13 +734,13 @@ function WhyAckoSection() {
               className="text-[24px] font-semibold leading-[30px] text-center"
               style={{ color: 'var(--app-text)' }}
             >
-              Why ACKO ?
+              {t.global.whyAcko}
             </h2>
             <p
               className="text-[14px] leading-[16px] text-center"
               style={{ color: 'var(--app-text-muted)' }}
             >
-              Insurance that actually makes sense
+              {t.global.whyAckoSub}
             </p>
           </div>
         </div>
@@ -772,6 +785,7 @@ function WhyAckoSection() {
 
 /* ── Footer ── */
 function PageFooter() {
+  const t = useT();
   const socialLinks = [
     { name: 'Instagram', icon: `${BASE}/footer/instagram.svg` },
     { name: 'LinkedIn', icon: `${BASE}/footer/linkedin.svg` },
@@ -791,7 +805,7 @@ function PageFooter() {
         <AckoLogo variant="white" className="h-[22px]" />
 
         <p className="text-[16px] leading-[24px] font-medium mt-6" style={{ color: 'white' }}>
-          ACKO Technology &amp; Services Private Limited
+          {t.global.footerCompany}
         </p>
 
         <div className="flex items-center gap-4 mt-6">
@@ -804,15 +818,15 @@ function PageFooter() {
         </div>
 
         <p className="text-[14px] leading-[20px] mt-8" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          CIN: U74110KA2016PTC120161
+          {t.global.footerCin}
         </p>
 
         <p className="text-[14px] leading-[20px] mt-5" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          *Listed #1 for &ldquo;insurance&rdquo; on the Apple App Store
+          {t.global.footerNote1}
         </p>
 
         <p className="text-[14px] leading-[22px] mt-5" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          The use of images and brands are only for the purpose of indication and illustration. ACKO claims no rights on the IP rights of any third parties.
+          {t.global.footerDisclaimer}
         </p>
 
         <div className="flex items-center gap-4 mt-8">
@@ -847,6 +861,7 @@ function GlobalHomepageInner() {
   const { setLanguage: setJourneyLang } = useJourneyStore();
   const { theme, cycleTheme } = useThemeStore();
   const { language, setLanguage: setGlobalLang } = useLanguageStore();
+  const t = useT();
   const [screen, setScreen] = useState<Screen>('language');
   const [hydrated, setHydrated] = useState(false);
   const [selectedLobId, setSelectedLobId] = useState<LobId | null>(null);
@@ -936,10 +951,37 @@ function GlobalHomepageInner() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen"
+            className="min-h-screen relative overflow-hidden"
             style={{ background: 'var(--app-bg)' }}
           >
-            <div className="max-w-[430px] mx-auto pb-4">
+            {/* Animated video background — last layer */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none max-w-[430px] w-full">
+              <video
+                key={theme}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="mx-auto object-cover"
+                style={{ width: 410, height: 300 }}
+                src={`${BASE}/Animated_BG/${theme === 'light' ? 'Light theme-BG' : 'Dark theme-BG'}.mp4`}
+              />
+              {theme !== 'light' && (
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none"
+                  style={{
+                    width: 410,
+                    height: 300,
+                    background: theme === 'midnight'
+                      ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #1C0B47 88.12%)'
+                      : 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #0F0F10 88.12%)',
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Content — always on top */}
+            <div className="max-w-[430px] mx-auto pb-4 relative z-10">
               <HeaderPill
                 isLoggedIn={isLoggedIn}
                 initial={firstName?.[0]?.toUpperCase() || 'R'}
@@ -955,7 +997,7 @@ function GlobalHomepageInner() {
 
               <HeroGreeting
                 firstName={firstName}
-                subtitle={hasOverrides ? 'Good to see you again.\nWhat would you like to do?' : undefined}
+                subtitle={hasOverrides ? t.global.heroTitleUser : undefined}
               />
 
               {/* PWILO Section — continue where you left off */}
@@ -969,10 +1011,10 @@ function GlobalHomepageInner() {
               {hasOverrides && (
                 <div className="px-4 pb-8 text-center">
                   <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
-                    Explore another insurance
+                    {t.global.pwiloExploreTitle}
                   </p>
                   <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
-                    Find the right cover for your needs
+                    {t.global.pwiloExploreDesc}
                   </p>
                 </div>
               )}
@@ -984,7 +1026,7 @@ function GlobalHomepageInner() {
                 className="text-[10px] leading-[14px] text-center mt-4"
                 style={{ color: 'var(--app-text-muted)' }}
               >
-                UID: 6484 | ARN: L0110 | T&amp;C apply
+                {t.global.footerTagline}
               </p>
 
               <div className="h-8" />

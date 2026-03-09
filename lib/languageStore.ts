@@ -12,7 +12,7 @@ function loadPersistedLanguage(): Language {
   if (typeof window === 'undefined') return 'en';
   try {
     const saved = localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (saved && ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml'].includes(saved)) return saved;
+    if (saved && ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'].includes(saved)) return saved;
   } catch { /* noop */ }
   return 'en';
 }

@@ -118,23 +118,15 @@ export default function LobSelector({ lobs, onSelect }: LobSelectorProps) {
   const theme = useThemeStore((s) => s.theme);
   const isLight = theme === 'light';
 
-  const cardBg = isLight
-    ? '#FFFFFF'
-    : theme === 'dark'
-    ? '#1E1E22'
-    : 'rgba(255,255,255,0.07)';
+  const cardBg = isLight ? '#FFFFFF' : 'var(--app-surface)';
 
   const cardShadow = isLight
     ? '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)'
-    : theme === 'dark'
-    ? '0 2px 8px rgba(0,0,0,0.4)'
-    : '0 2px 12px rgba(0,0,0,0.25)';
+    : '0 2px 8px rgba(0,0,0,0.4)';
 
   const badgeBg = isLight
     ? 'rgba(124,58,237,0.1)'
-    : theme === 'dark'
-    ? 'rgba(167,139,250,0.15)'
-    : 'rgba(167,139,250,0.2)';
+    : 'rgba(167,139,250,0.15)';
 
   const badgeText = isLight ? '#7C3AED' : '#C4B5FD';
 

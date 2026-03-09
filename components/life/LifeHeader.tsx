@@ -164,7 +164,7 @@ export default function LifeHeader() {
             </button>
           )}
           <Link href="/">
-            <AckoLogo variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-5" />
+            <AckoLogo variant={isLight ? 'color' : 'white'} className="h-5" />
           </Link>
         </div>
 

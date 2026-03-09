@@ -39,7 +39,7 @@ export default function AuraMotorEntryScreen({ onSelect }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-12 relative z-10">
         <Link href="/">
-          <AckoLogo variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-8" />
+          <AckoLogo variant={isLight ? 'color' : 'white'} className="h-8" />
         </Link>
         <span
           className="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider"

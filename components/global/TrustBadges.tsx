@@ -18,9 +18,9 @@ export default function TrustBadges() {
     { label: t.global.support,     sublabel: t.global.supportSub     },
   ];
 
-  const bgColor     = isLight ? '#FFFFFF' : theme === 'dark' ? '#1E1E22' : 'rgba(255,255,255,0.05)';
-  const borderColor = isLight ? 'rgba(0,0,0,0.06)' : theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)';
-  const fadeColor   = isLight ? '#F5F3FF' : theme === 'dark' ? '#121214' : '#6C4DE8';
+  const bgColor     = isLight ? '#FFFFFF' : 'var(--app-surface)';
+  const borderColor = isLight ? 'rgba(0,0,0,0.06)' : 'var(--app-border)';
+  const fadeColor   = isLight ? '#F5F3FF' : 'var(--app-surface-2, #121214)';
 
   return (
     <div

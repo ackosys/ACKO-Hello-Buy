@@ -124,12 +124,12 @@ const loginEarlyGate: ConversationStep = {
   module: 'entry',
   widgetType: 'login_gate_skippable',
   getScript: (_persona, state) => {
+    const t = getT(state.language);
     const name = userName(state) || useUserProfileStore.getState().firstName || '';
-    const greeting = name ? `Nice to meet you, ${name}!` : 'Great!';
     return {
       botMessages: [
-        greeting,
-        `Verify your mobile number to save your progress — or skip for now.`,
+        t.scripts.loginEarlyGreeting(name),
+        t.scripts.loginEarlyVerify,
       ],
     };
   },
@@ -576,8 +576,8 @@ const familySpouseAge: ConversationStep = {
   getScript: (persona, state) => {
     const t = getT(state.language);
     return {
-      botMessages: [`And how old is your spouse?`],
-      placeholder: "Spouse's age",
+      botMessages: [t.scripts.spouseAgeQ],
+      placeholder: t.scripts.spouseAgePlaceholder,
       inputType: 'number',
       min: 18,
       max: 99,
@@ -622,10 +622,11 @@ const familyParentsAge: ConversationStep = {
   condition: (state) => state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c)),
   getScript: (persona, state) => {
     const parentMembers = state.coverageFor.filter(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    const t = getT(state.language);
     const who = parentMembers.length === 1 ? `your ${parentMembers[0].replace(/_/g, '-')}` : 'the eldest parent you\'d like to cover';
     return {
-      botMessages: [`How old is ${who}? ${parentMembers.length > 1 ? 'Enter the age of the eldest parent.' : ''}`],
-      placeholder: "Eldest parent's age",
+      botMessages: [t.scripts.parentAgeQ(who, parentMembers.length > 1)],
+      placeholder: t.scripts.parentAgePlaceholder,
       inputType: 'number',
       min: 35,
       max: 99,
@@ -1058,8 +1059,9 @@ const healthConditionsUnderstood: ConversationStep = {
   module: 'health',
   widgetType: 'selection_cards',
   getScript: (persona, state) => {
+    const t = getT(state.language);
     return {
-      botMessages: ['Got it? Ready to look at coverage options?'],
+      botMessages: [t.scripts.customizeReady],
       options: [
         { id: 'yes', label: 'Yes, show me options', icon: 'check' },
         { id: 'questions', label: 'I have a question first', icon: 'help' },
@@ -1356,6 +1358,32 @@ const stpMedicalQuestions: ConversationStep = {
     ],
   }),
   processResponse: () => ({}),
+  getNextStep: () => 'payment.method_selection',
+};
+
+const paymentMethodSelection: ConversationStep = {
+  id: 'payment.method_selection',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const t = getT(state.language);
+    const isMonthly = state.paymentFrequency === 'monthly';
+    const options: any[] = [
+      { id: 'upi', label: 'UPI', description: 'GPay, PhonePe, Paytm & more', icon: 'upi' },
+      { id: 'card', label: 'Credit / Debit Card', description: 'Visa, Mastercard, RuPay', icon: 'card' },
+      { id: 'netbanking', label: 'Net Banking', description: 'All major banks supported', icon: 'bank' },
+    ];
+    if (!isMonthly) {
+      options.push({ id: 'emi', label: 'EMI', description: 'No-cost EMI on select cards', icon: 'emi' });
+    } else {
+      options.push({ id: 'autopay', label: 'Set up AutoPay', description: 'Auto-debit mandate for monthly payments', icon: 'autopay', badge: 'Required for monthly' });
+    }
+    return {
+      botMessages: [t.scripts.paymentMethodQ],
+      options,
+    };
+  },
+  processResponse: (response) => ({ paymentMethod: response }),
   getNextStep: () => 'payment.process',
 };
 
@@ -1499,9 +1527,10 @@ const telemerMedicalSummary: ConversationStep = {
   id: 'telemer.medical_summary',
   module: 'payment',
   widgetType: 'health_summary_card',
-  getScript: (_, state) => ({
-    botMessages: [`Here's your Medical Summary from the evaluation:`],
-  }),
+  getScript: (_, state) => {
+    const t = getT(state.language);
+    return { botMessages: [t.scripts.medicalSummaryIntro] };
+  },
   processResponse: () => ({}),
   getNextStep: () => 'telemer.confirm_summary',
 };
@@ -1510,13 +1539,16 @@ const telemerConfirmSummary: ConversationStep = {
   id: 'telemer.confirm_summary',
   module: 'payment',
   widgetType: 'selection_cards',
-  getScript: () => ({
-    botMessages: [`Please confirm this summary is accurate before we proceed.`],
-    options: [
-      { id: 'confirmed', label: 'Yes, this is correct', icon: 'check' },
-      { id: 'incorrect', label: 'Something needs correction', icon: 'edit' },
-    ],
-  }),
+  getScript: (_, state) => {
+    const t = getT(state.language);
+    return {
+      botMessages: [t.scripts.medicalSummaryConfirm],
+      options: [
+        { id: 'confirmed', label: 'Yes, this is correct', icon: 'check' },
+        { id: 'incorrect', label: 'Something needs correction', icon: 'edit' },
+      ],
+    };
+  },
   processResponse: () => ({}),
   getNextStep: (response) => response === 'incorrect' ? 'telemer.connect_prompt' : 'telemer.outcome',
 };
