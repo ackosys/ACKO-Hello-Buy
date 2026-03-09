@@ -393,7 +393,7 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <div className="w-[84px] h-[84px] mb-1">
+      <div className="w-[84px] h-[84px] mb-1" style={{ opacity: process.env.NEXT_PUBLIC_VIDEO_BG === 'true' ? 0 : 1 }}>
         <video
           src={`${BASE}/offerings/logo-animation.webm`}
           autoPlay
