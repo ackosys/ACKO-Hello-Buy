@@ -104,7 +104,7 @@ function calculateRecommendedCoverage(state: LifeJourneyState): {
 
   // 7. Final recommended cover (min ₹25L, max ₹100 Cr, rounded to nearest ₹5L)
   let recommendedCover = Math.max(totalNeed - existingCover, 2500000);
-  recommendedCover = Math.min(recommendedCover, 10000000000); // ₹100 Cr cap
+  recommendedCover = Math.min(recommendedCover, 1000000000); // ₹100 Cr cap
   recommendedCover = Math.round(recommendedCover / 500000) * 500000; // Round to nearest ₹5L
 
   const multiplierUsed = annualIncome > 0 ? Math.round((recommendedCover / annualIncome) * 10) / 10 : 0;
@@ -884,7 +884,7 @@ const lifeNeedRecommendation: ConversationStep<LifeJourneyState> = {
     };
 
     const rangeMin = Math.round(recommended * 0.8 / 2500000) * 2500000;
-    const rangeMax = Math.round(recommended * 1.2 / 2500000) * 2500000;
+    const rangeMax = Math.min(Math.round(recommended * 1.2 / 2500000) * 2500000, 1000000000);
     const multiplierUsed = breakdown.multiplierUsed || 12;
 
     const breakdownItems: { label: string; value: string }[] = [
@@ -926,31 +926,6 @@ const lifeNeedRecommendation: ConversationStep<LifeJourneyState> = {
       selectedTerm: policyTerm,
     };
   },
-  getNextStep: (_response, _state) => 'life_buying_intent',
-};
-
-const lifeBuyingIntent: ConversationStep<LifeJourneyState> = {
-  id: 'life_buying_intent',
-  module: 'quote',
-  widgetType: 'selection_cards',
-  getScript: (_persona, state) => {
-    const name = state.name || state.userName || '';
-    return {
-      botMessages: [
-        name
-          ? `One last thing, ${name.split(' ')[0]}. Let us know how far along you are in your life insurance journey.`
-          : `One last thing. Let us know how far along you are in your life insurance journey.`,
-      ],
-      options: [
-        { id: 'exploring', label: "I'm just exploring options" },
-        { id: 'few_months', label: "I'm planning to buy in the next few months" },
-        { id: 'very_soon', label: "I'm planning to buy a policy very soon" },
-      ],
-    };
-  },
-  processResponse: (response, _state) => ({
-    buyingIntent: response as BuyingIntent,
-  }),
   getNextStep: (_response, _state) => 'life_quote_display',
 };
 
@@ -1801,7 +1776,6 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
 
   // Stage 4 — Need Assessment (spec flow)
   lifeNeedRecommendation,
-  lifeBuyingIntent,
 
   // Legacy financial obligations (kept for backward compat)
   lifeFinancialLoans,

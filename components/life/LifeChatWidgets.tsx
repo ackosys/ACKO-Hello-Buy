@@ -605,7 +605,7 @@ export function LifeCoverageCard({ coverageAmount, policyTerm, coversTillAge, br
         onClick={onContinue}
         className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-all active:scale-[0.97]"
       >
-        Continue
+        Customise my plan
       </button>
     </motion.div>
   );
