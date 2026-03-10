@@ -976,6 +976,7 @@ export const kn: T = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `ಮರಳಿ ಸ್ವಾಗತ, ${name}`,
+    helloName: (name: string) => `ನಮಸ್ಕಾರ, ${name}`,
     heroGreeting: (name: string) => `ನಮಸ್ಕಾರ ${name}!\nನಿಮ್ಮ ಎಲ್ಲಾ ವಿಮೆ ಒಂದೇ ಕಡೆ`,
     heroTitle: 'ನಿಮ್ಮ ಎಲ್ಲಾ ವಿಮೆ\nಒಂದೇ ಕಡೆ',
     heroSubtitle: 'ಯಾವುದೇ ಜಾರ್ಗನ್ ಇಲ್ಲ • ಯಾವುದೇ ಮಧ್ಯವರ್ತಿ ಇಲ್ಲ • ಬರೀ ಸರಿಯಾದ ಕವರ್.',

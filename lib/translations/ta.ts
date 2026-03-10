@@ -257,6 +257,7 @@ export const ta: T = {
 
   global: {
     welcomeBack: (name: string) => `மீண்டும் வரவேற்கிறோம், ${name}`,
+    helloName: (name: string) => `வணக்கம், ${name}`,
     heroGreeting: (name: string) => `வணக்கம் ${name}!\nஉங்கள் அனைத்து காப்பீடும் ஒரே இடத்தில்`,
     heroTitle: 'உங்கள் அனைத்து காப்பீடும்\nஒரே இடத்தில்',
     heroSubtitle: 'எந்த சொல்வழக்கும் இல்லை • தரகர்கள் இல்லை • சரியான கவரேஜ் மட்டும்.',

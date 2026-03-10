@@ -256,6 +256,7 @@ export const ml: T = {
 
   global: {
     welcomeBack: (name: string) => `തിരിച്ചു വരവേൽക്കുന്നു, ${name}`,
+    helloName: (name: string) => `ഹലോ, ${name}`,
     heroGreeting: (name: string) => `ഹായ് ${name}!\nനിങ്ങളുടെ എല്ലാ ഇൻഷുറൻസും ഒരിടത്ത്`,
     heroTitle: 'നിങ്ങളുടെ എല്ലാ ഇൻഷുറൻസും\nഒരിടത്ത്',
     heroSubtitle: 'ഒരു ജാർഗണും ഇല്ല • ഇടനിലക്കാർ ഇല്ല • ശരിയായ കവറേജ് മാത്രം.',

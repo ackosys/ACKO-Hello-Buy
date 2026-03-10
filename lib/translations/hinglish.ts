@@ -981,6 +981,7 @@ export const hinglish: T = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `Welcome back, ${name}`,
+    helloName: (name: string) => `Hello, ${name}`,
     heroGreeting: (name: string) => `Hi ${name}!\nAapka saara insurance aik jagah`,
     heroTitle: 'Aapka saara insurance\naik jagah',
     heroSubtitle: 'Koi jargon nahi • Koi middle-man nahi • Bas sahi cover jo matter kare.',

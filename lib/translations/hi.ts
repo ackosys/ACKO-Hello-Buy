@@ -1053,6 +1053,7 @@ export const hi: T = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `वापस आपका स्वागत है, ${name}`,
+    helloName: (name: string) => `नमस्ते, ${name}`,
     heroGreeting: (name: string) => `नमस्ते ${name}!\nआपका सारा बीमा एक जगह`,
     heroTitle: 'आपका सारा बीमा\nएक जगह',
     heroSubtitle: 'कोई जार्गन नहीं • कोई बिचौलिया नहीं • बस वही कवर जो मायने रखता है।',

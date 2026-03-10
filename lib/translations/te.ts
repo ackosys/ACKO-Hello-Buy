@@ -108,6 +108,7 @@ export const te: T = {
 
   global: {
     welcomeBack: (name: string) => `తిరిగి స్వాగతం, ${name}`,
+    helloName: (name: string) => `హలో, ${name}`,
     heroGreeting: (name: string) => `హాయ్ ${name}!\nమీ అన్ని బీమా ఒకే చోట`,
     heroTitle: 'మీ అన్ని బీమా\nఒకే చోట',
     heroSubtitle: 'ఏ జార్గన్ లేదు • మధ్యవర్తులు లేరు • సరైన కవరేజ్ మాత్రమే.',
