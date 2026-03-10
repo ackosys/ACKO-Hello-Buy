@@ -1070,9 +1070,13 @@ export const en = {
     loanProviderQ: 'Enter your loan provider name',
     loanProviderPlaceholder: 'e.g., HDFC Bank, SBI, ICICI',
 
-    // Login Early Gate
+    // Login Early Gate (after name, skippable)
     loginEarlyGreeting: (name: string) => name ? `Almost there, ${name}!` : 'Almost there!',
     loginEarlyVerify: 'Verify your mobile number to save your progress and see personalized quotes — or skip for now.',
+
+    // Login Mandatory Gate (before plan review, not skippable)
+    loginMandatoryGreeting: (name: string) => name ? `One last step, ${name}!` : 'One last step!',
+    loginMandatoryVerify: 'Please verify your mobile number to proceed to payment and receive your policy documents.',
   },
 
   /* ── Life Insurance Scripts ── */
@@ -1553,6 +1557,7 @@ export const en = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `Welcome back, ${name}`,
+    helloName: (name: string) => `Hello, ${name}`,
     heroGreeting: (name: string) => `Hi ${name}!\nAll your insurance in one place`,
     heroTitle: 'All your insurance\nin one place',
     heroSubtitle: 'No Jargon • No Middlemen • Just the right cover for what matters most.',

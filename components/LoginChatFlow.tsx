@@ -442,17 +442,19 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
   const router = useRouter();
   const { setProfile, addPolicy } = useUserProfileStore();
 
-  // 'returning' — cookie found, show recognition prompt
-  // 'q1'        — collect name (new user)
-  // 'journey'   — show vehicle type chips after name
-  // 'q2'        — collect phone (gated before plans)
-  // 'q3'        — collect OTP
-  // 'post_login'— show results
+  // 'returning'     — cookie found, show recognition prompt
+  // 'q1'            — collect name (new user)
+  // 'journey'       — show vehicle type chips after name
+  // 'q2'            — collect phone (gated before plans)
+  // 'q3'            — collect OTP
+  // 'post_login'    — show results
   const [step, setStep] = useState<'returning' | 'q1' | 'journey' | 'q2' | 'q3' | 'post_login'>('q1');
   const [showTyping, setShowTyping] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpError, setOtpError] = useState(false);
+  // true when we pre-populated the name from profile (skip the "What should we call you?" message)
+  const [nameFromProfile, setNameFromProfile] = useState(false);
   const [nameEchoed, setNameEchoed] = useState(false);
   const [phoneEchoed, setPhoneEchoed] = useState(false);
   const [otpEchoed, setOtpEchoed] = useState(false);
@@ -465,13 +467,22 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Check for session cookie on mount
+  // Check for session cookie on mount; fall back to profile name if known
   useEffect(() => {
     const session = readSessionCookie();
     if (session) {
       setReturningUser(session);
       setName(session.firstName);
       setStep('returning');
+    } else {
+      const profileName = useUserProfileStore.getState().firstName;
+      if (profileName && !useUserProfileStore.getState().isLoggedIn) {
+        // Name already collected earlier in this session — skip the name question
+        setName(profileName);
+        setNameEchoed(true);
+        setNameFromProfile(true);
+        setStep('journey');
+      }
     }
   }, []);
 
@@ -642,17 +653,22 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         ) : (
           <>
             {/* ── New user path ── */}
-            <BotBubble>{t.chatGreet}</BotBubble>
-
-            <AnimatePresence>
-              {nameEchoed && <UserBubble>{name}</UserBubble>}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
-                <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
-              )}
-            </AnimatePresence>
+            {nameFromProfile ? (
+              // Name already known — greet without asking again
+              <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
+            ) : (
+              <>
+                <BotBubble>{t.chatGreet}</BotBubble>
+                <AnimatePresence>
+                  {nameEchoed && <UserBubble>{name}</UserBubble>}
+                </AnimatePresence>
+                <AnimatePresence>
+                  {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
+                    <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             <AnimatePresence>
               {phoneEchoed && <UserBubble>+91 {phone}</UserBubble>}

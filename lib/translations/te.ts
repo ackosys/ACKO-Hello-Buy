@@ -350,9 +350,13 @@ export const te: T = {
     loanProviderQ: 'మీ రుణ ప్రదాత పేరు నమోదు చేయండి',
     loanProviderPlaceholder: 'ఉదా. HDFC Bank, SBI, ICICI',
 
-    // Login Early Gate
+    // Login Early Gate (after name, skippable)
     loginEarlyGreeting: (name: string) => name ? `దాదాపు పూర్తయింది, ${name}!` : 'దాదాపు పూర్తయింది!',
     loginEarlyVerify: 'మీ పురోగతిని సేవ్ చేయడానికి మరియు వ్యక్తిగత కోట్‌లను చూడటానికి మొబైల్ నంబర్ ధృవీకరించండి — లేదా ఇప్పుడు దాటవేయండి.',
+
+    // Login Mandatory Gate (before plan review, not skippable)
+    loginMandatoryGreeting: (name: string) => name ? `చివరి దశ, ${name}!` : 'చివరి దశ!',
+    loginMandatoryVerify: 'చెల్లింపు మరియు పాలసీ పత్రాల కోసం మీ మొబైల్ నంబర్ ధృవీకరించండి.',
   },
 
   /* ── Life Insurance Scripts ── */

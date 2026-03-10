@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useJourneyStore } from '../lib/store';
 import LanguageSelector from '../components/LanguageSelector';
 import AckoLogo from '../components/AckoLogo';
@@ -19,6 +19,7 @@ import {
   clearAllSnapshots,
   type ProductKey,
 } from '../lib/journeyPersist';
+import { readSessionCookie } from '../lib/sessionCookie';
 import type { Language } from '../lib/types';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -385,15 +386,8 @@ function HeaderPill({
 }
 
 /* ── Hero Greeting with transparent-bg webm logo ── */
-function HeroGreeting({ firstName, isLoggedIn, subtitle }: { firstName: string; isLoggedIn: boolean; subtitle?: string }) {
+function HeroGreeting({ displayName, subtitle, videoBg }: { displayName: string; subtitle?: string; videoBg?: boolean }) {
   const t = useT();
-
-  const displayName = firstName ? firstName.split(' ')[0] : '';
-
-  let heading: string;
-  if (isLoggedIn && displayName) heading = t.global.welcomeBack(displayName);
-  else if (displayName) heading = t.global.heroGreeting(displayName);
-  else heading = t.global.heroTitle;
 
   return (
     <motion.div
@@ -402,7 +396,7 @@ function HeroGreeting({ firstName, isLoggedIn, subtitle }: { firstName: string; 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <div className="w-[84px] h-[84px] mb-1" style={{ opacity: process.env.NEXT_PUBLIC_VIDEO_BG === 'true' ? 0 : 1 }}>
+      <div className="w-[84px] h-[84px] mb-1" style={{ opacity: videoBg ? 0 : 1 }}>
         <video
           src={`${BASE}/offerings/logo-animation.webm`}
           autoPlay
@@ -413,17 +407,19 @@ function HeroGreeting({ firstName, isLoggedIn, subtitle }: { firstName: string; 
         />
       </div>
       <div className="text-center">
-        <h1
-          className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
-          style={{ color: 'var(--app-text)' }}
-        >
-          {heading}
-        </h1>
+        {displayName && (
+          <h1
+            className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
+            style={{ color: 'var(--app-text)' }}
+          >
+            {t.global.helloName(displayName)}
+          </h1>
+        )}
         <p
-          className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
-          style={{ color: 'var(--app-text-muted)' }}
+          className={`leading-[32px] whitespace-pre-line ${displayName ? 'text-[18px] mt-1' : 'text-[24px] font-semibold tracking-[-0.3px]'}`}
+          style={{ color: displayName ? 'var(--app-text-muted)' : 'var(--app-text)' }}
         >
-          {subtitle || t.global.heroSubtitle}
+          {subtitle || t.global.heroTitle}
         </p>
       </div>
     </motion.div>
@@ -858,6 +854,9 @@ export default function GlobalHomepage() {
 function GlobalHomepageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  // Video background: enabled when deployed as /newhomepage OR via build-time env var
+  const videoBg = process.env.NEXT_PUBLIC_VIDEO_BG === 'true' || pathname === '/newhomepage';
   const { setLanguage: setJourneyLang } = useJourneyStore();
   const { theme, cycleTheme } = useThemeStore();
   const { language, setLanguage: setGlobalLang } = useLanguageStore();
@@ -871,6 +870,10 @@ function GlobalHomepageInner() {
   const overrides = useLobSnapshots();
   const { firstName, isLoggedIn } = useUserProfileStore();
   const hasOverrides = overrides.length > 0;
+
+  // Resolve display name: prefer store (logged-in or previously entered), fall back to session cookie
+  const cookieName = typeof window !== 'undefined' ? (readSessionCookie()?.firstName || '') : '';
+  const displayName = (firstName || cookieName).split(' ')[0];
 
   const handleLanguageCycle = useCallback(() => {
     const idx = LANG_ORDER.indexOf(language as Language);
@@ -955,12 +958,11 @@ function GlobalHomepageInner() {
             style={{ background: 'var(--app-bg)' }}
           >
             {/* Animated video background — newhomepage only */}
-            {process.env.NEXT_PUBLIC_VIDEO_BG === 'true' && (
+            {videoBg && (
               <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none max-w-[430px] w-full">
                 <video
                   key={theme}
                   autoPlay
-                  loop
                   muted
                   playsInline
                   className="mx-auto object-cover"
@@ -998,9 +1000,9 @@ function GlobalHomepageInner() {
               />
 
               <HeroGreeting
-                firstName={firstName}
-                isLoggedIn={isLoggedIn}
+                displayName={displayName}
                 subtitle={hasOverrides ? t.global.heroTitleUser : undefined}
+                videoBg={videoBg}
               />
 
               {/* PWILO Section — continue where you left off */}

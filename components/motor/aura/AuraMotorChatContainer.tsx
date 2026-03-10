@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotorStore } from '../../../lib/motor/store';
 import { getMotorStep } from '../../../lib/motor/scripts';
 import { MotorJourneyState } from '../../../lib/motor/types';
-import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../../lib/journeyPersist';
+import { saveSnapshot, clearSnapshotById, MOTOR_SAVE_STEPS } from '../../../lib/journeyPersist';
 import { useUserProfileStore } from '../../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../../lib/mockUsers';
 import { writeSessionCookie } from '../../../lib/sessionCookie';
@@ -194,6 +194,11 @@ export default function AuraMotorChatContainer() {
   useEffect(() => {
     if (!MOTOR_SAVE_STEPS.has(currentStepId)) return;
     const s = useMotorStore.getState();
+    // Purchase complete — clear PWILO instead of saving a "policy active" card
+    if ((currentStepId === 'payment.success' || currentStepId === 'completion.dashboard') && s.paymentComplete) {
+      if (s.journeyId) clearSnapshotById(s.journeyId);
+      return;
+    }
     const id = saveSnapshot({
       journeyId: s.journeyId || undefined,
       product: s.vehicleType ?? 'car',
@@ -287,8 +292,8 @@ export default function AuraMotorChatContainer() {
 
     setTimeout(() => {
       updateState({
-        currentStepId: 'quote.calculating',
-        currentModule: 'quote',
+        currentStepId: 'owner_details.email',
+        currentModule: 'owner_details',
       } as Partial<MotorJourneyState>);
     }, 300);
   }, [setProfile, addPolicy, addMessage, updateState, t]);
@@ -299,11 +304,28 @@ export default function AuraMotorChatContainer() {
 
     setTimeout(() => {
       updateState({
-        currentStepId: 'quote.calculating',
-        currentModule: 'quote',
+        currentStepId: 'owner_details.email',
+        currentModule: 'owner_details',
       } as Partial<MotorJourneyState>);
     }, 300);
   }, [addMessage, updateState, t]);
+
+  // Mandatory login gate (before plan review): phone is required to proceed
+  const handleLoginGateMandatorySuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate_mandatory', module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'review.premium_breakdown',
+        currentModule: 'review',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
 
   const handleEditRequest = (stepId: string) => {
     setEditModal({ stepId, visible: true });
@@ -675,6 +697,8 @@ export default function AuraMotorChatContainer() {
         return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} />;
       case 'login_gate_skippable':
         return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
+      case 'login_gate_mandatory':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateMandatorySuccess} />;
       default:
         return null;
     }

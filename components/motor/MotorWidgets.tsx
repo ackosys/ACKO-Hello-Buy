@@ -400,12 +400,14 @@ const MOTOR_INPUT_THEME: InputTheme = {
 
 export function MotorTextInput({
   placeholder,
+  defaultValue,
   inputType = 'text',
   onSubmit,
   validate,
   maxLength,
 }: {
   placeholder?: string;
+  defaultValue?: string;
   inputType?: 'text' | 'number' | 'tel';
   onSubmit: (value: string) => void;
   validate?: (value: string) => string | null;
@@ -414,6 +416,7 @@ export function MotorTextInput({
   return (
     <BaseTextInput
       placeholder={placeholder || 'Type here...'}
+      defaultValue={defaultValue}
       inputType={inputType}
       onSubmit={onSubmit}
       validate={validate}

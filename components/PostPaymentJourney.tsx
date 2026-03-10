@@ -10,7 +10,7 @@ import { getT, getLocaleTag, useT } from '../lib/translations';
 import ConversationalFlow from './ConversationalFlow';
 import AckoLogo from './AckoLogo';
 import Link from 'next/link';
-import { saveSnapshot } from '../lib/journeyPersist';
+import { saveSnapshot, clearSnapshot } from '../lib/journeyPersist';
 import { useUserProfileStore } from '../lib/userProfileStore';
 
 /* ═══════════════════════════════════════════════════════
@@ -1021,6 +1021,11 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
         window.location.href = '/';
       }
       return true;
+    }
+    // Purchase journey fully complete — user dismissed the app download screen.
+    // Clear PWILO so "continue where you left off" no longer appears.
+    if (stepId === 'pp.app_download') {
+      clearSnapshot('health');
     }
     // Doctor call done — user is now at scenario select
     if (stepId === 'pp.voice_call' || stepId === 'pp.schedule_confirm') {

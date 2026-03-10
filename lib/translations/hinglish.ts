@@ -923,9 +923,13 @@ export const hinglish: T = {
     quoteReady: (make: string, model: string) => `${make} ${model} ke liye best plans yahan hain.`,
     paymentSuccess: (v: string) => `Payment successful! Aapki ${v} insurance policy issue ho rahi hai.`,
 
-    // Login Early Gate
+    // Login Early Gate (after name, skippable)
     loginEarlyGreeting: (name: string) => name ? `Almost there, ${name}!` : 'Almost there!',
     loginEarlyVerify: 'Apna mobile number verify karein progress save karne ke liye — ya abhi ke liye skip karein.',
+
+    // Login Mandatory Gate (before plan review, not skippable)
+    loginMandatoryGreeting: (name: string) => name ? `Ek aakhri step, ${name}!` : 'Ek aakhri step!',
+    loginMandatoryVerify: 'Payment aur policy documents ke liye apna mobile number verify karein.',
   },
 
   /* ── Life Insurance Scripts ── */

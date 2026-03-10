@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotorStore } from '../../lib/motor/store';
 import { getMotorStep } from '../../lib/motor/scripts';
 import { MotorJourneyState } from '../../lib/motor/types';
-import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../lib/journeyPersist';
+import { saveSnapshot, clearSnapshotById, MOTOR_SAVE_STEPS } from '../../lib/journeyPersist';
 import { saveRecentVehicle, getBrandLogoUrl } from '../../lib/motorRecentVehicles';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
@@ -185,6 +185,11 @@ export default function MotorChatContainer() {
   useEffect(() => {
     if (!MOTOR_SAVE_STEPS.has(currentStepId)) return;
     const s = useMotorStore.getState();
+    // Purchase complete — clear PWILO instead of saving a "policy active" card
+    if ((currentStepId === 'payment.success' || currentStepId === 'completion.dashboard') && s.paymentComplete) {
+      if (s.journeyId) clearSnapshotById(s.journeyId);
+      return;
+    }
     const id = saveSnapshot({
       journeyId: s.journeyId || undefined,
       product: s.vehicleType ?? 'car',
@@ -302,7 +307,7 @@ export default function MotorChatContainer() {
     addBotMessage();
   }, [currentStepId]);
 
-  // Login gate: called after user verifies OTP inside the motor journey
+  // Login gate (skippable, after name): called after user verifies OTP
   const handleLoginGateSuccess = useCallback((phone: string) => {
     const state = detectPostLoginState(phone);
     const firstName = useUserProfileStore.getState().firstName || '';
@@ -315,8 +320,8 @@ export default function MotorChatContainer() {
 
     setTimeout(() => {
       updateState({
-        currentStepId: 'quote.calculating',
-        currentModule: 'quote',
+        currentStepId: 'owner_details.email',
+        currentModule: 'owner_details',
       } as Partial<MotorJourneyState>);
     }, 300);
   }, [setProfile, addPolicy, addMessage, updateState, t]);
@@ -327,11 +332,28 @@ export default function MotorChatContainer() {
 
     setTimeout(() => {
       updateState({
-        currentStepId: 'quote.calculating',
-        currentModule: 'quote',
+        currentStepId: 'owner_details.email',
+        currentModule: 'owner_details',
       } as Partial<MotorJourneyState>);
     }, 300);
   }, [addMessage, updateState, t]);
+
+  // Mandatory login gate (before plan review): phone is required to proceed
+  const handleLoginGateMandatorySuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate_mandatory', module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'review.premium_breakdown',
+        currentModule: 'review',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
 
   // Handle edit
   const handleEditRequest = (stepId: string) => {
@@ -408,6 +430,7 @@ export default function MotorChatContainer() {
         return (
           <MotorTextInput
             placeholder={script.placeholder}
+            defaultValue={script.defaultValue}
             inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
             onSubmit={handleEditResponse}
             maxLength={isPincode ? 6 : undefined}
@@ -570,6 +593,7 @@ export default function MotorChatContainer() {
         return (
           <MotorTextInput
             placeholder={script.placeholder}
+            defaultValue={script.defaultValue}
             inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
             onSubmit={handleResponse}
             maxLength={isPincode ? 6 : undefined}
@@ -665,6 +689,8 @@ export default function MotorChatContainer() {
         return <MotorLoginGate onSuccess={handleLoginGateSuccess} />;
       case 'login_gate_skippable':
         return <MotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
+      case 'login_gate_mandatory':
+        return <MotorLoginGate onSuccess={handleLoginGateMandatorySuccess} />;
       default:
         return null;
     }

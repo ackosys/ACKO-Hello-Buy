@@ -521,7 +521,7 @@ const brandNewViewPrices: MotorConversationStep = {
     botMessages: [getT(state.language).motorScripts.fetchingPlans(state.vehicleData.make, state.vehicleData.model)],
   }),
   processResponse: () => ({}),
-  getNextStep: () => 'login.phone_gate',
+  getNextStep: () => 'quote.calculating',
 };
 
 /* ═══════════════════════════════════════════════
@@ -546,30 +546,38 @@ const ownerDetailsName: MotorConversationStep = {
   id: 'owner_details.name',
   module: 'owner_details',
   widgetType: 'text_input',
-  getScript: () => ({
-    botMessages: [
-      `What is the vehicle owner's full name?`,
-    ],
-    subText: `This should match the name on your RC (Registration Certificate).`,
-    placeholder: 'e.g., Bharath Kumar',
-    inputType: 'text' as const,
-  }),
+  getScript: (state) => {
+    const prefill = state.ownerName || useUserProfileStore.getState().firstName || '';
+    return {
+      botMessages: prefill
+        ? [`Does this name look right for the policy?`]
+        : [`What is the vehicle owner's full name?`],
+      subText: `This should match the name on your RC (Registration Certificate).`,
+      placeholder: 'e.g., Bharath Kumar',
+      defaultValue: prefill,
+      inputType: 'text' as const,
+    };
+  },
   processResponse: (response) => ({ ownerName: response, userName: response }),
-  getNextStep: () => 'owner_details.email',
+  getNextStep: () => 'login.phone_gate',
 };
 
 const ownerDetailsEmail: MotorConversationStep = {
   id: 'owner_details.email',
   module: 'owner_details',
   widgetType: 'text_input',
-  getScript: () => ({
-    botMessages: [
-      `And your email address?`,
-    ],
-    subText: `We will send your policy document and updates to this email.`,
-    placeholder: 'e.g., name@email.com',
-    inputType: 'text' as const,
-  }),
+  getScript: (state) => {
+    const prefill = state.ownerEmail || '';
+    return {
+      botMessages: prefill
+        ? [`Is this still the right email address?`]
+        : [`And your email address?`],
+      subText: `We will send your policy document and updates to this email.`,
+      placeholder: 'e.g., name@email.com',
+      defaultValue: prefill,
+      inputType: 'text' as const,
+    };
+  },
   processResponse: (response) => ({ ownerEmail: response }),
   getNextStep: (_, state) => {
     if (state.vehicleEntryType === 'brand_new') return 'owner_details.engine_number';
@@ -658,7 +666,7 @@ const ownerDetailsLoanCheck: MotorConversationStep = {
     ],
   }),
   processResponse: (response) => ({ hasCarLoan: response === 'yes' }),
-  getNextStep: (response) => response === 'yes' ? 'owner_details.loan_provider' : 'review.premium_breakdown',
+  getNextStep: (response) => response === 'yes' ? 'owner_details.loan_provider' : 'login.phone_gate_mandatory',
 };
 
 const ownerDetailsLoanProvider: MotorConversationStep = {
@@ -674,7 +682,7 @@ const ownerDetailsLoanProvider: MotorConversationStep = {
     };
   },
   processResponse: (response) => ({ loanProvider: response }),
-  getNextStep: () => 'review.premium_breakdown',
+  getNextStep: () => 'login.phone_gate_mandatory',
 };
 
 /* ═══════════════════════════════════════════════
@@ -963,7 +971,7 @@ const preQuoteViewPrices: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'login.phone_gate',
+  getNextStep: () => 'quote.calculating',
 };
 
 /* ═══════════════════════════════════════════════
@@ -979,7 +987,7 @@ const loginPhoneGate: MotorConversationStep = {
   condition: () => !useUserProfileStore.getState().isLoggedIn,
   getScript: (state) => {
     const t = getT(state.language).motorScripts;
-    const firstName = (useUserProfileStore.getState().firstName || '').split(' ')[0];
+    const firstName = (state.ownerName || useUserProfileStore.getState().firstName || '').split(' ')[0];
     return {
       botMessages: [
         t.loginEarlyGreeting(firstName),
@@ -988,7 +996,28 @@ const loginPhoneGate: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'quote.calculating',
+  getNextStep: () => 'owner_details.email',
+};
+
+/* Mandatory phone gate — shown only if the user skipped the early gate.
+   Must be completed before we show the final plan review. */
+const loginPhoneGateMandatory: MotorConversationStep = {
+  id: 'login.phone_gate_mandatory',
+  module: 'login',
+  widgetType: 'login_gate_mandatory',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    const firstName = (state.ownerName || useUserProfileStore.getState().firstName || '').split(' ')[0];
+    return {
+      botMessages: [
+        t.loginMandatoryGreeting(firstName),
+        t.loginMandatoryVerify,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'review.premium_breakdown',
 };
 
 /* ═══════════════════════════════════════════════
@@ -1305,10 +1334,7 @@ const addonsComplete: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: (_, state) => {
-    if (state.vehicleEntryType === 'brand_new') return 'owner_details.intro';
-    return 'review.premium_breakdown';
-  },
+  getNextStep: () => 'owner_details.intro',
 };
 
 const reviewPremiumBreakdown: MotorConversationStep = {
@@ -1533,6 +1559,7 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'brand_new.summary': brandNewSummary,
   'brand_new.view_prices': brandNewViewPrices,
   'login.phone_gate': loginPhoneGate,
+  'login.phone_gate_mandatory': loginPhoneGateMandatory,
   'owner_details.intro': ownerDetailsIntro,
   'owner_details.name': ownerDetailsName,
   'owner_details.email': ownerDetailsEmail,

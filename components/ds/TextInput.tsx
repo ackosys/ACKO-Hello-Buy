@@ -18,6 +18,7 @@ const DEFAULT_THEME: InputTheme = {
 
 export interface TextInputProps {
   placeholder: string;
+  defaultValue?: string;
   inputType?: 'text' | 'number' | 'tel';
   maxLength?: number;
   onSubmit: (value: string) => void;
@@ -28,6 +29,7 @@ export interface TextInputProps {
 
 export default function TextInput({
   placeholder,
+  defaultValue = '',
   inputType = 'text',
   maxLength,
   onSubmit,
@@ -37,7 +39,7 @@ export default function TextInput({
 }: TextInputProps) {
   const tr = useT();
   const resolvedButtonLabel = buttonLabel || tr.common.continue;
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(defaultValue);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const t = { ...DEFAULT_THEME, ...themeOverrides };

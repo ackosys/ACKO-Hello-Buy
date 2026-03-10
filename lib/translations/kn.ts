@@ -918,9 +918,13 @@ export const kn: T = {
     loanProviderQ: 'ನಿಮ್ಮ ಸಾಲ ನೀಡುವವರ ಹೆಸರು ನಮೂದಿಸಿ',
     loanProviderPlaceholder: 'ಉದಾ. HDFC Bank, SBI, ICICI',
 
-    // Login Early Gate
+    // Login Early Gate (after name, skippable)
     loginEarlyGreeting: (name: string) => name ? `ಇನ್ನು ಸ್ವಲ್ಪವೇ, ${name}!` : 'ಇನ್ನು ಸ್ವಲ್ಪವೇ!',
     loginEarlyVerify: 'ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಉಳಿಸಲು ಮತ್ತು ವೈಯಕ್ತಿಕ ಉಲ್ಲೇಖಗಳನ್ನು ನೋಡಲು ಮೊಬೈಲ್ ನಂಬರ್ ಪರಿಶೀಲಿಸಿ — ಅಥವಾ ಈಗ ಬಿಟ್ಟುಬಿಡಿ.',
+
+    // Login Mandatory Gate (before plan review, not skippable)
+    loginMandatoryGreeting: (name: string) => name ? `ಕೊನೆಯ ಹಂತ, ${name}!` : 'ಕೊನೆಯ ಹಂತ!',
+    loginMandatoryVerify: 'ಪಾವತಿ ಮತ್ತು ಪಾಲಿಸಿ ದಾಖಲೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು ನಿಮ್ಮ ಮೊಬೈಲ್ ನಂಬರ್ ಪರಿಶೀಲಿಸಿ.',
   },
 
   /* ── Life Insurance Scripts ── */

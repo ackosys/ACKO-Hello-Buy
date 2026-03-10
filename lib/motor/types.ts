@@ -66,6 +66,7 @@ export type MotorWidgetType =
   | 'app_download_cta'
   | 'login_gate'
   | 'login_gate_skippable'
+  | 'login_gate_mandatory'
   | 'dashboard_cta'
   | 'document_upload'
   | 'safety_condition_picker'
@@ -224,6 +225,7 @@ export interface MotorStepScript {
   subText?: string;
   options?: Option[];
   placeholder?: string;
+  defaultValue?: string;
   inputType?: 'text' | 'number' | 'tel';
 }
 
