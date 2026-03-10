@@ -39,10 +39,12 @@ import type { LifeJourneyState } from '../../lib/life/types';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
 import { writeSessionCookie } from '../../lib/sessionCookie';
+import { useT } from '../../lib/translations';
 
 const VALID_OTP = '0000';
 
-function LifeLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
+function LifeLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
   const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState(['', '', '', '']);
@@ -97,7 +99,7 @@ function LifeLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
               autoFocus
               type="tel"
               inputMode="numeric"
-              placeholder="Enter your mobile number"
+              placeholder={t.chat.loginPhonePlaceholder}
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
@@ -105,20 +107,28 @@ function LifeLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
             />
           </div>
           <p className="text-caption text-white/40 mt-1.5 text-center">
-            We&apos;ll save your progress so you can continue from where you left off
+            {t.chat.loginSaveProgress}
           </p>
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
             className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
           >
-            Send OTP
+            {t.chat.loginSendOtp}
           </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
         </>
       ) : (
         <>
           <p className="text-caption text-white/40 text-center mb-3">
-            OTP sent to +91 {phone}
+            {t.chat.loginOtpSentTo(phone)}
           </p>
           <motion.div
             className="flex gap-2 justify-center"
@@ -145,9 +155,9 @@ function LifeLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
           ) : (
-            <p className="text-caption text-white/40 text-center mt-2">Enter <strong>0000</strong> to verify</p>
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
           )}
         </>
       )}
@@ -168,6 +178,7 @@ export default function LifeChatContainer() {
   } = useLifeJourneyStore();
 
   const router = useRouter();
+  const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
   const [showWidget, setShowWidget] = useState(false);
@@ -430,7 +441,7 @@ export default function LifeChatContainer() {
     buildPoliciesForState(loginState).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'life_login_gate', module: 'basic_info' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'life_login_gate', module: 'basic_info' });
     setShowWidget(false);
 
     setTimeout(() => {
@@ -439,7 +450,19 @@ export default function LifeChatContainer() {
         currentModule: 'basic_info',
       } as Partial<LifeJourneyState>);
     }, 300);
-  }, [setProfile, addPolicy, addMessage, updateState]);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
+  const handleLoginGateSkip = useCallback(() => {
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'life_login_gate', module: 'basic_info' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'life_basic_gender',
+        currentModule: 'basic_info',
+      } as Partial<LifeJourneyState>);
+    }, 300);
+  }, [addMessage, updateState, t]);
 
   // Determine if widget is large (renders inline in chat) or small (bottom sheet)
   const isLargeWidget = () => {
@@ -527,6 +550,8 @@ export default function LifeChatContainer() {
         return <LifeAppDownloadCta onComplete={() => handleResponse({})} />;
       case 'login_gate':
         return <LifeLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <LifeLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
       case 'financial_screen':
       case 'underwriting_status':
         return null;

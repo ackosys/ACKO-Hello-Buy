@@ -975,16 +975,15 @@ const preQuoteViewPrices: MotorConversationStep = {
 const loginPhoneGate: MotorConversationStep = {
   id: 'login.phone_gate',
   module: 'login',
-  widgetType: 'login_gate',
-  // Skip entirely if already logged in
+  widgetType: 'login_gate_skippable',
   condition: () => !useUserProfileStore.getState().isLoggedIn,
-  getScript: () => {
-    const firstName = useUserProfileStore.getState().firstName;
-    const greeting = firstName ? `Almost there, ${firstName}!` : 'Almost there!';
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    const firstName = (useUserProfileStore.getState().firstName || '').split(' ')[0];
     return {
       botMessages: [
-        greeting,
-        `To show your personalized quotes and save your progress, please verify your mobile number.`,
+        t.loginEarlyGreeting(firstName),
+        t.loginEarlyVerify,
       ],
     };
   },

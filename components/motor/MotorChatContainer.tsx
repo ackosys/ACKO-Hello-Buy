@@ -10,6 +10,7 @@ import { saveRecentVehicle, getBrandLogoUrl } from '../../lib/motorRecentVehicle
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
 import { writeSessionCookie } from '../../lib/sessionCookie';
+import { useT } from '../../lib/translations';
 import ChatMessage, { TypingIndicator } from '../ChatMessage';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import {
@@ -38,7 +39,8 @@ import { PremiumBreakdown, PaymentGateway, MotorCelebration, PolicyTracker, NpsF
 /* ── Inline phone+OTP gate shown before quotes are revealed ── */
 const VALID_OTP = '0000';
 
-function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
+function MotorLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
   const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState(['', '', '', '']);
@@ -93,7 +95,7 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
               autoFocus
               type="tel"
               inputMode="numeric"
-              placeholder="Enter your mobile number"
+              placeholder={t.chat.loginPhonePlaceholder}
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
@@ -101,20 +103,28 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
             />
           </div>
           <p className="text-caption text-white/40 mt-1.5 text-center">
-            We&apos;ll save your progress so you can continue from where you left off
+            {t.chat.loginSaveProgress}
           </p>
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
             className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
           >
-            Send OTP
+            {t.chat.loginSendOtp}
           </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
         </>
       ) : (
         <>
           <p className="text-caption text-white/40 text-center mb-3">
-            OTP sent to +91 {phone}
+            {t.chat.loginOtpSentTo(phone)}
           </p>
           <motion.div
             className="flex gap-2 justify-center"
@@ -141,9 +151,9 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
           ) : (
-            <p className="text-caption text-white/40 text-center mt-2">Enter <strong>0000</strong> to verify</p>
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
           )}
         </>
       )}
@@ -162,6 +172,8 @@ export default function MotorChatContainer() {
   } = useMotorStore();
 
   const { isLoggedIn, setProfile, addPolicy } = useUserProfileStore();
+  const t = useT();
+  const tWidgets = t.widgets;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
@@ -298,17 +310,28 @@ export default function MotorChatContainer() {
     buildPoliciesForState(state).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.phone_gate', module: 'login' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate', module: 'login' });
     setShowWidget(false);
 
-    // Advance to quote.calculating
     setTimeout(() => {
       updateState({
         currentStepId: 'quote.calculating',
         currentModule: 'quote',
       } as Partial<MotorJourneyState>);
     }, 300);
-  }, [setProfile, addPolicy, addMessage, updateState]);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
+  const handleLoginGateSkip = useCallback(() => {
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'login.phone_gate', module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'quote.calculating',
+        currentModule: 'quote',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [addMessage, updateState, t]);
 
   // Handle edit
   const handleEditRequest = (stepId: string) => {
@@ -389,9 +412,9 @@ export default function MotorChatContainer() {
             onSubmit={handleEditResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -551,9 +574,9 @@ export default function MotorChatContainer() {
             onSubmit={handleResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -640,6 +663,8 @@ export default function MotorChatContainer() {
         return <AppDownloadCta onComplete={() => handleResponse({})} />;
       case 'login_gate':
         return <MotorLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <MotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
       default:
         return null;
     }

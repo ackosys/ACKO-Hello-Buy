@@ -17,7 +17,7 @@ import { useUserProfileStore } from './userProfileStore';
 type PersonaScripts = Record<PersonaType, StepScript>;
 
 function userName(state: JourneyState): string {
-  return state.userName || 'there';
+  return (state.userName || 'there').split(' ')[0];
 }
 
 function cityFromPincode(pincode: string): string {
@@ -47,7 +47,7 @@ const entryWelcome: ConversationStep = {
   widgetType: 'none',
   getScript: (persona, state) => {
     const t = getT(state.language);
-    const name = state.userName || 'Rahul';
+    const name = (state.userName || 'Rahul').split(' ')[0];
 
     const crossLobGreeting = useUserProfileStore.getState().getCrossLobGreeting('health');
     if (crossLobGreeting) {
@@ -125,7 +125,7 @@ const loginEarlyGate: ConversationStep = {
   widgetType: 'login_gate_skippable',
   getScript: (_persona, state) => {
     const t = getT(state.language);
-    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const name = userName(state) || (useUserProfileStore.getState().firstName || '').split(' ')[0];
     return {
       botMessages: [
         t.scripts.loginEarlyGreeting(name),
@@ -1185,7 +1185,7 @@ const loginPhoneGate: ConversationStep = {
   widgetType: 'login_gate',
   condition: () => !useUserProfileStore.getState().isLoggedIn,
   getScript: (persona, state) => {
-    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const name = userName(state) || (useUserProfileStore.getState().firstName || '').split(' ')[0];
     const greeting = name ? `Almost there, ${name}!` : 'Almost there!';
     return {
       botMessages: [

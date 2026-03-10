@@ -192,6 +192,7 @@ function MotorJourneyInner() {
   const userName = store.userName;
   const theme = useThemeStore((s) => s.theme);
   const globalLanguage = useLanguageStore((s) => s.language);
+  const journeyLanguage = store.language;
   const searchParams = useSearchParams();
   const { isLoggedIn } = useUserProfileStore();
 
@@ -201,7 +202,9 @@ function MotorJourneyInner() {
   const [hydrated, setHydrated] = useState(false);
 
   // Keep motor store language in sync with the global language selection
-  useEffect(() => { setLanguage(globalLanguage); }, [globalLanguage, setLanguage]);
+  useEffect(() => {
+    if (journeyLanguage !== globalLanguage) setLanguage(globalLanguage);
+  }, [journeyLanguage, globalLanguage, setLanguage]);
 
   useEffect(() => {
     const product = vehicleParam ?? 'car';
@@ -212,6 +215,10 @@ function MotorJourneyInner() {
     const screenParam = searchParams.get('screen');
 
     resetJourney();
+
+    // Sync language immediately after reset — read from localStorage as authoritative source
+    const savedLang = localStorage.getItem('acko_language');
+    if (savedLang) setLanguage(savedLang as import('../../lib/types').Language);
 
     // Set vehicleType from URL param immediately so MotorHeader shows the badge
     updateState({ vehicleType: product as VehicleType } as Partial<MotorJourneyState>);

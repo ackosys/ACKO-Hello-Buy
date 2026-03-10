@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../../lib/store';
 import { useThemeStore } from '../../lib/themeStore';
+import { useLanguageStore } from '../../lib/languageStore';
 import { loadSnapshot, clearSnapshot } from '../../lib/journeyPersist';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import EntryScreen from '../../components/EntryScreen';
@@ -80,13 +81,19 @@ function WelcomeOverlay({ onDone }: { onDone: () => void }) {
 }
 
 function HealthJourneyInner() {
-  const { updateState, resetJourney } = useJourneyStore();
+  const { updateState, resetJourney, setLanguage } = useJourneyStore();
   const paymentComplete = useJourneyStore(s => s.paymentComplete);
   const isExistingUser = useJourneyStore(s => s.isExistingAckoUser);
+  const globalLanguage = useLanguageStore((s) => s.language);
+  const journeyLanguage = useJourneyStore((s) => s.language);
   const [screen, setScreen] = useState<Screen>('chat');
   const [showWelcome, setShowWelcome] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (journeyLanguage !== globalLanguage) setLanguage(globalLanguage);
+  }, [journeyLanguage, globalLanguage, setLanguage]);
 
   const seedDemoState = () => {
     updateState({
@@ -124,6 +131,11 @@ function HealthJourneyInner() {
     const snap = resume ? loadSnapshot('health') : null;
 
     resetJourney();
+
+    // Sync language immediately after reset — global store may not be hydrated yet,
+    // so read from localStorage as the authoritative persisted source.
+    const savedLang = localStorage.getItem('acko_language');
+    if (savedLang) setLanguage(savedLang as import('../../lib/types').Language);
 
     const screenParam = searchParams.get('screen');
 

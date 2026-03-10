@@ -1,72 +1,51 @@
 /**
  * ACKO Design System — Barrel File
  *
- * Re-exports shared components that are used across multiple journeys.
- * When consolidating, move the canonical implementation into this directory
- * and update all journey-specific files to import from here.
+ * Single source of truth for shared components.
+ * All journeys (Health, Motor, Life, Aura) import from here.
  *
- * Current component locations:
- *
- * SHARED (used in Health, Motor, Life):
- *   SelectionCards     → components/ChatWidgets.tsx
- *   MultiSelect        → components/ChatWidgets.tsx
- *   NumberInput         → components/ChatWidgets.tsx
- *   TextInput           → components/ChatWidgets.tsx
- *   PincodeInput        → components/ChatWidgets.tsx
- *   USPCards            → components/ChatWidgets.tsx
- *   ChatMessage         → components/ChatMessage.tsx
- *   ConversationalFlow  → components/ConversationalFlow.tsx
- *   FloatingHelpButton  → components/FloatingHelpButton.tsx
- *   LanguageSelector    → components/LanguageSelector.tsx
- *   AckoLogo            → components/AckoLogo.tsx
- *
- * GLOBAL:
- *   ThemeProvider       → components/global/ThemeProvider.tsx
- *   ThemeToggle         → components/global/ThemeToggle.tsx
- *   TrustBadges         → components/global/TrustBadges.tsx
- *   ValueProps          → components/global/ValueProps.tsx
- *   LobSelector         → components/global/LobSelector.tsx
- *   DropOffBanner       → components/global/DropOffBanner.tsx
- *   PolicyDashboard     → components/global/PolicyDashboard.tsx
- *   PolicyActionScreen  → components/global/PolicyActionScreen.tsx
- *   GlobalHero          → components/global/GlobalHero.tsx
- *
- * HEALTH-SPECIFIC:
- *   PlanSwitcher        → components/ChatWidgets.tsx
- *   FrequencySelect     → components/ChatWidgets.tsx
- *   Celebration         → components/ChatWidgets.tsx
- *   HospitalList        → components/ChatWidgets.tsx
- *   DobCollection       → components/ChatWidgets.tsx
- *   GapResults          → components/ChatWidgets.tsx
- *   ConfirmDetails      → components/ChatWidgets.tsx
- *   ReviewSummary       → components/ChatWidgets.tsx
- *   ConsentWidget       → components/ChatWidgets.tsx
- *
- * MOTOR-SPECIFIC:
- *   VehicleRegInput     → components/motor/MotorWidgets.tsx
- *   BrandSelector       → components/motor/MotorWidgets.tsx
- *   ModelSelector        → components/motor/MotorWidgets.tsx
- *   VariantSelector      → components/motor/MotorWidgets.tsx
- *   YearSelector         → components/motor/MotorWidgets.tsx
- *   PlanSelector         → components/motor/MotorWidgets.tsx
- *   PremiumBreakdown     → components/motor/MotorFinalWidgets.tsx
- *   MotorCelebration     → components/motor/MotorFinalWidgets.tsx
- *   PolicyTracker        → components/motor/MotorFinalWidgets.tsx
- *   NpsFeedback          → components/motor/MotorFinalWidgets.tsx
- *   AppDownloadCta       → components/motor/MotorFinalWidgets.tsx
- *
- * LIFE-SPECIFIC:
- *   LifeDatePicker       → components/life/LifeChatWidgets.tsx
- *   LifeYesNo            → components/life/LifeChatWidgets.tsx
- *   CoverageInput        → components/life/LifeChatWidgets.tsx
- *   CoverageCard         → components/life/LifeChatWidgets.tsx
- *   RiderCards           → components/life/LifeRiderCards.tsx
- *   PremiumSummary       → components/life/LifeChatWidgets.tsx
- *
- * AURA-SPECIFIC:
- *   AuraMotorWidgets     → components/motor/aura/AuraMotorWidgets.tsx
- *   AuraClaimsWidgets    → components/motor/aura/AuraClaimsWidgets.tsx
+ * How it works:
+ *   - Canonical implementations live in this directory.
+ *   - Old locations (components/global/, components/AckoLogo.tsx, etc.)
+ *     have been replaced with re-exports pointing here.
+ *   - Changing a component here propagates everywhere.
  */
 
+// ── Group A: Identical components ──
+export { default as AckoLogo } from './AckoLogo';
+export { default as ThemeToggle } from './ThemeToggle';
+export { default as ThemeProvider } from './ThemeProvider';
+export { default as LanguageSelector } from './LanguageSelector';
+export { default as FloatingHelpButton } from './FloatingHelpButton';
+
+// ── Group B: Configurable base components ──
+export { default as SelectionCards } from './SelectionCards';
+export type { SelectionOption, SelectionTheme, SelectionCardsProps } from './SelectionCards';
+
+export { default as MultiSelect } from './MultiSelect';
+export type { MultiSelectOption, MultiSelectTheme, MultiSelectProps } from './MultiSelect';
+
+export { default as NumberInput } from './NumberInput';
+export type { InputTheme, NumberInputProps } from './NumberInput';
+
+export { default as TextInput } from './TextInput';
+export type { TextInputProps } from './TextInput';
+
+export { default as PincodeInput } from './PincodeInput';
+export type { PincodeInputProps } from './PincodeInput';
+
+export { default as ChatMessage, TypingIndicator } from './ChatMessage';
+export type { ChatMessageData, ChatBubbleTheme, BaseChatMessageProps, TypingIndicatorProps } from './ChatMessage';
+
+// ── Group C: Global components ──
+export { default as TrustBadges } from './TrustBadges';
+export { default as ValueProps } from './ValueProps';
+export { default as LobSelector } from './LobSelector';
+export { default as GlobalHero } from './GlobalHero';
+export { default as DropOffBanner } from './DropOffBanner';
+export { default as PolicyDashboard } from './PolicyDashboard';
+export { default as PolicyActionScreen } from './PolicyActionScreen';
+
+// ── Design System Catalog components ──
 export { Showcase, Section, SizeRow } from './ComponentShowcase';
 export { default as DesignSystemNav } from './DesignSystemNav';

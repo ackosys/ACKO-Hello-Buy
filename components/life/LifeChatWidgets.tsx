@@ -7,6 +7,10 @@ import { useLifeJourneyStore } from '../../lib/life/store';
 import { calculateBasePremium } from '../../lib/life/scripts';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { useT } from '../../lib/translations';
+import BaseSelectionCards from '../ds/SelectionCards';
+import BaseMultiSelect from '../ds/MultiSelect';
+import BaseNumberInput from '../ds/NumberInput';
+import BaseTextInput from '../ds/TextInput';
 
 /* ═══════════════════════════════════════════════════════
    SVG Icon System — Life-specific icons
@@ -49,164 +53,52 @@ function LifeIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: s
 }
 
 /* ═══════════════════════════════════════════════════════
-   Selection Cards — Reusable grid/list selection
+   Selection Cards — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
-export function LifeSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-                : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-              }
-            `}
-          >
-            {opt.icon && (
-              <div className="mb-2">
-                {typeof opt.icon === 'string' && LIFE_ICON_PATHS[opt.icon]
-                  ? <LifeIcon icon={opt.icon} className="w-8 h-8" />
-                  : <span className="text-3xl">{opt.icon}</span>}
-              </div>
-            )}
-            <span className={`text-label-md font-medium ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>
-              {opt.label}
-            </span>
-            {opt.description && (
-              <span className="text-caption text-white/50 mt-1">{opt.description}</span>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
+function lifeRenderIcon(icon: string, className?: string) {
+  if (typeof icon === 'string' && LIFE_ICON_PATHS[icon]) {
+    return <LifeIcon icon={icon} className={className || 'w-6 h-6'} />;
   }
+  return <span className="text-2xl">{icon}</span>;
+}
 
+export function LifeSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => (
-        <motion.button
-          key={opt.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.04 }}
-          onClick={() => handleSelect(opt.id)}
-          className={`
-            flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-200 active:scale-[0.97]
-            ${selected === opt.id
-              ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-              : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-            }
-          `}
-        >
-          {opt.icon && (
-            <div className="flex-shrink-0">
-              {typeof opt.icon === 'string' && LIFE_ICON_PATHS[opt.icon]
-                ? <LifeIcon icon={opt.icon} className="w-6 h-6" />
-                : <span className="text-xl">{opt.icon}</span>}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <span className={`text-label-md font-medium block ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>
-              {opt.label}
-            </span>
-            {opt.description && (
-              <span className="text-caption text-white/40 block mt-0.5">{opt.description}</span>
-            )}
-          </div>
-          {selected === opt.id && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            </motion.div>
-          )}
-        </motion.button>
-      ))}
-    </div>
+    <BaseSelectionCards
+      options={options}
+      onSelect={onSelect}
+      renderIcon={lifeRenderIcon}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Multi Select — Grid with multi-selection and confirm
+   Multi Select — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
 export function LifeMultiSelect({ options, onSelect }: { options: Option[]; onSelect: (response: string) => void }) {
-  const [selected, setSelected] = useState<string[]>([]);
-
-  const toggle = (id: string) => {
-    if (id === 'none') {
-      setSelected(prev => prev.includes('none') ? [] : ['none']);
-      return;
-    }
-    setSelected(prev => {
-      const without = prev.filter(s => s !== 'none');
-      return without.includes(id) ? without.filter(s => s !== id) : [...without, id];
-    });
-  };
-
   return (
-    <div className="max-w-md">
-      <div className="grid grid-cols-2 gap-2.5">
-        {options.map((opt, i) => {
-          const isSelected = selected.includes(opt.id);
-          return (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              onClick={() => toggle(opt.id)}
-              className={`
-                flex items-center justify-center text-center px-4 py-3.5 rounded-xl border transition-all duration-150 active:scale-[0.97]
-                ${isSelected
-                  ? 'border-purple-400 bg-white/15'
-                  : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-                }
-              `}
-            >
-              <span className="text-label-md text-white/90 font-medium">{opt.label}</span>
-              {isSelected && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-2 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-      <button
-        onClick={() => selected.length > 0 && onSelect(selected.join(','))}
-        disabled={selected.length === 0}
-        className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-      >
-        Continue
-      </button>
-    </div>
+    <BaseMultiSelect
+      options={options}
+      onSelect={onSelect}
+      renderIcon={lifeRenderIcon}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Number Input — For age, income, coverage amounts
+   Number Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
+
+function lifeCurrencyFormat(v: string) {
+  const num = parseInt(v);
+  if (isNaN(num)) return '';
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
+  if (num >= 1000) return `₹${(num / 1000).toFixed(1)} K`;
+  return `₹${num.toLocaleString('en-IN')}`;
+}
 
 export function LifeNumberInput({ 
   placeholder, 
@@ -223,72 +115,21 @@ export function LifeNumberInput({
   max?: number; 
   onSubmit: (val: string) => void 
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
-
-  const handleSubmit = () => {
-    const num = parseFloat(value);
-    if (!value.trim()) { setError('Please enter a value'); return; }
-    if (min !== undefined && num < min) { setError(`Minimum value is ${min.toLocaleString('en-IN')}`); return; }
-    if (max !== undefined && num > max) { setError(`Maximum value is ${max.toLocaleString('en-IN')}`); return; }
-    setError('');
-    onSubmit(value);
-  };
-
-  const formatDisplay = (v: string) => {
-    const num = parseInt(v);
-    if (isNaN(num)) return '';
-    if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
-    if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
-    if (num >= 1000) return `₹${(num / 1000).toFixed(1)} K`;
-    return `₹${num.toLocaleString('en-IN')}`;
-  };
-
   return (
-    <div className="max-w-sm">
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => { setValue(e.target.value); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder={placeholder}
-          className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
-        />
-        {value && inputType !== 'tel' && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-body-sm text-purple-300/70">
-            {formatDisplay(value)}
-          </div>
-        )}
-      </div>
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
-          {error}
-        </motion.p>
-      )}
-      {subText && <p className="text-white/40 text-caption mt-1.5">{subText}</p>}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        Continue
-      </motion.button>
-    </div>
+    <BaseNumberInput
+      placeholder={placeholder}
+      subText={subText}
+      inputType={(inputType as 'text' | 'number' | 'tel') || 'number'}
+      min={min}
+      max={max}
+      onSubmit={onSubmit}
+      formatDisplay={inputType !== 'tel' ? lifeCurrencyFormat : undefined}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Text Input — For name, phone, pincode
+   Text Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
 
 export function LifeTextInput({
@@ -302,50 +143,13 @@ export function LifeTextInput({
   maxLength?: number;
   onSubmit: (val: string) => void;
 }) {
-  const lw = useT().lifeWidgets;
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) { setError(lw.textErrorEmpty); return; }
-    if (inputType === 'tel' && value.length !== 10) { setError('Please enter a valid 10-digit number'); return; }
-    setError('');
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
-        autoFocus
-      />
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
-          {error}
-        </motion.p>
-      )}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        Continue
-      </motion.button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder}
+      inputType={inputType as 'text' | 'number' | 'tel'}
+      maxLength={maxLength}
+      onSubmit={onSubmit}
+    />
   );
 }
 

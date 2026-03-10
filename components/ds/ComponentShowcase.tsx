@@ -47,9 +47,9 @@ export function Showcase({ name, source, variant, description, children, maxWidt
   );
 }
 
-export function Section({ id, title, count, children }: { id: string; title: string; count?: number; children: React.ReactNode }) {
+export function Section({ id, title, count, children, style }: { id: string; title: string; count?: number; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <section id={id} className="scroll-mt-20">
+    <section id={id} className="scroll-mt-20" style={style}>
       <div className="flex items-baseline gap-3 mb-5">
         <h2 className="text-xl font-bold" style={{ color: 'var(--app-text)' }}>{title}</h2>
         {count !== undefined && (

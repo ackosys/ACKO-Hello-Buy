@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { BaseJourneyState, BaseJourneyActions, ChatMessage, Language } from './types';
+import { useLanguageStore } from '../languageStore';
 
 let messageCounter = 0;
 
@@ -66,7 +67,8 @@ export function createJourneyStore<TState extends BaseJourneyState>(
 
     resetJourney: () => {
       messageCounter = 0;
-      set(() => ({ ...initialState } as Store));
+      const lang = useLanguageStore.getState().language;
+      set(() => ({ ...initialState, language: lang } as Store));
     },
   }));
 }

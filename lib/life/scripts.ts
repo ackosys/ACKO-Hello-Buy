@@ -628,10 +628,11 @@ const lifeDqHabits: ConversationStep<LifeJourneyState> = {
 const lifeLoginGate: ConversationStep<LifeJourneyState> = {
   id: 'life_login_gate',
   module: 'basic_info',
-  widgetType: 'login_gate',
+  widgetType: 'login_gate_skippable',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
   getScript: (_persona, state) => {
     const t = getT(state.language).lifeScripts;
-    const name = userName(state) || useUserProfileStore.getState().firstName || '';
+    const name = greet(state) || (useUserProfileStore.getState().firstName || '').split(' ')[0];
     return {
       botMessages: [
         t.lifeLoginGreeting(name),

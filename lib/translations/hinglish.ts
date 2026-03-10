@@ -132,8 +132,11 @@ export const hinglish: T = {
     validNumber: 'Please ek sahi number daalein',
     minValue: (min: number) => `Kam se kam ${min} hona chahiye`,
     maxValue: (max: number) => `Zyada se zyada ${max} hona chahiye`,
+    enterValue: 'Please ek value daalein',
+    valid10Digit: 'Please sahi 10-digit number daalein',
     required: 'Ye field zaroori hai',
     validPincode: 'Please sahi 6-digit pincode daalein',
+    invalidPincodeFirstDigit: 'Galat pincode — pehla digit 1-9 hona chahiye',
     findHospitals: 'Mere paas ke hospitals dhoondhein',
     dropPdf: 'Apni policy PDF yahaan drop karein',
     orBrowse: 'ya file browse karein',
@@ -919,6 +922,10 @@ export const hinglish: T = {
     ncbGreat: (pct: number) => `Badiya — aapka No Claim Bonus ${pct}% hai.`,
     quoteReady: (make: string, model: string) => `${make} ${model} ke liye best plans yahan hain.`,
     paymentSuccess: (v: string) => `Payment successful! Aapki ${v} insurance policy issue ho rahi hai.`,
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `Almost there, ${name}!` : 'Almost there!',
+    loginEarlyVerify: 'Apna mobile number verify karein progress save karne ke liye — ya abhi ke liye skip karein.',
   },
 
   /* ── Life Insurance Scripts ── */
@@ -944,6 +951,10 @@ export const hinglish: T = {
     optShowQuote: 'Haan, mujhe mera quote dikhao',
     optMaybeLater: 'Baad mein shayad',
     lifePaySuccess: 'Payment successful! Aapki life insurance policy process ho rahi hai.',
+
+    // Life login gate
+    lifeLoginGreeting: (name: string) => name ? `Great, ${name}!` : 'Great!',
+    lifeLoginVerify: 'Apna mobile number verify karein progress save karne ke liye — ya abhi ke liye skip karein.',
   },
 
   /* ── Drop-off / Journey Persist ── */
@@ -966,6 +977,7 @@ export const hinglish: T = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `Welcome back, ${name}`,
+    heroGreeting: (name: string) => `Hi ${name}!\nAapka saara insurance aik jagah`,
     heroTitle: 'Aapka saara insurance\naik jagah',
     heroSubtitle: 'Koi jargon nahi • Koi middle-man nahi • Bas sahi cover jo matter kare.',
     heroTitleUser: 'Aaj aap kya\nprotect karna chahenge?',
