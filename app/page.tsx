@@ -1060,7 +1060,7 @@ function GlobalHomepageInner() {
               onBuyNew={() => router.push(card.route)}
               onManagePolicy={() => {
                 const routes: Record<string, string> = {
-                  health: '/health?screen=dashboard', car: '/motor?vehicle=car&screen=dashboard',
+                  health: '/health', car: '/motor?vehicle=car&screen=dashboard',
                   bike: '/motor?vehicle=bike&screen=dashboard', life: '/life?screen=dashboard',
                 };
                 router.push(routes[selectedLobId] || card.route);

@@ -1019,8 +1019,6 @@ export default function PostPaymentJourney({ onDashboard, initialPhase, onTalkTo
     if (stepId === 'pp.end') {
       if (response === 'home') {
         window.location.href = '/';
-      } else if (response === 'dashboard') {
-        onDashboard();
       }
       return true;
     }

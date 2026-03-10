@@ -205,8 +205,6 @@ function HealthJourneyInner() {
     setScreen('chat');
   };
 
-  const handleDashboard = () => setScreen('dashboard');
-
   const openExpertPanel = (module?: string) => {
     if (module) updateState({ currentModule: module as never });
     updateState({ showExpertPanel: true });
@@ -217,6 +215,7 @@ function HealthJourneyInner() {
   const handleJumpToCall = () => { seedDemoState(); setPostPaymentInitialPhase('voice_call'); setScreen('post_payment'); };
   const handleJumpToPostCallScenarios = () => { seedDemoState(); setPostPaymentInitialPhase('scenario_select'); setScreen('post_payment'); };
   const handleJumpToPostPayment = () => { seedDemoState(); setPostPaymentInitialPhase(undefined); setScreen('post_payment'); };
+  const handleDashboard = () => setScreen('dashboard');
   const dismissWelcome = useCallback(() => setShowWelcome(false), []);
 
   if (!hydrated) {
