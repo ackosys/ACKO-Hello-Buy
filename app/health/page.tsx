@@ -7,16 +7,18 @@ import { useJourneyStore } from '../../lib/store';
 import { useThemeStore } from '../../lib/themeStore';
 import { useLanguageStore } from '../../lib/languageStore';
 import { loadSnapshot, clearSnapshot } from '../../lib/journeyPersist';
+import { useUserProfileStore } from '../../lib/userProfileStore';
 import EntryScreen from '../../components/EntryScreen';
 import Header from '../../components/Header';
 import ChatContainer from '../../components/ChatContainer';
 import { ExpertPanel, AIChatPanel } from '../../components/Panels';
 import PostPaymentJourney from '../../components/PostPaymentJourney';
+import Dashboard from '../../components/Dashboard';
 import AckoLogo from '../../components/AckoLogo';
 import { useT } from '../../lib/translations';
 import type { PostPaymentScenario } from '../../lib/types';
 
-type Screen = 'entry' | 'chat' | 'post_payment';
+type Screen = 'entry' | 'chat' | 'post_payment' | 'dashboard';
 
 /* ═══════════════════════════════════════════════════════
    Welcome Overlay — 3s auto-dismiss transition on top of entry
@@ -106,6 +108,24 @@ function HealthJourneyInner() {
     });
   };
 
+  const seedDemoPolicy = () => {
+    const ps = useUserProfileStore.getState();
+    if (!ps.policies.some((p) => p.lob === 'health' && p.active)) {
+      ps.setProfile({ firstName: 'Rahul', isLoggedIn: true });
+      ps.addPolicy({
+        id: `health_demo_${Date.now()}`,
+        lob: 'health',
+        policyNumber: `ACKO-H-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        label: 'ACKO Platinum',
+        active: true,
+        purchasedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+        premium: 12999,
+        premiumFrequency: 'yearly',
+        details: '₹25L cover · 2 members',
+      });
+    }
+  };
+
   useEffect(() => {
     const resume = searchParams.get('resume') === '1';
     const snap = resume ? loadSnapshot('health') : null;
@@ -148,8 +168,8 @@ function HealthJourneyInner() {
       });
       if (snap.paymentComplete) {
         if (snap.currentStepId === 'completion.celebration') {
-          setPostPaymentInitialPhase('full_flow');
-          setScreen('post_payment');
+          seedDemoPolicy();
+          setScreen('dashboard');
         } else {
           const stepMap: Record<string, string> = {
             'health_eval.schedule': 'resume_call_scheduled',
@@ -195,6 +215,7 @@ function HealthJourneyInner() {
   const handleJumpToCall = () => { seedDemoState(); setPostPaymentInitialPhase('voice_call'); setScreen('post_payment'); };
   const handleJumpToPostCallScenarios = () => { seedDemoState(); setPostPaymentInitialPhase('scenario_select'); setScreen('post_payment'); };
   const handleJumpToPostPayment = () => { seedDemoState(); setPostPaymentInitialPhase(undefined); setScreen('post_payment'); };
+  const handleDashboard = () => setScreen('dashboard');
   const dismissWelcome = useCallback(() => setShowWelcome(false), []);
 
   if (!hydrated) {
@@ -216,7 +237,12 @@ function HealthJourneyInner() {
         )}
         {screen === 'post_payment' && (
           <motion.div key="post_payment" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <PostPaymentJourney onDashboard={() => { window.location.href = '/'; }} initialPhase={postPaymentInitialPhase} onTalkToExpert={() => openExpertPanel('post_payment')} />
+            <PostPaymentJourney onDashboard={handleDashboard} initialPhase={postPaymentInitialPhase} onTalkToExpert={() => openExpertPanel('post_payment')} />
+          </motion.div>
+        )}
+        {screen === 'dashboard' && (
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Dashboard onTalkToExpert={(ctx) => openExpertPanel(ctx || 'dashboard')} />
           </motion.div>
         )}
         {screen === 'chat' && (
