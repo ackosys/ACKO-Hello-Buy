@@ -95,7 +95,7 @@ export default function MultiSelect({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
               onClick={() => toggle(opt.id)}
-              className="flex items-center justify-center text-center px-4 py-3.5 rounded-xl border transition-all duration-150 active:scale-[0.97]"
+              className={`flex items-center justify-center text-center px-4 rounded-xl border transition-all duration-150 active:scale-[0.97] ${cols === 3 ? 'aspect-[4/3]' : 'py-3.5'}`}
               style={{
                 background: isSelected ? t.surfaceSelected : t.surface,
                 borderColor: isSelected ? t.borderSelected : t.border,

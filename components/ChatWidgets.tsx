@@ -184,7 +184,6 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
     <BaseMultiSelect
       options={options}
       onSelect={(csv) => onSelect(csv.split(','))}
-      renderIcon={healthRenderIcon}
       confirmLabel={t.common.continue}
       selected={selected.map(s => s === 'children' && isChildrenSelected ? 'children' : s)}
       onToggle={toggle}
