@@ -149,8 +149,11 @@ export const hi: T = {
     validNumber: 'कृपया एक सही नंबर दर्ज करें',
     minValue: (min: number) => `कम से कम ${min} होना चाहिए`,
     maxValue: (max: number) => `अधिकतम ${max} होना चाहिए`,
+    enterValue: 'कृपया एक मान दर्ज करें',
+    valid10Digit: 'कृपया सही 10 अंकों का नंबर दर्ज करें',
     required: 'यह फ़ील्ड ज़रूरी है',
     validPincode: 'कृपया सही 6 अंकों का पिनकोड दर्ज करें',
+    invalidPincodeFirstDigit: 'गलत पिनकोड — पहला अंक 1-9 होना चाहिए',
     findHospitals: 'मेरे पास के अस्पताल खोजें',
     dropPdf: 'अपनी पॉलिसी PDF यहाँ डालें',
     orBrowse: 'या फ़ाइल ब्राउज़ करें',
@@ -961,6 +964,36 @@ export const hi: T = {
     quoteReady: (make: string, model: string) => `${make} ${model} के लिए बेहतरीन प्लान यहाँ हैं।`,
     quoteChoose: 'अपने लिए सबसे उपयुक्त प्लान चुनें।',
     paymentSuccess: (v: string) => `भुगतान सफल! आपकी ${v} बीमा पॉलिसी जारी हो रही है।`,
+
+    regPlaceholder: 'उदा. MH 04 EQ 4392',
+    popularSubText: 'लोकप्रिय मॉडलों में से चुनें या खोजें।',
+    otherOption: 'अन्य — ब्रांड और मॉडल चुनें',
+    gotIt: 'समझ गया।',
+    mobilePlaceholder: 'उदा. 9876543210',
+    pincodeSub: 'आपका पिनकोड आपके वाहन के RTO को निर्धारित करता है।',
+    pincodePlaceholder: 'उदा. 560099',
+    policyStatus: (v: string) => `आपकी ${v} के लिए सबसे अच्छा प्रीमियम पाने के लिए कुछ सवाल पूछता हूँ।`,
+    comprehensiveSub: 'ओन डैमेज + थर्ड पार्टी',
+    thirdPartySub: 'बुनियादी कानूनी कवर',
+    notExpiredYet: 'अभी समाप्त नहीं हुई',
+    expiredRecently: 'पिछले 30 दिनों में समाप्त हुई',
+    expiredLonger: '30 दिनों से अधिक पहले समाप्त हुई',
+    cngAmount: 'CNG किट का घोषित मूल्य कितना है?',
+    ownerName: 'रजिस्टर्ड मालिक का नाम क्या है?',
+    ownerNameSub: 'RC (रजिस्ट्रेशन सर्टिफिकेट) के अनुसार।',
+    ownerDob: 'प्राथमिक मालिक की जन्म तिथि?',
+    addonsIntro: 'स्टैंडर्ड पॉलिसी से परे सुरक्षा देने वाले कुछ ऐड-ऑन।',
+    addonsQuestion: 'क्या आप इनमें से कुछ जोड़ना चाहेंगे?',
+    summaryReview: 'आपका अंतिम प्रीमियम विवरण यहाँ है।',
+    proceedToPayment: 'भुगतान के लिए नीचे टैप करें।',
+    gstInputQ: 'अपना GST नंबर दर्ज करें',
+    gstInputPlaceholder: 'उदा. 22AAAAA0000A1Z5',
+    loanProviderQ: 'अपने लोन प्रोवाइडर का नाम दर्ज करें',
+    loanProviderPlaceholder: 'उदा. HDFC Bank, SBI, ICICI',
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `बस थोड़ा और, ${name}!` : 'बस थोड़ा और!',
+    loginEarlyVerify: 'अपनी प्रगति सहेजने और व्यक्तिगत कोट देखने के लिए मोबाइल नंबर सत्यापित करें — या अभी छोड़ दें।',
   },
 
   /* ── Life Insurance Scripts ── */
@@ -990,6 +1023,10 @@ export const hi: T = {
     optMaybeLater: 'बाद में शायद',
     optShowQuote: 'हाँ, मुझे मेरा कोट दिखाएं',
     lifePaySuccess: 'भुगतान सफल! आपकी लाइफ इंश्योरेंस पॉलिसी प्रोसेस हो रही है।',
+
+    // Life login gate
+    lifeLoginGreeting: (name: string) => name ? `बढ़िया, ${name}!` : 'बढ़िया!',
+    lifeLoginVerify: 'अपनी प्रगति सहेजने और अनुभव को व्यक्तिगत बनाने के लिए मोबाइल नंबर सत्यापित करें — या अभी छोड़ दें।',
   },
 
   /* ── Drop-off / Journey Persist ── */
@@ -1012,6 +1049,7 @@ export const hi: T = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `वापस आपका स्वागत है, ${name}`,
+    heroGreeting: (name: string) => `नमस्ते ${name}!\nआपका सारा बीमा एक जगह`,
     heroTitle: 'आपका सारा बीमा\nएक जगह',
     heroSubtitle: 'कोई जार्गन नहीं • कोई बिचौलिया नहीं • बस वही कवर जो मायने रखता है।',
     heroTitleUser: 'आज आप क्या\nसुरक्षित करना चाहेंगे?',

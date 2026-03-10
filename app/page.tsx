@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useJourneyStore } from '../lib/store';
 import LanguageSelector from '../components/LanguageSelector';
 import AckoLogo from '../components/AckoLogo';
+import GradientBadge from '../components/ds/GradientBadge';
 import PolicyActionScreen, { type PolicyStatusInfo } from '../components/global/PolicyActionScreen';
 import { useUserProfileStore, type PolicyLob } from '../lib/userProfileStore';
 import { useThemeStore } from '../lib/themeStore';
@@ -384,8 +385,16 @@ function HeaderPill({
 }
 
 /* ── Hero Greeting with transparent-bg webm logo ── */
-function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
+function HeroGreeting({ firstName, isLoggedIn, subtitle }: { firstName: string; isLoggedIn: boolean; subtitle?: string }) {
   const t = useT();
+
+  const displayName = firstName ? firstName.split(' ')[0] : '';
+
+  let heading: string;
+  if (isLoggedIn && displayName) heading = t.global.welcomeBack(displayName);
+  else if (displayName) heading = t.global.heroGreeting(displayName);
+  else heading = t.global.heroTitle;
+
   return (
     <motion.div
       className="flex flex-col items-center gap-2 px-6 pt-8 pb-10"
@@ -408,7 +417,7 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
           className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
           style={{ color: 'var(--app-text)' }}
         >
-          {firstName ? t.global.welcomeBack(firstName) : t.global.heroTitle}
+          {heading}
         </h1>
         <p
           className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
@@ -636,16 +645,7 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
           <p className="text-[10px] leading-[12px] mt-1.5" style={{ color: 'var(--app-text-muted)' }}>
             {t.global.healthCardDesc}
           </p>
-          <div
-            className="inline-flex items-center px-2 py-1.5 rounded-full mt-1.5"
-            style={{
-              background: 'linear-gradient(90deg, rgba(153,116,249,0.36) 0%, rgba(236,72,153,0.08) 89%)',
-            }}
-          >
-            <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--app-text)' }}>
-              {t.global.healthCardFrom}
-            </span>
-          </div>
+          <GradientBadge className="mt-1.5">{t.global.healthCardFrom}</GradientBadge>
           <div className="absolute left-3 bottom-3">{arrowBtn}</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -999,6 +999,7 @@ function GlobalHomepageInner() {
 
               <HeroGreeting
                 firstName={firstName}
+                isLoggedIn={isLoggedIn}
                 subtitle={hasOverrides ? t.global.heroTitleUser : undefined}
               />
 

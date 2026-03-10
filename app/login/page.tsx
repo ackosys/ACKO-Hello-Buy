@@ -240,7 +240,7 @@ function LoginContent() {
                 <LogoAnimation />
                 <div className="text-center space-y-1">
                   <h1 className="text-[22px] font-semibold leading-[30px] tracking-[-0.2px] whitespace-pre-line" style={{ color: 'var(--app-text)' }}>
-                    {t.login.welcomeBack(returningUser.firstName)}
+                    {t.login.welcomeBack(returningUser.firstName.split(' ')[0])}
                   </h1>
                   <p className="text-[15px] leading-[22px]" style={{ color: 'var(--app-text-muted)' }}>
                     {t.login.welcomeBackSub}
@@ -256,7 +256,7 @@ function LoginContent() {
                     className="w-full h-[52px] rounded-2xl text-[16px] font-semibold"
                     style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
                   >
-                    {t.login.continueAs(returningUser.firstName)}
+                    {t.login.continueAs(returningUser.firstName.split(' ')[0])}
                   </button>
                   <button
                     onClick={handleNotMe}

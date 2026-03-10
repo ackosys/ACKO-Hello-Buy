@@ -65,6 +65,7 @@ export type MotorWidgetType =
   | 'nps_feedback'
   | 'app_download_cta'
   | 'login_gate'
+  | 'login_gate_skippable'
   | 'dashboard_cta'
   | 'document_upload'
   | 'safety_condition_picker'

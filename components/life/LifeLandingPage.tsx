@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import AckoLogo from '../AckoLogo';
+import GradientBadge from '../ds/GradientBadge';
 import Link from 'next/link';
 
 interface LifeLandingPageProps {
@@ -120,9 +121,7 @@ export default function LifeLandingPage({ onGetStarted }: LifeLandingPageProps) 
               </div>
               {/* ACKO Pure Term */}
               <div className="p-3.5 rounded-xl bg-white/15 border border-purple-400/30">
-                <div className="inline-flex items-center gap-1 bg-green-500/20 text-green-300 text-[9px] font-semibold px-2 py-0.5 rounded-full mb-2">
-                  RECOMMENDED
-                </div>
+                <GradientBadge className="mb-2">RECOMMENDED</GradientBadge>
                 <p className="text-lg font-bold text-white leading-none">₹15K</p>
                 <p className="text-[11px] text-purple-200/60 mt-0.5">/year</p>
                 <div className="mt-3 pt-3 border-t border-white/15">

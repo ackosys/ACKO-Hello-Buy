@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { JourneyState, ChatMessage, INITIAL_STATE, Module, Language } from './types';
 import { resolvePersona } from './personas';
+import { useLanguageStore } from './languageStore';
 
 interface JourneyActions {
   addMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
@@ -77,6 +78,7 @@ export const useJourneyStore = create<JourneyStore>()((set, get) => ({
 
   resetJourney: () => {
     messageCounter = 0;
-    set({ ...INITIAL_STATE });
+    const lang = useLanguageStore.getState().language;
+    set({ ...INITIAL_STATE, language: lang });
   },
 }));

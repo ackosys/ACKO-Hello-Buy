@@ -6,6 +6,10 @@ import { useMotorStore } from '../../../lib/motor/store';
 import { getMotorStep } from '../../../lib/motor/scripts';
 import { MotorJourneyState } from '../../../lib/motor/types';
 import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../../lib/journeyPersist';
+import { useUserProfileStore } from '../../../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../../../lib/mockUsers';
+import { writeSessionCookie } from '../../../lib/sessionCookie';
+import { useT } from '../../../lib/translations';
 import AuraChatMessage, { AuraTypingIndicator } from './AuraChatMessage';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import {
@@ -44,6 +48,124 @@ import {
 } from './AuraClaimsWidgets';
 import { MotorCelebration as AuraCelebration } from './AuraMotorFinalWidgets';
 
+const VALID_OTP = '0000';
+
+function AuraMotorLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
+  const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const ref0 = useRef<HTMLInputElement>(null);
+  const ref1 = useRef<HTMLInputElement>(null);
+  const ref2 = useRef<HTMLInputElement>(null);
+  const ref3 = useRef<HTMLInputElement>(null);
+  const otpRefs = [ref0, ref1, ref2, ref3];
+
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
+  const handlePhoneSubmit = () => {
+    if (!phoneCanSubmit) return;
+    setGateStep('otp');
+    setTimeout(() => otpRefs[0].current?.focus(), 150);
+  };
+
+  const handleOtpChange = (i: number, val: string) => {
+    const d = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[i] = d;
+    setDigits(next);
+    if (d && i < 3) otpRefs[i + 1].current?.focus();
+    if (next.every(x => x !== '')) {
+      const otp = next.join('');
+      if (otp === VALID_OTP) {
+        setOtpError(false);
+        onSuccess(phone);
+      } else {
+        setOtpError(true);
+        setTimeout(() => { setOtpError(false); setDigits(['', '', '', '']); }, 600);
+        setTimeout(() => otpRefs[0].current?.focus(), 650);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) otpRefs[i - 1].current?.focus();
+  };
+
+  return (
+    <div className="max-w-sm">
+      {gateStep === 'phone' ? (
+        <>
+          <div className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm">
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
+            <input
+              autoFocus
+              type="tel"
+              inputMode="numeric"
+              placeholder={t.chat.loginPhonePlaceholder}
+              value={phone}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
+            />
+          </div>
+          <p className="text-caption text-white/40 mt-1.5 text-center">{t.chat.loginSaveProgress}</p>
+          <button
+            onClick={handlePhoneSubmit}
+            disabled={!phoneCanSubmit}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+          >
+            {t.chat.loginSendOtp}
+          </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">{t.chat.loginOtpSentTo(phone)}</p>
+          <motion.div
+            className="flex gap-2 justify-center"
+            animate={otpError ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleOtpChange(i, e.target.value)}
+                onKeyDown={e => handleOtpKeyDown(i, e)}
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
+                }}
+              />
+            ))}
+          </motion.div>
+          {otpError ? (
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
+          ) : (
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AuraMotorChatContainer() {
   const {
     currentStepId,
@@ -53,6 +175,9 @@ export default function AuraMotorChatContainer() {
     updateState,
     trimAndUpdateFromStep,
   } = useMotorStore();
+  const { setProfile, addPolicy } = useUserProfileStore();
+  const t = useT();
+  const tWidgets = t.widgets;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
@@ -150,6 +275,36 @@ export default function AuraMotorChatContainer() {
     addBotMessage();
   }, [currentStepId]);
 
+  const handleLoginGateSuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName });
+
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate', module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'quote.calculating',
+        currentModule: 'quote',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
+  const handleLoginGateSkip = useCallback(() => {
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'login.phone_gate', module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'quote.calculating',
+        currentModule: 'quote',
+      } as Partial<MotorJourneyState>);
+    }, 300);
+  }, [addMessage, updateState, t]);
+
   const handleEditRequest = (stepId: string) => {
     setEditModal({ stepId, visible: true });
   };
@@ -220,9 +375,9 @@ export default function AuraMotorChatContainer() {
             onSubmit={handleEditResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -404,9 +559,9 @@ export default function AuraMotorChatContainer() {
             onSubmit={handleResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -516,6 +671,10 @@ export default function AuraMotorChatContainer() {
         return <ReimbursementUpload onContinue={(result) => handleResponse(result)} />;
       case 'claim_closure':
         return <ClaimClosure onContinue={() => handleResponse('done')} />;
+      case 'login_gate':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
       default:
         return null;
     }

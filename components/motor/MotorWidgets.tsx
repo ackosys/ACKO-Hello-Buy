@@ -13,6 +13,10 @@ import { MotorJourneyState, NcbPercentage } from '../../lib/motor/types';
 import { getMotorAddOns } from '../../lib/motor/plans';
 import Image from 'next/image';
 import { useT } from '../../lib/translations';
+import GradientBadge from '../ds/GradientBadge';
+import BaseSelectionCards, { type SelectionTheme } from '../ds/SelectionCards';
+import BaseTextInput from '../ds/TextInput';
+import type { InputTheme } from '../ds/NumberInput';
 
 const ADDON_ICONS: Record<string, string> = {
   engine_protection:     'Engine_protect.svg',
@@ -130,28 +134,41 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
 }
 
 /* ═══════════════════════════════════════════════
-   Selection Cards (Motor version)
+   Selection Cards (Motor version) — DS base + KYC sheet
    ═══════════════════════════════════════════════ */
+
+const MOTOR_THEME: SelectionTheme = {
+  surface: 'var(--motor-surface)',
+  surfaceSelected: 'var(--motor-selected-bg)',
+  surface2: 'var(--motor-surface-2)',
+  border: 'var(--motor-border)',
+  borderSelected: 'rgb(192,132,252)',
+  text: 'var(--motor-text)',
+  textMuted: 'var(--motor-text-subtle)',
+};
+
+function motorRenderIcon(icon: string, className?: string) {
+  return <MotorIcon icon={icon} className={`${className || 'w-6 h-6'} text-purple-300`} />;
+}
+
+function motorRenderLogo(logoUrl: string, label: string, className?: string) {
+  return <img src={assetPath(logoUrl)} alt={label} className={className || 'w-7 h-7 object-contain'} />;
+}
 
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
   const tw = useT().motorWidgets;
-  const [selected, setSelected] = useState<string | null>(null);
   const [showKycSheet, setShowKycSheet] = useState(false);
   const theme = useThemeStore((s) => s.theme);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-  const useLogoGrid = options.filter(o => o.logoUrl).length >= 3;
+  const [kycStage, setKycStage] = useState<'info' | 'verify'>('info');
+  const [kycIframeLoading, setKycIframeLoading] = useState(true);
 
   const handleSelect = (id: string) => {
-    setSelected(id);
     if (id === 'start_kyc') {
       setShowKycSheet(true);
       return;
     }
-    setTimeout(() => onSelect(id), 250);
+    onSelect(id);
   };
-
-  const [kycStage, setKycStage] = useState<'info' | 'verify'>('info');
-  const [kycIframeLoading, setKycIframeLoading] = useState(true);
 
   const handleKycComplete = () => {
     setShowKycSheet(false);
@@ -160,165 +177,15 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
     onSelect('start_kyc');
   };
 
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-purple-400 shadow-lg shadow-purple-900/20'
-                : 'hover:border-purple-300/30'
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            {opt.badge && (
-              <span className="absolute -top-2 -right-2 text-[11px] bg-pink-500 text-white px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                {opt.badge}
-              </span>
-            )}
-            <div className="mb-2 w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-              {opt.logoUrl ? (
-                <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-7 h-7 object-contain" />
-              ) : (
-                <MotorIcon icon={opt.icon!} className="w-6 h-6 text-purple-300" />
-              )}
-            </div>
-            <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-            {opt.description && (
-              <p className="text-[12px] mt-1" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
-  if (useLogoGrid) {
-    const logoOptions = options.filter(o => o.logoUrl);
-    const otherOptions = options.filter(o => !o.logoUrl);
-    return (
-      <div>
-        <div className="grid grid-cols-3 gap-2">
-          {logoOptions.map((opt, i) => (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.025 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95]
-                ${selected === opt.id
-                  ? 'border-purple-400 ring-1 ring-purple-400/30'
-                  : ''
-                }
-              `}
-              style={{
-                background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-                borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-              }}
-            >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-                <img src={assetPath(opt.logoUrl!)} alt={opt.label} className="w-7 h-7 object-contain" />
-              </div>
-              <span className="text-[11px] font-medium text-center leading-tight" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-              {opt.description && (
-                <span className="text-[9px] text-center leading-tight" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</span>
-              )}
-              {selected === opt.id && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-        {otherOptions.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (logoOptions.length + i) * 0.025 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              w-full mt-2 text-left px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400'
-                : ''
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {opt.icon && (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--motor-surface-2)' }}>
-                  <MotorIcon icon={opt.icon} className="w-4 h-4 text-purple-300" />
-                </div>
-              )}
-              <span className="text-[13px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="grid grid-cols-1 gap-2.5 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400 shadow-md shadow-purple-900/20'
-                : ''
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {(opt.logoUrl || opt.icon) && (
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-                  {opt.logoUrl ? (
-                    <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
-                  ) : (
-                    <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-purple-300" />
-                  )}
-                </div>
-              )}
-              <div className="flex-1">
-                <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-                {opt.description && <p className="text-[12px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>}
-              </div>
-            </div>
-          </motion.button>
-        ))}
-      </div>
+      <BaseSelectionCards
+        options={options}
+        onSelect={handleSelect}
+        renderIcon={motorRenderIcon}
+        renderLogo={motorRenderLogo}
+        theme={MOTOR_THEME}
+      />
 
       {typeof document !== 'undefined' && createPortal(
         <div className={`motor-${theme}`}>
@@ -347,7 +214,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                   borderBottom: 'none',
                 }}
               >
-                {/* Header — same for both stages */}
                 <div className="px-5 pt-5 pb-4 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
@@ -374,7 +240,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
 
                 {kycStage === 'info' ? (
                   <>
-                    {/* Steps */}
                     <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2">
                       {[
                         { step: '1', title: tw.kycStep1Title, desc: tw.kycStep1Desc },
@@ -392,8 +257,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                         </div>
                       ))}
                     </div>
-
-                    {/* CTAs */}
                     <div className="px-5 py-4 flex-shrink-0 space-y-2">
                       <button
                         onClick={() => { setKycStage('verify'); setKycIframeLoading(true); }}
@@ -416,7 +279,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                   </>
                 ) : (
                   <>
-                    {/* iframe fills remaining space */}
                     <div className="flex-1 relative overflow-hidden mx-4 rounded-2xl" style={{ border: '1px solid var(--motor-border)' }}>
                       {kycIframeLoading && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'var(--motor-glass-bg)' }}>
@@ -432,8 +294,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                         onLoad={() => setKycIframeLoading(false)}
                       />
                     </div>
-
-                    {/* Done CTA */}
                     <div className="px-5 py-4 flex-shrink-0">
                       <button
                         onClick={handleKycComplete}
@@ -525,8 +385,18 @@ export function VehicleRegInput({ placeholder, onSubmit }: { placeholder?: strin
 }
 
 /* ═══════════════════════════════════════════════
-   Generic Text / Number Input
+   Generic Text / Number Input — DS base
    ═══════════════════════════════════════════════ */
+
+const MOTOR_INPUT_THEME: InputTheme = {
+  inputBg: 'var(--motor-input-bg)',
+  inputBorder: 'var(--motor-input-border)',
+  inputBorderFocus: 'rgb(168,85,247)',
+  inputText: 'var(--motor-input-text)',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+  buttonShadow: 'var(--btn-primary-shadow)',
+};
 
 export function MotorTextInput({
   placeholder,
@@ -541,49 +411,15 @@ export function MotorTextInput({
   validate?: (value: string) => string | null;
   maxLength?: number;
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError('Please enter a value');
-      return;
-    }
-    if (validate) {
-      const err = validate(value.trim());
-      if (err) { setError(err); return; }
-    }
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder || 'Type here...'}
-        className="w-full px-4 py-4 rounded-xl text-[16px] focus:outline-none focus:border-purple-400 transition-colors"
-        style={{ background: 'var(--motor-input-bg)', border: '1px solid var(--motor-input-border)', color: 'var(--motor-input-text)' }}
-        autoComplete="off"
-        maxLength={maxLength}
-      />
-      {error && <p className="text-[12px] text-red-400 mt-1.5">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        className="mt-3 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-      >
-        Continue
-      </button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder || 'Type here...'}
+      inputType={inputType}
+      onSubmit={onSubmit}
+      validate={validate}
+      maxLength={maxLength}
+      theme={MOTOR_INPUT_THEME}
+    />
   );
 }
 
@@ -2063,9 +1899,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                           <p className="text-[10px] text-white/40">+ 18% GST</p>
                         </div>
                       </div>
-                      <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-400/20">
-                        {tw.recommended}
-                      </span>
+                      <GradientBadge>{tw.recommended}</GradientBadge>
                     </button>
                   </div>
 
@@ -2171,9 +2005,7 @@ function PlanCard({
                 {subtitle && <p className="text-[11px] text-white/40 mt-0.5">{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-purple-500/30 text-violet-700 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
-                  {badge}
-                </span>
+                <GradientBadge>{badge}</GradientBadge>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -2640,12 +2472,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm space-y-3">
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
         <div className="px-4 py-3" style={{ background: 'var(--motor-plan-rec-header-bg)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--motor-plan-rec-badge)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>{tw.planRecommended}</span>
-          </div>
+          <GradientBadge className="mb-1">{tw.planRecommended}</GradientBadge>
           <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{planLabel} Plan</h3>
           {matchedPlan && (
             <p className="text-[22px] font-bold mt-1" style={{ color: 'var(--motor-text)' }}>
@@ -2790,7 +2617,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       />
                     )}
                     <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
+                    {addon.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
                     {selected && (
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
@@ -2862,8 +2689,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
                       </div>
@@ -3076,8 +2903,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">{tw.recommended}</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
                       </div>

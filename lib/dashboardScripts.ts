@@ -84,7 +84,7 @@ const dashboardSteps: ConversationStep[] = [
       const t = getT(state.language);
       return {
         botMessages: [
-          t.db.welcomeBack(state.userName || 'there'),
+          t.db.welcomeBack((state.userName || 'there').split(' ')[0]),
           buildPolicySummary(state),
         ],
       };

@@ -570,8 +570,8 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
   const isNewUser = postLoginState === 'new_user' || postLoginState?.startsWith('new_user_pwilo');
   const welcomeMsg = isNewUser
-    ? t.chatWelcomeNew(name)
-    : t.chatWelcomeReturning(name);
+    ? t.chatWelcomeNew(name.split(' ')[0])
+    : t.chatWelcomeReturning(name.split(' ')[0]);
 
   const contextMsg = (() => {
     if (!postLoginState) return t.chatInsureToday;
@@ -613,10 +613,10 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         {returningUser ? (
           <>
             <BotBubble>
-              {t.chatReturningGreet(returningUser.firstName)}
+              {t.chatReturningGreet(returningUser.firstName.split(' ')[0])}
             </BotBubble>
             <BotBubble>
-              {t.chatReturningConfirm(returningUser.firstName)}
+              {t.chatReturningConfirm(returningUser.firstName.split(' ')[0])}
             </BotBubble>
 
             <AnimatePresence>
@@ -650,7 +650,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
             <AnimatePresence>
               {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
-                <BotBubble>{t.chatNiceToMeet(name)}</BotBubble>
+                <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
               )}
             </AnimatePresence>
 
@@ -758,7 +758,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
               className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
               style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
             >
-              {t.continueAs(returningUser.firstName)}
+              {t.continueAs(returningUser.firstName.split(' ')[0])}
             </button>
             <button
               onClick={handleNotMe}

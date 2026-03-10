@@ -157,7 +157,10 @@ export const en = {
     minValue: (min: number) => `Must be at least ${min}`,
     maxValue: (max: number) => `Must be at most ${max}`,
     required: 'This field is required',
+    enterValue: 'Please enter a value',
+    valid10Digit: 'Please enter a valid 10-digit number',
     validPincode: 'Please enter a valid 6-digit pincode',
+    invalidPincodeFirstDigit: 'Invalid pincode — first digit must be 1-9',
     findHospitals: 'Find hospitals near me',
     dropPdf: 'Drop your policy PDF here',
     orBrowse: 'or tap to browse files',
@@ -1066,6 +1069,10 @@ export const en = {
     gstInputPlaceholder: 'e.g., 22AAAAA0000A1Z5',
     loanProviderQ: 'Enter your loan provider name',
     loanProviderPlaceholder: 'e.g., HDFC Bank, SBI, ICICI',
+
+    // Login Early Gate
+    loginEarlyGreeting: (name: string) => name ? `Almost there, ${name}!` : 'Almost there!',
+    loginEarlyVerify: 'Verify your mobile number to save your progress and see personalized quotes — or skip for now.',
   },
 
   /* ── Life Insurance Scripts ── */
@@ -1240,7 +1247,7 @@ export const en = {
 
     // Life login gate
     lifeLoginGreeting: (name: string) => name ? `Great, ${name}!` : 'Great!',
-    lifeLoginVerify: 'Before we dive in, please verify your mobile number so we can save your progress and personalize your experience.',
+    lifeLoginVerify: 'Verify your mobile number to save your progress and personalize your experience — or skip for now.',
 
     // Income
     incomePlaceholder: 'Enter annual income (₹)',
@@ -1546,6 +1553,7 @@ export const en = {
   /* ── Global Homepage ── */
   global: {
     welcomeBack: (name: string) => `Welcome back, ${name}`,
+    heroGreeting: (name: string) => `Hi ${name}!\nAll your insurance in one place`,
     heroTitle: 'All your insurance\nin one place',
     heroSubtitle: 'No Jargon • No Middlemen • Just the right cover for what matters most.',
     heroTitleUser: 'What would you like\nto protect today?',

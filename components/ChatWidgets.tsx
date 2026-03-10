@@ -7,6 +7,10 @@ import { formatCurrency, getPlanDetails, NEARBY_LABS, FEATURE_EXPLANATIONS } fro
 import { useJourneyStore } from '../lib/store';
 import { useT } from '../lib/translations';
 import { assetPath } from '../lib/assetPath';
+import BaseSelectionCards from './ds/SelectionCards';
+import BaseMultiSelect from './ds/MultiSelect';
+import BaseNumberInput from './ds/NumberInput';
+import BasePincodeInput from './ds/PincodeInput';
 
 /* ═══════════════════════════════════════════════════════
    SVG Icon System — replaces emojis with clean icons
@@ -81,105 +85,27 @@ function getDiseaseIcon(optionId: string): JSX.Element | null {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Selection Cards — Dark-themed visual cards on purple bg
-   Grid layout with SVG icons & frosted glass
+   Selection Cards — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
+function healthRenderIcon(icon: string, className?: string) {
+  const diseaseIcon = getDiseaseIcon(icon);
+  if (diseaseIcon) return <div className="text-purple-300">{diseaseIcon}</div>;
+  return <OptionIcon icon={icon} className={`${className || 'w-6 h-6'} !text-purple-300`} />;
+}
+
 export function SelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => {
-          const diseaseIcon = getDiseaseIcon(opt.id);
-          return (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-                ${selected === opt.id
-                  ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-                  : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-                }
-              `}
-            >
-              {opt.badge && (
-                <span className="absolute -top-2 -right-2 text-label-sm bg-pink-500 text-white px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                  {opt.badge}
-                </span>
-              )}
-              <div className="mb-2 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : <OptionIcon icon={opt.icon!} className="w-6 h-6 !text-purple-300" />}
-              </div>
-              <span className="text-body-md font-medium text-white/90">{opt.label}</span>
-              {opt.description && (
-                <p className="text-caption text-white/40 mt-1">{opt.description}</p>
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // List layout for more options — dark glass style
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => {
-        const diseaseIcon = getDiseaseIcon(opt.id);
-        return (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => handleSelect(opt.id)}
-            disabled={opt.disabled}
-            className={`
-              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400 bg-white/15 shadow-md shadow-purple-900/20'
-                : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-              }
-              ${opt.disabled ? 'opacity-40' : ''}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              {diseaseIcon ? (
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-purple-300">{diseaseIcon}</div>
-              ) : opt.icon ? (
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <OptionIcon icon={opt.icon} className="w-4.5 h-4.5 !text-purple-300" />
-                </div>
-              ) : null}
-              <div className="flex-1">
-                <span className="text-body-md font-medium text-white/90">{opt.label}</span>
-                {opt.description && <p className="text-caption text-white/40 mt-0.5">{opt.description}</p>}
-              </div>
-              {opt.badge && (
-                <span className="text-label-sm bg-purple-500/50 text-white px-2 py-0.5 rounded-full border border-purple-400/30">{opt.badge}</span>
-              )}
-            </div>
-          </motion.button>
-        );
-      })}
-    </div>
+    <BaseSelectionCards
+      options={options}
+      onSelect={onSelect}
+      renderIcon={healthRenderIcon}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Multi Select — Visual grid for few items, list for many
+   Multi Select — delegates to DS base + children picker
    ═══════════════════════════════════════════════════════ */
 
 export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect: (ids: string[]) => void }) {
@@ -187,23 +113,18 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
   const [selected, setSelected] = useState<string[]>([]);
   const [showChildrenPicker, setShowChildrenPicker] = useState(false);
   const [numChildren, setNumChildren] = useState<number | null>(null);
-  // ≤6 options with icons → 2-col icon grid (family member style)
-  // >6 options → 3-col compact grid (motor car-selection style)
-  const useGrid = options.length <= 6 && options.every(o => o.icon);
-  const use3ColGrid = options.length > 6;
   const hasChildrenOption = options.some(o => o.id === 'children');
+  const isChildrenSelected = selected.some(s => s === 'children' || s.startsWith('children:'));
 
   const toggle = (id: string) => {
     if (id === 'none') { setSelected(['none']); return; }
     if (id === 'children' && hasChildrenOption) {
       const isCurrentlySelected = selected.some(s => s.startsWith('children'));
       if (isCurrentlySelected) {
-        // Deselect: remove children entry and collapse picker
         setSelected(prev => prev.filter(s => !s.startsWith('children')));
         setNumChildren(null);
         setShowChildrenPicker(false);
       } else {
-        // Select: mark as selected (pending count) and expand picker
         setSelected(prev => [...prev.filter(s => s !== 'none' && !s.startsWith('children')), 'children']);
         setShowChildrenPicker(true);
       }
@@ -218,225 +139,95 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
   const confirmChildren = (count: number) => {
     setNumChildren(count);
     setShowChildrenPicker(false);
-    // Replace placeholder 'children' with encoded 'children:N'
     setSelected(prev => [...prev.filter(s => !s.startsWith('children')), `children:${count}`]);
   };
 
-  // True whether we have a placeholder 'children' (picker open) or a confirmed 'children:N'
-  const isChildrenSelected = selected.some(s => s === 'children' || s.startsWith('children:'));
-
-  return (
-    <div className="max-w-md">
-      <div className={use3ColGrid ? 'grid grid-cols-3 gap-2' : useGrid ? 'grid grid-cols-2 gap-2.5' : 'grid grid-cols-2 gap-2'}>
-        {options.map((opt, i) => {
-          const diseaseIcon = getDiseaseIcon(opt.id);
-          const isSelected = opt.id === 'children' ? isChildrenSelected : selected.includes(opt.id);
-
-          if (use3ColGrid) {
-            return (
-              <motion.button
-                key={opt.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.025 }}
-                onClick={() => toggle(opt.id)}
-                className={`
-                  relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 active:scale-[0.95]
-                  ${isSelected ? 'border-purple-400' : 'border-white/10'}
-                `}
-                style={{ background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.05)' }}
-              >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? 'bg-purple-500/30' : 'bg-white/8'}`}>
-                  {diseaseIcon
-                    ? <div className="text-purple-300">{diseaseIcon}</div>
-                    : opt.icon
-                      ? <OptionIcon icon={opt.icon} className="w-5 h-5 !text-purple-300" />
-                      : <svg className="w-5 h-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
-                  }
-                </div>
-                <span className="text-[11px] font-medium text-center leading-tight text-white/90">{opt.label}</span>
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center"
-                  >
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  </motion.div>
-                )}
-              </motion.button>
-            );
-          }
-
-          return (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              onClick={() => toggle(opt.id)}
-              className={`
-                ${useGrid ? 'flex flex-col items-center text-center p-4 rounded-xl' : 'flex items-center gap-2.5 p-3 rounded-xl text-left'}
-                border transition-all duration-150 active:scale-[0.97]
-                ${isSelected
-                  ? 'border-purple-400 bg-white/15'
-                  : 'border-white/10 bg-white/6 hover:bg-white/10'
-                }
-              `}
-            >
-              {useGrid && (
-                <div className={`mb-1.5 w-9 h-9 rounded-lg flex items-center justify-center ${isSelected ? 'bg-purple-500/30' : 'bg-white/10'}`}>
-                  {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : opt.icon ? <OptionIcon icon={opt.icon} className="w-5 h-5 !text-purple-300" /> : null}
-                </div>
-              )}
-              {!useGrid && (
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-purple-500/30' : 'bg-white/10'}`}>
-                  {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : opt.icon ? <OptionIcon icon={opt.icon} className="w-4 h-4 !text-purple-300" /> : null}
-                </div>
-              )}
-              <span className="text-body-sm text-white/90 font-medium">{opt.label}</span>
-              {opt.id === 'children' && isChildrenSelected && numChildren ? (
-                <span className="text-[11px] text-purple-300 mt-0.5">{numChildren} {numChildren === 1 ? 'child' : 'children'}</span>
-              ) : null}
-              {isSelected && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                </motion.div>
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-
-      {/* Inline children count picker — slides in below the grid, no overlay */}
-      <AnimatePresence>
-        {showChildrenPicker && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="overflow-hidden"
-          >
-            <div className="pt-4 pb-1">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-[14px] font-semibold text-white">How many children?</p>
-                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.45))' }}>Each one will be covered</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-2.5">
-                {[1, 2, 3, 4].map(count => (
-                  <motion.button
-                    key={count}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: count * 0.04 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => confirmChildren(count)}
-                    className="py-3.5 rounded-xl text-[20px] font-bold transition-all border border-white/10 bg-white/6 hover:bg-white/12 text-white"
-                  >
-                    {count}
-                  </motion.button>
-                ))}
+  const childrenPicker = hasChildrenOption ? (
+    <AnimatePresence>
+      {showChildrenPicker && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+          className="overflow-hidden"
+        >
+          <div className="pt-4 pb-1">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[14px] font-semibold text-white">How many children?</p>
+                <p className="text-[12px] mt-0.5" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.45))' }}>Each one will be covered</p>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="grid grid-cols-4 gap-2.5">
+              {[1, 2, 3, 4].map(count => (
+                <motion.button
+                  key={count}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: count * 0.04 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => confirmChildren(count)}
+                  className="py-3.5 rounded-xl text-[20px] font-bold transition-all border border-white/10 bg-white/6 hover:bg-white/12 text-white"
+                >
+                  {count}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  ) : null;
 
-      <button
-        onClick={() => selected.length > 0 && onSelect(selected)}
-        disabled={selected.length === 0 || showChildrenPicker}
-        className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-      >
-        {t.common.continue}
-      </button>
-    </div>
+  return (
+    <BaseMultiSelect
+      options={options}
+      onSelect={(csv) => onSelect(csv.split(','))}
+      renderIcon={healthRenderIcon}
+      confirmLabel={t.common.continue}
+      selected={selected.map(s => s === 'children' && isChildrenSelected ? 'children' : s)}
+      onToggle={toggle}
+      confirmDisabled={showChildrenPicker}
+    >
+      {childrenPicker}
+    </BaseMultiSelect>
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Number / Text Input
+   Number / Text Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
 
 export function NumberInput({ placeholder, subText, inputType = 'number', min, max, onSubmit }: {
   placeholder: string; subText?: string; inputType?: 'text' | 'number' | 'tel'; min?: number; max?: number; onSubmit: (value: string) => void;
 }) {
   const t = useT();
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = () => {
-    if (inputType === 'number' || inputType === 'tel') {
-      const num = parseInt(value);
-      if (isNaN(num)) { setError(t.widgets.validNumber); return; }
-      if (min !== undefined && num < min) { setError(t.widgets.minValue(min)); return; }
-      if (max !== undefined && num > max) { setError(t.widgets.maxValue(max)); return; }
-    }
-    if (!value.trim()) { setError(t.widgets.required); return; }
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        type={inputType === 'tel' ? 'tel' : inputType === 'number' ? 'tel' : 'text'}
-        inputMode={inputType === 'number' || inputType === 'tel' ? 'numeric' : 'text'}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder}
-        className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-body-md text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors backdrop-blur-sm"
-        autoFocus
-      />
-      {subText && <p className="text-caption text-white/40 mt-1.5">{subText}</p>}
-      {error && <p className="text-caption text-red-400 mt-1">{error}</p>}
-      <button onClick={handleSubmit} className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
-        {t.common.continue}
-      </button>
-    </div>
+    <BaseNumberInput
+      placeholder={placeholder}
+      subText={subText}
+      inputType={inputType}
+      min={min}
+      max={max}
+      onSubmit={onSubmit}
+      buttonLabel={t.common.continue}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Pincode Input
+   Pincode Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
 
 export function PincodeInput({ placeholder, onSubmit }: { placeholder: string; onSubmit: (value: string) => void }) {
   const t = useT();
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = () => {
-    if (!/^\d{6}$/.test(value)) { setError('Please enter a valid 6-digit pincode'); return; }
-    onSubmit(value);
-  };
-
   return (
-    <div className="max-w-sm">
-      <div className="relative">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-        </svg>
-        <input
-          type="tel" inputMode="numeric" maxLength={6} value={value}
-          onChange={(e) => { setValue(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder={placeholder}
-          className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-body-md text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors backdrop-blur-sm"
-          autoFocus
-        />
-      </div>
-      {error && <p className="text-caption text-red-400 mt-1.5">{error}</p>}
-      <button onClick={handleSubmit} disabled={value.length !== 6}
-        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
-        {t.widgets.findHospitals}
-      </button>
-    </div>
+    <BasePincodeInput
+      placeholder={placeholder}
+      onSubmit={onSubmit}
+      buttonLabel={t.widgets.findHospitals}
+    />
   );
 }
 

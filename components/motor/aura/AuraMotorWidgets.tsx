@@ -10,6 +10,10 @@ import { useMotorStore } from '../../../lib/motor/store';
 import { MotorJourneyState, NcbPercentage } from '../../../lib/motor/types';
 import { getMotorAddOns } from '../../../lib/motor/plans';
 import Image from 'next/image';
+import BaseSelectionCards, { type SelectionTheme } from '../../ds/SelectionCards';
+import GradientBadge from '../../ds/GradientBadge';
+import BaseTextInput from '../../ds/TextInput';
+import type { InputTheme } from '../../ds/NumberInput';
 
 const ADDON_ICONS: Record<string, string> = {
   engine_protection:     'Engine_protect.svg',
@@ -127,161 +131,36 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
 }
 
 /* ═══════════════════════════════════════════════
-   Selection Cards (Motor version)
+   Selection Cards (Aura version) — DS base
    ═══════════════════════════════════════════════ */
 
+const AURA_THEME: SelectionTheme = {
+  surface: 'var(--aura-surface)',
+  surfaceSelected: 'var(--aura-surface-2)',
+  surface2: 'var(--aura-surface-2)',
+  border: 'var(--aura-border)',
+  borderSelected: '#A855F7',
+  text: 'var(--aura-text)',
+  textMuted: 'var(--aura-text-subtle)',
+};
+
+function auraRenderIcon(icon: string, className?: string) {
+  return <MotorIcon icon={icon} className={`${className || 'w-6 h-6'} text-[#C084FC]`} />;
+}
+
+function auraRenderLogo(logoUrl: string, label: string, className?: string) {
+  return <img src={assetPath(logoUrl)} alt={label} className={className || 'w-7 h-7 object-contain'} />;
+}
+
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-  const useLogoGrid = options.filter(o => o.logoUrl).length >= 3;
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-[#A855F7] bg-[var(--aura-surface-2)] shadow-lg shadow-black/20'
-                : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] hover:border-[var(--aura-border-strong)]'
-              }
-            `}
-          >
-            {opt.badge && (
-              <span className="absolute -top-2 -right-2 text-[11px] bg-pink-500 text-[var(--aura-text)] px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                {opt.badge}
-              </span>
-            )}
-            <div className="mb-2 w-10 h-10 rounded-xl bg-[var(--aura-surface-2)] flex items-center justify-center overflow-hidden">
-              {opt.logoUrl ? (
-                <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-7 h-7 object-contain" />
-              ) : (
-                <MotorIcon icon={opt.icon!} className="w-6 h-6 text-[#C084FC]" />
-              )}
-            </div>
-            <span className="text-[15px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-            {opt.description && (
-              <p className="text-[12px] text-[var(--aura-text-subtle)] mt-1">{opt.description}</p>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
-  if (useLogoGrid) {
-    const logoOptions = options.filter(o => o.logoUrl);
-    const otherOptions = options.filter(o => !o.logoUrl);
-    return (
-      <div>
-        <div className="grid grid-cols-3 gap-2">
-          {logoOptions.map((opt, i) => (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.025 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95]
-                ${selected === opt.id
-                  ? 'border-[#A855F7] bg-[#A855F7]/10 ring-1 ring-[#A855F7]/30'
-                  : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)]'
-                }
-              `}
-            >
-              <div className="w-10 h-10 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center overflow-hidden">
-                <img src={assetPath(opt.logoUrl!)} alt={opt.label} className="w-7 h-7 object-contain" />
-              </div>
-              <span className="text-[11px] font-medium text-[var(--aura-text)] text-center leading-tight">{opt.label}</span>
-              {opt.description && (
-                <span className="text-[9px] text-[var(--aura-text-subtle)] text-center leading-tight">{opt.description}</span>
-              )}
-              {selected === opt.id && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#A855F7] flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-[var(--aura-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-        {otherOptions.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (logoOptions.length + i) * 0.025 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              w-full mt-2 text-left px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-[#A855F7] bg-[var(--aura-surface-2)]'
-                : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)]'
-              }
-            `}
-          >
-            <div className="flex items-center gap-3">
-              {opt.icon && (
-                <div className="w-8 h-8 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center flex-shrink-0">
-                  <MotorIcon icon={opt.icon} className="w-4 h-4 text-[#C084FC]" />
-                </div>
-              )}
-              <span className="text-[13px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => (
-        <motion.button
-          key={opt.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.04 }}
-          onClick={() => handleSelect(opt.id)}
-          className={`
-            text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-            ${selected === opt.id
-              ? 'border-[#A855F7] bg-[var(--aura-surface-2)] shadow-md shadow-black/20'
-              : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] hover:border-[var(--aura-border-strong)]'
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            {(opt.logoUrl || opt.icon) && (
-              <div className="w-9 h-9 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {opt.logoUrl ? (
-                  <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
-                ) : (
-                  <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-[#C084FC]" />
-                )}
-              </div>
-            )}
-            <div className="flex-1">
-              <span className="text-[15px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-              {opt.description && <p className="text-[12px] text-[var(--aura-text-subtle)] mt-0.5">{opt.description}</p>}
-            </div>
-          </div>
-        </motion.button>
-      ))}
-    </div>
+    <BaseSelectionCards
+      options={options}
+      onSelect={onSelect}
+      renderIcon={auraRenderIcon}
+      renderLogo={auraRenderLogo}
+      theme={AURA_THEME}
+    />
   );
 }
 
@@ -353,8 +232,18 @@ export function VehicleRegInput({ placeholder, onSubmit }: { placeholder?: strin
 }
 
 /* ═══════════════════════════════════════════════
-   Generic Text / Number Input
+   Generic Text / Number Input — DS base
    ═══════════════════════════════════════════════ */
+
+const AURA_INPUT_THEME: InputTheme = {
+  inputBg: 'var(--aura-surface-2)',
+  inputBorder: 'var(--aura-border)',
+  inputBorderFocus: '#A855F7',
+  inputText: 'var(--aura-text)',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+  buttonShadow: 'var(--btn-primary-shadow)',
+};
 
 export function MotorTextInput({
   placeholder,
@@ -369,48 +258,15 @@ export function MotorTextInput({
   validate?: (value: string) => string | null;
   maxLength?: number;
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError('Please enter a value');
-      return;
-    }
-    if (validate) {
-      const err = validate(value.trim());
-      if (err) { setError(err); return; }
-    }
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder || 'Type here...'}
-        className="w-full px-4 py-4 bg-[var(--aura-surface-2)] border border-[var(--aura-border)] rounded-xl text-[16px] text-[var(--aura-text)] placeholder:text-[var(--aura-text-subtle)] focus:outline-none focus:border-[#A855F7] focus:bg-[var(--aura-surface-2)] transition-colors"
-        autoComplete="off"
-        maxLength={maxLength}
-      />
-      {error && <p className="text-[12px] text-red-400 mt-1.5">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-        className="mt-3 w-full py-3.5 rounded-xl text-[15px] font-semibold hover:opacity-90 transition-colors active:scale-[0.97]"
-      >
-        Continue
-      </button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder || 'Type here...'}
+      inputType={inputType}
+      onSubmit={onSubmit}
+      validate={validate}
+      maxLength={maxLength}
+      theme={AURA_INPUT_THEME}
+    />
   );
 }
 
@@ -1660,9 +1516,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                         </div>
                       </div>
                       {savings > 0 && (
-                        <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-400/20">
-                          Save ₹{savings.toLocaleString('en-IN')}
-                        </span>
+                        <GradientBadge>Save ₹{savings.toLocaleString('en-IN')}</GradientBadge>
                       )}
                     </button>
 
@@ -1688,9 +1542,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                           <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
                         </div>
                       </div>
-                      <span className="text-[10px] bg-[#A855F7]/15 text-[#C084FC] px-2 py-0.5 rounded-full border border-[#A855F7]/15">
-                        Recommended
-                      </span>
+                      <GradientBadge>Recommended</GradientBadge>
                     </button>
                   </div>
 
@@ -1762,9 +1614,7 @@ function PlanCard({
                 {subtitle && <p className="text-[11px] text-[var(--aura-text-subtle)] mt-0.5">{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-[#A855F7]/20 text-[#C084FC] px-2 py-0.5 rounded-full border border-[#A855F7]/20 whitespace-nowrap">
-                  {badge}
-                </span>
+                <GradientBadge>{badge}</GradientBadge>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -2229,12 +2079,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm space-y-3">
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
         <div className="px-4 py-3" style={{ background: 'var(--motor-plan-rec-header-bg)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--motor-plan-rec-badge)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>Recommended for you</span>
-          </div>
+          <GradientBadge className="mb-1">Recommended for you</GradientBadge>
           <h3 className="text-[18px] font-bold" style={{ color: 'var(--aura-text)' }}>{planLabel} Plan</h3>
           {matchedPlan && (
             <p className="text-[22px] font-bold mt-1" style={{ color: 'var(--aura-text)' }}>
@@ -2374,7 +2219,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       />
                     )}
                     <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">{addon.name}</h4>
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">Recommended</span>}
+                    {addon.recommended && <GradientBadge>Recommended</GradientBadge>}
                     {selected && (
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
@@ -2446,8 +2291,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-[var(--aura-text)]">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-[#C084FC] bg-[#A855F7]/20 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>Recommended</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-[var(--aura-text)]">₹{variant.price}</span>
                       </div>
@@ -2655,8 +2500,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-[var(--aura-text)]">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-[#C084FC] bg-[#A855F7]/20 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>Recommended</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-[var(--aura-text)]">₹{variant.price}</span>
                       </div>
