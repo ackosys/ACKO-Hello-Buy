@@ -940,7 +940,7 @@ const lifeNeedRecommendation: ConversationStep<LifeJourneyState> = {
       selectedTerm: policyTerm,
     };
   },
-  getNextStep: (_response, _state) => 'life_buying_intent',
+  getNextStep: (_response, _state) => 'life_quote_display',
 };
 
 const lifeBuyingIntent: ConversationStep<LifeJourneyState> = {
@@ -1642,8 +1642,9 @@ const lifeEkyc: ConversationStep<LifeJourneyState> = {
     if (response === 'skipped') return { currentModule: 'financial' as LifeModule };
     return { ekycComplete: true, currentModule: 'financial' as LifeModule };
   },
-  getNextStep: (response, _state) => {
+  getNextStep: (response, state) => {
     if (response === 'skipped') return 'life_ekyc_skipped';
+    if (state.financialComplete || state.medicalComplete) return 'life_pending_verifications';
     return 'life_financial';
   },
 };
@@ -1651,15 +1652,22 @@ const lifeEkyc: ConversationStep<LifeJourneyState> = {
 const lifeEkycSkipped: ConversationStep<LifeJourneyState> = {
   id: 'life_ekyc_skipped',
   module: 'ekyc',
-  widgetType: 'none',
+  widgetType: 'action_buttons',
   getScript: (_persona, state) => {
     const t = getT(state.language).lifeScripts;
     return {
-      botMessages: [t.ekycSkippedNote, t.ekycSkippedContinue],
+      botMessages: [t.ekycSkippedNote],
+      options: [
+        { id: 'reopen', label: 'Complete e-KYC now' },
+        { id: 'skip', label: 'Skip for now' },
+      ],
     };
   },
   processResponse: (_response, _state) => ({}),
-  getNextStep: (_response, _state) => 'life_financial',
+  getNextStep: (response, _state) => {
+    if (response === 'reopen') return 'life_ekyc';
+    return 'life_financial';
+  },
 };
 
 /* ═══════════════════════════════════════════════
@@ -1679,11 +1687,35 @@ const lifeFinancial: ConversationStep<LifeJourneyState> = {
     botMessages.push(t.financialVerifyIntro);
     return { botMessages };
   },
-  processResponse: (_response, _state) => ({
-    financialComplete: true,
-    currentModule: 'medical' as LifeModule,
+  processResponse: (response, _state) => {
+    if (response === 'skipped') return { currentModule: 'medical' as LifeModule };
+    return { financialComplete: true, currentModule: 'medical' as LifeModule };
+  },
+  getNextStep: (response, state) => {
+    if (response === 'skipped') return 'life_financial_skipped';
+    if (state.medicalComplete) return 'life_pending_verifications';
+    return 'life_medical_eval';
+  },
+};
+
+const lifeFinancialSkipped: ConversationStep<LifeJourneyState> = {
+  id: 'life_financial_skipped',
+  module: 'financial',
+  widgetType: 'action_buttons',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `This is a mandatory step — we need to verify your income to process your policy for underwriting. Please make sure you complete it within 5–7 days of payment.`,
+    ],
+    options: [
+      { id: 'reopen', label: 'Verify income now' },
+      { id: 'skip', label: 'Skip for now' },
+    ],
   }),
-  getNextStep: (_response, _state) => 'life_medical_eval',
+  processResponse: (_response, _state) => ({}),
+  getNextStep: (response, _state) => {
+    if (response === 'reopen') return 'life_financial';
+    return 'life_medical_eval';
+  },
 };
 
 /* ═══════════════════════════════════════════════
@@ -1697,11 +1729,72 @@ const lifeMedicalEval: ConversationStep<LifeJourneyState> = {
   getScript: (_persona, state) => ({
     botMessages: [getT(state.language).lifeScripts.medicalEvalIntro],
   }),
-  processResponse: (_response, _state) => ({
-    medicalComplete: true,
-    currentModule: 'underwriting' as LifeModule,
+  processResponse: (response, _state) => {
+    if (response === 'skipped') return { currentModule: 'underwriting' as LifeModule };
+    return { medicalComplete: true, currentModule: 'underwriting' as LifeModule };
+  },
+  getNextStep: (response, _state) => {
+    if (response === 'skipped') return 'life_medical_skipped';
+    return 'life_pending_verifications';
+  },
+};
+
+const lifeMedicalSkipped: ConversationStep<LifeJourneyState> = {
+  id: 'life_medical_skipped',
+  module: 'medical',
+  widgetType: 'action_buttons',
+  getScript: (_persona, _state) => ({
+    botMessages: [
+      `This is a mandatory step — we need your medical evaluation to process your policy for underwriting. Please make sure you complete it within 5–7 days of payment.`,
+    ],
+    options: [
+      { id: 'reopen', label: 'Start medical evaluation' },
+      { id: 'skip', label: 'Skip for now' },
+    ],
   }),
-  getNextStep: (_response, _state) => 'life_underwriting',
+  processResponse: (_response, _state) => ({}),
+  getNextStep: (response, _state) => {
+    if (response === 'reopen') return 'life_medical_eval';
+    return 'life_pending_verifications';
+  },
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: PENDING VERIFICATIONS — Gate before underwriting
+   ═══════════════════════════════════════════════ */
+
+const lifePendingVerifications: ConversationStep<LifeJourneyState> = {
+  id: 'life_pending_verifications',
+  module: 'underwriting',
+  widgetType: 'action_buttons',
+  condition: (state) => !state.ekycComplete || !state.financialComplete || !state.medicalComplete,
+  getScript: (_persona, state) => {
+    const pending: string[] = [];
+    if (!state.ekycComplete) pending.push('e-KYC verification');
+    if (!state.financialComplete) pending.push('Income verification');
+    if (!state.medicalComplete) pending.push('Medical evaluation');
+
+    const list = pending.map(p => `• ${p}`).join('\n');
+    const firstPendingId = !state.ekycComplete ? 'ekyc' : !state.financialComplete ? 'financial' : 'medical';
+
+    return {
+      botMessages: [
+        `We can't process your policy for underwriting until all mandatory steps are completed.\n\n**Pending:**\n${list}\n\nPlease complete these within 5–7 days of payment.`,
+      ],
+      options: [
+        { id: firstPendingId, label: `Complete ${pending[0]}` },
+        ...(pending.length > 1 ? [{ id: 'skip_all', label: `I'll do it later` }] : []),
+      ],
+    };
+  },
+  processResponse: (_response, _state) => ({}),
+  getNextStep: (response, state) => {
+    if (response === 'ekyc') return 'life_ekyc';
+    if (response === 'financial') return 'life_financial';
+    if (response === 'medical') return 'life_medical_eval';
+    if (state.ekycComplete && state.financialComplete && state.medicalComplete) return 'life_underwriting';
+    return 'life_nps';
+  },
 };
 
 /* ═══════════════════════════════════════════════
@@ -1849,7 +1942,10 @@ export const LIFE_STEPS: ConversationStep<LifeJourneyState>[] = [
   lifeEkyc,
   lifeEkycSkipped,
   lifeFinancial,
+  lifeFinancialSkipped,
   lifeMedicalEval,
+  lifeMedicalSkipped,
+  lifePendingVerifications,
   lifeUnderwriting,
 
   // Completion: NPS, app download, end

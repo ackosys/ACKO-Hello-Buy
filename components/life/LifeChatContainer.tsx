@@ -375,9 +375,9 @@ export default function LifeChatContainer() {
     } else if (step.widgetType === 'ekyc_screen') {
       userLabel = response === 'skipped' ? "I'll do this later" : 'e-KYC verified ✓';
     } else if (step.widgetType === 'financial_screen') {
-      userLabel = 'Income verified ✓';
+      userLabel = response === 'skipped' ? "I'll do this later" : 'Income verified ✓';
     } else if (step.widgetType === 'medical_screen') {
-      userLabel = 'Medical evaluation scheduled ✓';
+      userLabel = response === 'skipped' ? "I'll do this later" : 'Medical evaluation scheduled ✓';
     } else if (step.widgetType === 'underwriting_status') {
       userLabel = 'Acknowledged';
     } else if (step.widgetType === 'nps_feedback' && response && typeof response === 'object' && response.score) {
@@ -516,6 +516,24 @@ export default function LifeChatContainer() {
     switch (step.widgetType) {
       case 'selection_cards':
         return <LifeSelectionCards options={script.options || []} onSelect={handleResponse} />;
+      case 'action_buttons':
+        return (
+          <div className="flex flex-col gap-2.5 max-w-sm">
+            {(script.options || []).map((opt, i) => (
+              <button
+                key={opt.id}
+                onClick={() => handleResponse(opt.id)}
+                className={`w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] ${
+                  i === 0
+                    ? 'bg-purple-700 text-white hover:bg-purple-600'
+                    : 'border border-white/20 text-white/60 hover:text-white/80 hover:bg-white/5'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        );
       case 'multi_select':
         return <LifeMultiSelect options={script.options || []} onSelect={handleResponse} />;
       case 'yes_no':
@@ -747,6 +765,7 @@ export default function LifeChatContainer() {
         <AnimatePresence>
           {showWidget && (isOverlayWidget() || isFinancialStep) && (
             <LifeRedirectionSheet
+              key={currentStepId}
               widgetType={getLifeStep(currentStepId)?.widgetType ?? ''}
               onComplete={() => handleResponse('continue')}
               onSkip={() => handleResponse('skipped')}
