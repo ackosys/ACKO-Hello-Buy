@@ -1333,9 +1333,8 @@ const reviewConsent: ConversationStep = {
       botMessages: [t.scripts.consentMsg],
       links: [
         { label: 'Terms & Conditions', url: 'https://www.acko.com/terms-and-conditions/' },
-        { label: 'Customer Information Sheet (CIS)', url: 'https://www.acko.com/health-insurance/cis/' },
       ],
-      consentText: 'I acknowledge I have read and understood the Terms & Conditions and Customer Information Sheet.',
+      consentText: 'I acknowledge I have read and understood the Terms & Conditions.',
     };
   },
   processResponse: () => ({}),

@@ -1705,30 +1705,31 @@ export function ConsentWidget({
   ];
   const resolvedLinks = links ?? defaultLinks;
 
+  // Build inline acknowledgement: replace the document label with a hyperlink inside the sentence
+  const tcLink = resolvedLinks[0];
+  const renderInlineConsent = () => {
+    if (!consentText || !tcLink) {
+      return <span className="text-body-sm text-white/70">{t.widgets.confirmInfo} <a href={tcLink?.url ?? '#'} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink?.label ?? t.widgets.termsAndConditions}</a>.</span>;
+    }
+    // Split consent text around the document label and inject the hyperlink
+    const parts = consentText.split(tcLink.label);
+    if (parts.length === 2) {
+      return (
+        <span className="text-body-sm text-white/70">
+          {parts[0]}
+          <a href={tcLink.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink.label}</a>
+          {parts[1]}
+        </span>
+      );
+    }
+    return <span className="text-body-sm text-white/70">{consentText}</span>;
+  };
+
   return (
     <div className="max-w-md space-y-3">
-      {resolvedLinks.length > 0 && (
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2">
-          <p className="text-xs text-white/50 font-medium uppercase tracking-wide">Important Documents</p>
-          {resolvedLinks.map((link, i) => (
-            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-purple-300 hover:text-white text-sm underline underline-offset-2 transition-colors">
-              <span>📄</span> {link.label}
-            </a>
-          ))}
-        </div>
-      )}
       <label className="flex items-start gap-3 cursor-pointer bg-white/5 rounded-xl p-4 border border-white/10">
         <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 accent-purple-500 flex-shrink-0" />
-        <span className="text-body-sm text-white/70">
-          {consentText ?? `${t.widgets.confirmInfo} `}
-          {!consentText && resolvedLinks.map((link, i) => (
-            <span key={i}>
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{link.label}</a>
-              {i < resolvedLinks.length - 1 ? ' and ' : '.'}
-            </span>
-          ))}
-        </span>
+        {renderInlineConsent()}
       </label>
       <button onClick={onConfirm} disabled={!agreed}
         className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
