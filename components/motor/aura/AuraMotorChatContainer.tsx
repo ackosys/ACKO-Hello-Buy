@@ -281,49 +281,96 @@ export default function AuraMotorChatContainer() {
   }, [currentStepId]);
 
   const handleLoginGateSuccess = useCallback((phone: string) => {
-    const state = detectPostLoginState(phone);
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
     const firstName = useUserProfileStore.getState().firstName || '';
     setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
-    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate', module: 'login' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
     setShowWidget(false);
 
     setTimeout(() => {
-      updateState({
-        currentStepId: 'owner_details.email',
-        currentModule: 'owner_details',
-      } as Partial<MotorJourneyState>);
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
     }, 300);
   }, [setProfile, addPolicy, addMessage, updateState, t]);
 
   const handleLoginGateSkip = useCallback(() => {
-    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'login.phone_gate', module: 'login' });
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: currentStep, module: 'login' });
     setShowWidget(false);
 
     setTimeout(() => {
-      updateState({
-        currentStepId: 'owner_details.email',
-        currentModule: 'owner_details',
-      } as Partial<MotorJourneyState>);
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, freshState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
     }, 300);
   }, [addMessage, updateState, t]);
 
-  // Mandatory login gate (before plan review): phone is required to proceed
   const handleLoginGateMandatorySuccess = useCallback((phone: string) => {
-    const state = detectPostLoginState(phone);
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
     const firstName = useUserProfileStore.getState().firstName || '';
     setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
-    buildPoliciesForState(state).forEach(p => addPolicy(p));
-    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate_mandatory', module: 'login' });
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
     setShowWidget(false);
 
     setTimeout(() => {
-      updateState({
-        currentStepId: 'review.premium_breakdown',
-        currentModule: 'review',
-      } as Partial<MotorJourneyState>);
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'review.premium_breakdown',
+          currentModule: 'review',
+        } as Partial<MotorJourneyState>);
+      }
     }, 300);
   }, [setProfile, addPolicy, addMessage, updateState, t]);
 
@@ -385,6 +432,10 @@ export default function AuraMotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleEditResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleEditResponse} />;
@@ -569,6 +620,10 @@ export default function AuraMotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleResponse} />;

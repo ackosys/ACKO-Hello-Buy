@@ -1238,25 +1238,20 @@ export function PlanCalculator({ onComplete }: { onComplete: (result: any) => vo
       // Generate plans (import inline to avoid issues)
       setTimeout(async () => {
         try {
-          const { getMotorPlanDetails, calculateIDV } = await import('../../../lib/motor/plans');
+          const { getPlansForCombination, determinePlanCombination, calculateIDV } = await import('../../../lib/motor/plans');
           const state = useMotorStore.getState() as MotorJourneyState;
           
-          // Calculate IDV
-          const makePrice = 800000; // Mock: ₹8L
+          const makePrice = 800000;
           const vehicleAge = vehicleData.registrationYear 
             ? new Date().getFullYear() - vehicleData.registrationYear 
             : 3;
           const idvData = calculateIDV(makePrice, vehicleAge);
           
-          // Generate all plan variations
-          // Note: Only Comprehensive has garage tier options
-          const comprehensiveAll = getMotorPlanDetails(state, 'comprehensive', 'all');
-          const comprehensiveNetwork = getMotorPlanDetails(state, 'comprehensive', 'network');
-          const zeroDep = getMotorPlanDetails(state, 'zero_dep');
-          const thirdParty = getMotorPlanDetails(state, 'third_party');
+          const combo = determinePlanCombination(state);
+          const plans = getPlansForCombination(state, combo);
           
           onComplete({
-            plans: [comprehensiveAll, comprehensiveNetwork, zeroDep, thirdParty],
+            plans,
             idv: idvData.recommended,
             idvMin: idvData.min,
             idvMax: idvData.max,
@@ -1664,12 +1659,12 @@ function PlanCard({
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98]"
               style={{
-                background: 'var(--motor-bg)',
-                color: 'var(--motor-text)',
-                border: '1px solid var(--motor-border-strong)',
-                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+                background: 'var(--btn-secondary-bg)',
+                color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--btn-secondary-border)',
+                boxShadow: 'var(--btn-secondary-shadow)',
               }}
             >
               {isComprehensive ? 'Explore plan' : 'Select this plan'}
@@ -2127,7 +2122,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'out_of_pocket');
+  const auraState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns('car', auraState).filter((a: any) => a.category === 'out_of_pocket');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2321,7 +2317,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'protect_everyone');
+  const auraState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns(vType as 'car' | 'bike', auraState).filter((a: any) => a.category === 'protect_everyone');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 

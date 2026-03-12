@@ -1,6 +1,7 @@
-import { MotorConversationStep, MotorJourneyState } from './types';
+import { MotorConversationStep, MotorJourneyState, FetchedDataFlags } from './types';
 import { getT, getCurrentLang } from '../translations';
 import { useUserProfileStore } from '../userProfileStore';
+import { determinePlanCombination, getRecommendedPlanType } from './plans';
 
 /* ═══════════════════════════════════════════════════════════════════
    ACKO Motor Insurance — Conversational Scripts
@@ -107,40 +108,191 @@ const vehicleFetchLoading: MotorConversationStep = {
     botMessages: [getT(state.language).motorScripts.fetchingReg(state.registrationNumber)],
   }),
   processResponse: (response) => {
-    // response is 'success' or 'failed'
     if (response === 'success') {
+      /* All-or-Nothing Framework:
+         - Car details: all 6 fields or none
+         - Policy expiry + type: both or neither
+         - NCB: only if policy details present
+         - Last claim: only if policy details present */
+      const carDetailsFetched = true;
+      const policyDetailsFetched = true;
+      const ncbFetched = policyDetailsFetched ? true : false;
+      const lastClaimFetched = policyDetailsFetched ? false : false;
+
       return {
         autoFetchSuccess: true,
-        vehicleDataSource: 'auto_fetched',
-        vehicleData: {
+        vehicleDataSource: 'auto_fetched' as const,
+        fetchedDataFlags: {
+          carDetailsFetched,
+          policyDetailsFetched,
+          ncbFetched,
+          lastClaimFetched,
+        },
+        prelimCheckResult: 'clear' as const,
+        vehicleData: carDetailsFetched ? {
           make: 'Maruti',
           model: 'Swift Dzire',
           variant: 'LXI',
           fuelType: 'petrol' as const,
-          registrationYear: 2020,
+          registrationYear: 2022,
           registrationMonth: 'March',
           hasCngKit: null,
           isCommercialVehicle: null,
+        } : {
+          make: '', model: '', variant: '', fuelType: '' as const,
+          registrationYear: null, registrationMonth: '',
+          hasCngKit: null, isCommercialVehicle: null,
         },
-        previousPolicy: {
+        previousPolicy: policyDetailsFetched ? {
           insurer: 'TATA AIG',
-          expiryDate: '28/06/2024',
+          expiryDate: '28/06/2025',
           policyType: 'comprehensive' as const,
-          ncbPercentage: 35 as const,
+          ncbPercentage: ncbFetched ? 35 as const : 0 as const,
+          hadClaims: lastClaimFetched ? false : null,
+        } : {
+          insurer: '', expiryDate: '',
+          policyType: 'not_sure' as const,
+          ncbPercentage: 0 as const,
           hadClaims: null,
         },
       };
     }
     return {
       autoFetchSuccess: false,
-      vehicleDataSource: 'manual_entry',
+      vehicleDataSource: 'manual_entry' as const,
+      fetchedDataFlags: {
+        carDetailsFetched: false,
+        policyDetailsFetched: false,
+        ncbFetched: false,
+        lastClaimFetched: false,
+      },
     };
   },
   getNextStep: (response) => {
-    if (response === 'success') return 'vehicle_fetch.found';
+    if (response === 'success') return 'prelim.check';
     return 'manual_entry.start';
   },
 };
+
+/* ═══════════════════════════════════════════════
+   MODULE: PRELIMINARY CHECKS — After reg entry, before verify
+   Per car-planning-logic skill file
+   ═══════════════════════════════════════════════ */
+
+const prelimCheck: MotorConversationStep = {
+  id: 'prelim.check',
+  module: 'vehicle_fetch',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [`Checking your vehicle records...`],
+  }),
+  processResponse: () => {
+    // Simulate preliminary checks — in production this would call backend
+    // For now, always return 'clear' to proceed normally
+    return { prelimCheckResult: 'clear' as const };
+  },
+  getNextStep: (_, state) => {
+    const check = state.prelimCheckResult || 'clear';
+    switch (check) {
+      case 'insured_same_user': return 'prelim.insured_same_user';
+      case 'insured_different_user': return 'prelim.insured_different_user';
+      case 'two_wheeler_entered': return 'prelim.two_wheeler_entered';
+      case 'payment_pending_steps': return 'prelim.payment_pending';
+      default: return 'vehicle_fetch.found';
+    }
+  },
+};
+
+const prelimInsuredSameUser: MotorConversationStep = {
+  id: 'prelim.insured_same_user',
+  module: 'vehicle_fetch',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `This vehicle is already insured with ACKO.`,
+    ],
+    options: [
+      { id: 'view_policy', label: 'View my running policy', icon: 'shield' },
+      { id: 'edit_reg', label: 'Edit registration number', icon: 'edit' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (response) => {
+    if (response === 'edit_reg') return 'registration.enter_number';
+    return 'post_purchase.end';
+  },
+};
+
+const prelimInsuredDifferentUser: MotorConversationStep = {
+  id: 'prelim.insured_different_user',
+  module: 'vehicle_fetch',
+  widgetType: 'selection_cards',
+  getScript: (state) => ({
+    botMessages: [
+      `This vehicle is already insured with ACKO. The policy belongs to the account associated with phone number ${state.prelimExistingPolicyPhone || 'xxxx5511'}.`,
+    ],
+    options: [
+      { id: 'buying_car', label: 'I am buying this car and want to check insurance', icon: 'car' },
+      { id: 'login_other', label: 'Login with the other phone number', icon: 'phone' },
+      { id: 'edit_reg', label: 'Edit registration number', icon: 'edit' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (response) => {
+    if (response === 'buying_car') return 'vehicle_fetch.found';
+    if (response === 'edit_reg') return 'registration.enter_number';
+    return 'registration.enter_number';
+  },
+};
+
+const prelimTwoWheelerEntered: MotorConversationStep = {
+  id: 'prelim.two_wheeler_entered',
+  module: 'vehicle_fetch',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `The registration number you entered belongs to a two-wheeler.`,
+    ],
+    options: [
+      { id: 'continue_tw', label: 'Continue insuring this two-wheeler', icon: 'scooter' },
+      { id: 'edit_reg', label: 'Edit registration number', icon: 'edit' },
+    ],
+  }),
+  processResponse: (response) => {
+    if (response === 'continue_tw') return { vehicleType: 'bike' as const };
+    return {};
+  },
+  getNextStep: (response) => {
+    if (response === 'continue_tw') return 'vehicle_fetch.found';
+    return 'registration.enter_number';
+  },
+};
+
+const prelimPaymentPending: MotorConversationStep = {
+  id: 'prelim.payment_pending',
+  module: 'vehicle_fetch',
+  widgetType: 'selection_cards',
+  getScript: (state) => ({
+    botMessages: [
+      `You have already completed payment for insurance on this vehicle. Your policy will be generated once you complete the pending steps.`,
+      state.prelimPendingStep ? `Pending: ${state.prelimPendingStep}` : `There are pending verification steps.`,
+    ],
+    options: [
+      { id: 'complete_steps', label: 'Complete the required steps', icon: 'check' },
+      { id: 'edit_reg', label: 'Edit registration number', icon: 'edit' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (response) => {
+    if (response === 'edit_reg') return 'registration.enter_number';
+    return 'post_purchase.status_intro';
+  },
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: VEHICLE FETCH — Verify Card
+   Shows only fetched fields per all-or-nothing framework
+   ═══════════════════════════════════════════════ */
 
 const vehicleFetchFound: MotorConversationStep = {
   id: 'vehicle_fetch.found',
@@ -148,6 +300,14 @@ const vehicleFetchFound: MotorConversationStep = {
   widgetType: 'vehicle_details_card',
   getScript: (state) => {
     const t = getT(state.language).motorScripts;
+    const flags = state.fetchedDataFlags;
+    if (!flags?.carDetailsFetched && !flags?.policyDetailsFetched) {
+      return {
+        botMessages: [
+          `We couldn't find details for this vehicle. Let's enter them manually.`,
+        ],
+      };
+    }
     return {
       botMessages: [t.vehicleFound(vLabel(state)), t.vehicleFoundConfirm],
     };
@@ -155,10 +315,60 @@ const vehicleFetchFound: MotorConversationStep = {
   processResponse: () => ({}),
   getNextStep: (response, state) => {
     if (response === 'retry') return 'registration.enter_number';
-    if (state.vehicleType === 'bike') return 'pre_quote.policy_status';
-    return 'pre_quote.cng_check';
+    const flags = state.fetchedDataFlags;
+    if (!flags?.carDetailsFetched && !flags?.policyDetailsFetched) {
+      return 'manual_entry.start';
+    }
+    return getNextMissingFieldStep(state);
   },
 };
+
+/* ── Helper: determine next question based on what's missing ── */
+
+function getNextMissingFieldStep(state: MotorJourneyState): string {
+  const flags = state.fetchedDataFlags || { carDetailsFetched: false, policyDetailsFetched: false, ncbFetched: false, lastClaimFetched: false };
+
+  if (!flags.carDetailsFetched) {
+    if (!state.vehicleData.make) return 'manual_entry.select_brand';
+    if (!state.vehicleData.model) return 'manual_entry.select_model';
+    if (!state.vehicleData.fuelType) return 'manual_entry.select_fuel';
+    if (!state.vehicleData.variant && state.vehicleType !== 'bike') return 'manual_entry.select_variant';
+    if (!state.vehicleData.registrationYear) return 'manual_entry.select_year';
+  }
+
+  if (state.vehicleType !== 'bike' && state.vehicleData.isCommercialVehicle === null) {
+    return 'pre_quote.commercial_check';
+  }
+
+  if (!flags.policyDetailsFetched) {
+    if (!state.previousPolicy.policyType || state.previousPolicy.policyType === 'not_sure') {
+      return 'pre_quote.policy_type_ask';
+    }
+    if (!state.previousPolicy.expiryDate) {
+      return 'pre_quote.policy_status';
+    }
+  }
+
+  if (!state.pincode) return 'pre_quote.pincode_ask';
+
+  if (!useUserProfileStore.getState().isLoggedIn && !state.phone) {
+    return 'login.phone_gate_prequote';
+  }
+
+  if (flags.policyDetailsFetched && !flags.ncbFetched) {
+    return 'pre_quote.ncb_selection';
+  }
+
+  if (flags.policyDetailsFetched && !flags.lastClaimFetched && state.previousPolicy.hadClaims === null) {
+    return 'pre_quote.last_claim_ask';
+  }
+
+  if (state.vehicleType !== 'bike' && state.vehicleData.hasCngKit === null) {
+    return 'pre_quote.cng_check';
+  }
+
+  return 'pre_quote.summary';
+}
 
 /* ═══════════════════════════════════════════════
    MODULE: MANUAL ENTRY — When auto-fetch fails
@@ -321,11 +531,10 @@ const manualEntrySelectYear: MotorConversationStep = {
     },
   }),
   getNextStep: (_, state) => {
-    const isBike = state.vehicleType === 'bike';
     if (state.vehicleEntryType === 'brand_new') {
       return 'brand_new.pincode';
     }
-    return isBike ? 'pre_quote.policy_status' : 'pre_quote.cng_check';
+    return getNextMissingFieldStep(state);
   },
 };
 
@@ -710,7 +919,7 @@ const preQuoteCngCheck: MotorConversationStep = {
   }),
   getNextStep: (_, state) => {
     if (state.vehicleEntryType === 'brand_new') return 'brand_new.pincode';
-    return 'pre_quote.commercial_check';
+    return getNextMissingFieldStep(state);
   },
 };
 
@@ -735,7 +944,7 @@ const preQuoteCommercialCheck: MotorConversationStep = {
   getNextStep: (response, state) => {
     if (state.vehicleEntryType === 'brand_new') return 'brand_new.pincode';
     if (response === 'yes') return 'pre_quote.commercial_rejection';
-    return 'pre_quote.policy_status';
+    return getNextMissingFieldStep({ ...state, vehicleData: { ...state.vehicleData, isCommercialVehicle: false } } as MotorJourneyState);
   },
 };
 
@@ -751,6 +960,86 @@ const preQuoteCommercialRejection: MotorConversationStep = {
   }),
   processResponse: () => ({}),
   getNextStep: () => 'pre_quote.commercial_rejection', // dead end
+};
+
+/* ── Pincode (always asked — never auto-fetched) ── */
+
+const preQuotePincodeAsk: MotorConversationStep = {
+  id: 'pre_quote.pincode_ask',
+  module: 'pre_quote',
+  widgetType: 'text_input',
+  getScript: (state) => ({
+    botMessages: [`What is the pincode where your ${vLabel(state)} is registered?`],
+    subText: `Your location helps us find the best plans and pricing for your area.`,
+    placeholder: 'e.g., 560001',
+    inputType: 'tel' as const,
+  }),
+  processResponse: (response) => ({ pincode: response }),
+  getNextStep: (_, state) => getNextMissingFieldStep({ ...state, pincode: _ } as MotorJourneyState),
+};
+
+/* ── Phone Login Gate (pre-quote — during data collection) ── */
+
+const loginPhoneGatePrequote: MotorConversationStep = {
+  id: 'login.phone_gate_prequote',
+  module: 'login',
+  widgetType: 'login_gate_skippable',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    const firstName = (state.ownerName || useUserProfileStore.getState().firstName || '').split(' ')[0];
+    return {
+      botMessages: [
+        firstName
+          ? `${firstName}, we need to verify your phone number to show you personalised plans.`
+          : `We need to verify your phone number to show you personalised plans.`,
+        `This also lets us save your progress so you can pick up later.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: (_, state) => getNextMissingFieldStep(state),
+};
+
+/* ── Policy Type (when not auto-fetched) ── */
+
+const preQuotePolicyTypeAsk: MotorConversationStep = {
+  id: 'pre_quote.policy_type_ask',
+  module: 'pre_quote',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [`What type of policy did you have on this vehicle?`],
+    subText: `This determines which plans and discounts are available to you.`,
+    options: [
+      { id: 'comprehensive', label: 'Comprehensive', description: 'Covers own damage + third party', icon: 'shield' },
+      { id: 'third_party', label: 'Third Party', description: 'Only covers damage to others', icon: 'shield_search' },
+      { id: 'not_sure', label: 'Not sure', icon: 'help' },
+    ],
+  }),
+  processResponse: (response, state) => ({
+    previousPolicy: { ...state.previousPolicy, policyType: response as any },
+  }),
+  getNextStep: (_, state) => 'pre_quote.policy_status',
+};
+
+/* ── Last Year Claim (when policy details present but claim not fetched) ── */
+
+const preQuoteLastClaimAsk: MotorConversationStep = {
+  id: 'pre_quote.last_claim_ask',
+  module: 'pre_quote',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [`Did you make a claim in your previous policy year?`],
+    subText: `Your claim history affects your No Claim Bonus discount.`,
+    options: [
+      { id: 'no', label: 'No claims made', icon: 'check' },
+      { id: 'yes', label: 'I made a claim', icon: 'document' },
+    ],
+  }),
+  processResponse: (response, state) => ({
+    previousPolicy: { ...state.previousPolicy, hadClaims: response === 'yes' },
+  }),
+  getNextStep: (_, state) => getNextMissingFieldStep({ ...state, previousPolicy: { ...state.previousPolicy, hadClaims: _ === 'yes' } } as MotorJourneyState),
 };
 
 /* ── Policy Status ── */
@@ -827,12 +1116,11 @@ const preQuoteNcbSelection: MotorConversationStep = {
       ncbIncreased: ncb > oldNcb,
     };
   },
-  getNextStep: (_, state) => {
-    // Check if NCB increased
-    const ncb = parseInt(_) as number;
+  getNextStep: (response, state) => {
+    const ncb = parseInt(response) as number;
     const oldNcb = state.previousPolicy.ncbPercentage;
     if (ncb > oldNcb) return 'pre_quote.ncb_reward';
-    return 'pre_quote.summary';
+    return getNextMissingFieldStep({ ...state, newNcbPercentage: ncb } as MotorJourneyState);
   },
 };
 
@@ -847,7 +1135,7 @@ const preQuoteNcbReward: MotorConversationStep = {
     ],
   }),
   processResponse: () => ({}),
-  getNextStep: () => 'pre_quote.summary',
+  getNextStep: (_, state) => getNextMissingFieldStep(state),
 };
 
 /* ── Expired Policy Path ── */
@@ -971,6 +1259,32 @@ const preQuoteViewPrices: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
+  getNextStep: () => {
+    if (!useUserProfileStore.getState().isLoggedIn) {
+      return 'login.phone_gate_before_plans';
+    }
+    return 'quote.calculating';
+  },
+};
+
+const loginPhoneGateBeforePlans: MotorConversationStep = {
+  id: 'login.phone_gate_before_plans',
+  module: 'login',
+  widgetType: 'login_gate_mandatory',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    const firstName = (state.ownerName || useUserProfileStore.getState().firstName || '').split(' ')[0];
+    return {
+      botMessages: [
+        firstName
+          ? `${firstName}, we need your phone number to show your plans.`
+          : `We need your phone number to continue.`,
+        `Please verify your number to proceed.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
   getNextStep: () => 'quote.calculating',
 };
 
@@ -1029,17 +1343,19 @@ const quoteCalculating: MotorConversationStep = {
   module: 'quote',
   widgetType: 'plan_calculator',
   getScript: () => ({
-    botMessages: [
-      `Fetching your personalized quotes...`,
-    ],
+    botMessages: [`Fetching your personalized quotes...`],
   }),
-  processResponse: (response) => ({
-    calculatingPlans: false,
-    availablePlans: response.plans || [],
-    idv: response.idv || 0,
-    idvMin: response.idvMin || 0,
-    idvMax: response.idvMax || 0,
-  }),
+  processResponse: (response, state) => {
+    const combo = determinePlanCombination(state);
+    return {
+      calculatingPlans: false,
+      availablePlans: response.plans || [],
+      planCombination: combo,
+      idv: response.idv || 0,
+      idvMin: response.idvMin || 0,
+      idvMax: response.idvMax || 0,
+    };
+  },
   getNextStep: () => 'quote.plans_ready',
 };
 
@@ -1050,28 +1366,290 @@ const quotePlansReady: MotorConversationStep = {
   getScript: (state) => {
     const v = state.vehicleData;
     return {
+      botMessages: [`We found the best plans for your ${v.make} ${v.model}.`],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: (_, state) => {
+    const combo = state.planCombination;
+    if (!combo) return 'quote.plan_selection';
+
+    // Case 0: OD-only (active TP policy)
+    if (combo.startsWith('OD')) return 'guided.od_tp_active';
+    // Case 3: Only one plan (A or B)
+    if (combo === 'A' || combo === 'B') return 'guided.single_plan';
+    // Case 2: No ZD (C or D) — skip ZD step
+    if (combo === 'C' || combo === 'D') return 'guided.comp_vs_tp';
+    // Case 1: Full flow (E or F)
+    return 'guided.comp_vs_tp';
+  },
+};
+
+/* ═══════════════════════════════════════════════
+   GUIDED PLAN SELECTION — Step by step per skill file
+   ═══════════════════════════════════════════════ */
+
+/* Case 0: Active TP policy — OD renewal only */
+const guidedOdTpActive: MotorConversationStep = {
+  id: 'guided.od_tp_active',
+  module: 'quote',
+  widgetType: 'selection_cards',
+  getScript: (state) => ({
+    botMessages: [
+      `Your Third Party policy is already active till ${state.activeTpExpiryDate || 'its expiry date'}. You only need to renew your Own Damage (OD) policy right now.`,
+    ],
+    options: [
+      { id: 'okay', label: 'Okay, got it', icon: 'check' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (_, state) => {
+    const combo = state.planCombination;
+    if (combo === 'OD-1') return 'guided.od_only_info';
+    return 'guided.od_zd_vs_standard';
+  },
+};
+
+const guidedOdOnlyInfo: MotorConversationStep = {
+  id: 'guided.od_only_info',
+  module: 'quote',
+  widgetType: 'none',
+  getScript: () => ({
+    botMessages: [
+      `Only the standard Own Damage plan is available for your vehicle. Let's customise it with add-ons.`,
+    ],
+  }),
+  processResponse: (_, state) => ({
+    selectedPlanType: 'od' as any,
+    guidedPlanChoice: null,
+    guidedZdChoice: null,
+  }),
+  getNextStep: () => 'guided.plan_confirmed',
+};
+
+const guidedOdZdVsStandard: MotorConversationStep = {
+  id: 'guided.od_zd_vs_standard',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: () => ({
+    botMessages: [
+      `Do you want Zero Depreciation cover or a Standard OD plan?`,
+    ],
+    subText: `Zero Depreciation means no out-of-pocket cost for parts replaced during claims.`,
+    options: [
+      { id: 'zd', label: 'OD Zero Depreciation', description: 'No depreciation charges — full claim payout', icon: 'shield' },
+      { id: 'standard', label: 'Standard OD', description: 'Depreciation applies — you pay the difference', icon: 'document' },
+    ],
+  }),
+  processResponse: (response) => ({
+    guidedZdChoice: response as 'zd' | 'standard',
+  }),
+  getNextStep: (response, state) => {
+    if (response === 'standard') {
+      return 'guided.plan_confirmed';
+    }
+    if (state.planCombination === 'OD-3') return 'guided.od_zd_variant';
+    return 'guided.plan_confirmed';
+  },
+};
+
+const guidedOdZdVariant: MotorConversationStep = {
+  id: 'guided.od_zd_variant',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: () => ({
+    botMessages: [`Choose your OD Zero Depreciation variant.`],
+    options: [
+      { id: 'safe_driver', label: 'Safe Driver', description: 'Lower premium. ₹5,000 deductible per claim.', icon: 'user' },
+      { id: 'standard', label: 'Standard', description: 'Higher premium. No deductible.', icon: 'shield' },
+    ],
+  }),
+  processResponse: (response) => ({
+    guidedVariantChoice: response,
+    selectedPlanType: response === 'safe_driver' ? 'od_zd_safe' as any : 'od_zd_standard' as any,
+  }),
+  getNextStep: () => 'guided.plan_confirmed',
+};
+
+/* Case 1 & 2: Comprehensive vs Third Party */
+const guidedCompVsTp: MotorConversationStep = {
+  id: 'guided.comp_vs_tp',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: (state) => {
+    const rec = getRecommendedPlanType(state, state.planCombination || 'C');
+    return {
+      botMessages: [`Do you want a Comprehensive plan or a Third Party plan?`],
+      subText: `Comprehensive covers your own car damage plus third-party liabilities. Third Party covers only liabilities towards others.`,
+      options: [
+        { id: 'comprehensive', label: 'Comprehensive', description: 'Covers your car + others', icon: 'shield' },
+        { id: 'third_party', label: 'Third Party', description: 'Legal minimum — covers others only', icon: 'document' },
+      ],
+    };
+  },
+  processResponse: (response) => ({
+    guidedPlanChoice: response as 'comprehensive' | 'third_party',
+  }),
+  getNextStep: (response, state) => {
+    if (response === 'third_party') return 'guided.plan_confirmed';
+    const combo = state.planCombination;
+    if (combo === 'E' || combo === 'F') return 'guided.zd_vs_standard_comp';
+    return 'guided.comp_variant';
+  },
+};
+
+/* ZD Comp vs Standard Comp */
+const guidedZdVsStandardComp: MotorConversationStep = {
+  id: 'guided.zd_vs_standard_comp',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: (state) => {
+    const rec = getRecommendedPlanType(state, state.planCombination || 'E');
+    const recLabel = rec.step2Rec === 'zd' ? 'Recommended' : '';
+    return {
+      botMessages: [`Do you want Zero Depreciation cover or a Standard Comprehensive plan?`],
+      subText: `Zero Depreciation means no out-of-pocket cost for parts replaced during claims. Standard Comprehensive means you pay depreciation.`,
+      options: [
+        { id: 'zd', label: 'Zero Depreciation', description: recLabel ? `${recLabel} — Full claim payout` : 'Full claim payout, no depreciation charges', icon: 'shield' },
+        { id: 'standard', label: 'Standard Comprehensive', description: 'Depreciation applies on parts replaced', icon: 'document' },
+      ],
+    };
+  },
+  processResponse: (response) => ({
+    guidedZdChoice: response as 'zd' | 'standard',
+  }),
+  getNextStep: (response, state) => {
+    if (response === 'standard') return 'guided.comp_variant';
+    return 'guided.zd_comp_variant';
+  },
+};
+
+/* Comprehensive variant selection (Network vs Standard) */
+const guidedCompVariant: MotorConversationStep = {
+  id: 'guided.comp_variant',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: (state) => {
+    const combo = state.planCombination;
+    const hasNetwork = combo === 'D' || combo === 'E' || combo === 'F';
+    if (!hasNetwork) {
+      return {
+        botMessages: [`Only the Standard Comprehensive plan is available for your vehicle.`],
+        options: [
+          { id: 'standard', label: 'Comprehensive — Standard', description: 'Repair at any garage, no deductible', icon: 'shield' },
+        ],
+      };
+    }
+    return {
+      botMessages: [`Choose your Comprehensive plan variant.`],
+      options: [
+        { id: 'network', label: 'Network Garage', description: 'Lower premium. Repairs at ACKO network garages. ₹5,000 deductible outside network.', icon: 'garage' },
+        { id: 'standard', label: 'Standard', description: 'Any garage, no deductible.', icon: 'shield' },
+      ],
+    };
+  },
+  processResponse: (response) => {
+    const expanded = response === 'network' ? 'comprehensive_network' : 'comprehensive_standard';
+    return {
+      guidedVariantChoice: response,
+      selectedPlanType: expanded as any,
+      selectedGarageTier: response === 'network' ? 'network' : 'all',
+    };
+  },
+  getNextStep: () => 'guided.plan_confirmed',
+};
+
+/* ZD Comprehensive variant selection (Safe Driver vs Standard) */
+const guidedZdCompVariant: MotorConversationStep = {
+  id: 'guided.zd_comp_variant',
+  module: 'quote',
+  widgetType: 'guided_plan_step',
+  getScript: (state) => {
+    const combo = state.planCombination;
+    const hasBoth = combo === 'F';
+    if (!hasBoth) {
+      return {
+        botMessages: [`Only the Safe Driver variant of ZD Comprehensive is available.`],
+        subText: `₹5,000 deductible payable during any claim.`,
+        options: [
+          { id: 'safe_driver', label: 'ZD Comprehensive — Safe Driver', description: 'Lower premium, ₹5,000 deductible per claim', icon: 'user' },
+        ],
+      };
+    }
+    return {
+      botMessages: [`Choose your ZD Comprehensive variant.`],
+      options: [
+        { id: 'safe_driver', label: 'Safe Driver', description: 'Lower premium. ₹5,000 deductible per claim.', icon: 'user' },
+        { id: 'standard', label: 'Standard', description: 'Higher premium. No deductible.', icon: 'shield' },
+      ],
+    };
+  },
+  processResponse: (response) => {
+    const expanded = response === 'safe_driver' ? 'zd_comprehensive_safe' : 'zd_comprehensive_standard';
+    return {
+      guidedVariantChoice: response,
+      selectedPlanType: expanded as any,
+    };
+  },
+  getNextStep: () => 'guided.plan_confirmed',
+};
+
+/* Case 3: Single plan only (A = TP only, B = Comp Standard only) */
+const guidedSinglePlan: MotorConversationStep = {
+  id: 'guided.single_plan',
+  module: 'quote',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    const isTp = state.planCombination === 'A';
+    return {
       botMessages: [
-        `We found the best plans for your ${v.make} ${v.model}.`,
+        `We are only able to offer you one plan at this time.`,
+        isTp
+          ? `Third Party — covers legal liabilities towards third parties. Does not cover your own car.`
+          : `Comprehensive Standard — covers your own car damage and third-party liabilities.`,
+      ],
+      options: [
+        { id: 'proceed', label: 'Proceed with this plan', icon: 'check' },
+      ],
+    };
+  },
+  processResponse: (_, state) => {
+    const isTp = state.planCombination === 'A';
+    return {
+      selectedPlanType: (isTp ? 'third_party' : 'comprehensive_standard') as any,
+      guidedPlanChoice: isTp ? 'third_party' : 'comprehensive',
+    };
+  },
+  getNextStep: () => 'guided.plan_confirmed',
+};
+
+/* Plan confirmed → proceed to add-on questions */
+const guidedPlanConfirmed: MotorConversationStep = {
+  id: 'guided.plan_confirmed',
+  module: 'quote',
+  widgetType: 'none',
+  getScript: (state) => {
+    const planName = state.selectedPlan?.name || state.selectedPlanType || 'your plan';
+    return {
+      botMessages: [
+        `Great choice. Now let us personalise your add-ons.`,
       ],
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'quote.plan_selection',
+  getNextStep: () => 'addons.paid_driver_question',
 };
 
+/* Still support the old plan selector for backward compat / "Help me choose" */
 const quotePlanSelection: MotorConversationStep = {
   id: 'quote.plan_selection',
   module: 'quote',
   widgetType: 'plan_selector',
-  getScript: () => {
-    return {
-      botMessages: [
-        `Choose a plan that fits your needs.`,
-      ],
-      subText: `All plans include 1 year Own Damage and 3 years Third-party coverage. You can add more protection with add-ons in the next step.`,
-    };
-  },
-  processResponse: (response, state) => {
+  getScript: () => ({
+    botMessages: [`Choose a plan that fits your needs.`],
+    subText: `All plans include 1 year Own Damage and 3 years Third-party coverage. You can add more protection with add-ons in the next step.`,
+  }),
+  processResponse: (response) => {
     if (response === 'help_choose') return {};
     return {
       selectedPlanType: response.planType,
@@ -1266,17 +1844,60 @@ const quotePlanSelected: MotorConversationStep = {
     return {
       botMessages: [
         `${planName} — good choice.`,
-        `Now let us customise it with add-ons that suit your needs.`,
+        `Now let us personalise your add-ons.`,
       ],
     };
   },
   processResponse: () => ({}),
+  getNextStep: () => 'addons.paid_driver_question',
+};
+
+/* ═══════════════════════════════════════════════
+   ADD-ON PERSONALIZATION QUESTIONS
+   Per skill file: asked before displaying add-ons
+   ═══════════════════════════════════════════════ */
+
+const addonsPaidDriverQuestion: MotorConversationStep = {
+  id: 'addons.paid_driver_question',
+  module: 'addons',
+  widgetType: 'selection_cards',
+  getScript: (state) => ({
+    botMessages: [
+      `A couple of quick questions to personalise your add-ons.`,
+      `Do you have a paid or hired driver for this ${vLabel(state)}?`,
+    ],
+    options: [
+      { id: 'yes', label: 'Yes', icon: 'user' },
+      { id: 'no', label: 'No', icon: 'forward' },
+    ],
+  }),
+  processResponse: (response) => ({
+    hasPaidDriver: response === 'yes',
+  }),
+  getNextStep: () => 'addons.accessories_question',
+};
+
+const addonsAccessoriesQuestion: MotorConversationStep = {
+  id: 'addons.accessories_question',
+  module: 'addons',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [
+      `Do you have any electrical or non-electrical accessories fitted to your car after purchase?`,
+    ],
+    subText: `For example: new AC unit, bass boosters, alloy wheels, seat covers.`,
+    options: [
+      { id: 'yes', label: 'Yes, I have accessories', icon: 'check' },
+      { id: 'no', label: 'No accessories', icon: 'forward' },
+    ],
+  }),
+  processResponse: (response) => ({
+    hasAftermarketAccessories: response === 'yes',
+  }),
   getNextStep: (_, state) => {
-    // Third-party plans only get protect_everyone addons
     if (state.selectedPlanType === 'third_party') {
       return 'addons.protect_everyone';
     }
-    // Comprehensive and Zero Dep get all addons
     return 'addons.out_of_pocket';
   },
 };
@@ -1287,7 +1908,7 @@ const addonsOutOfPocket: MotorConversationStep = {
   widgetType: 'out_of_pocket_addons',
   getScript: () => ({
     botMessages: [
-      `These add-ons reduce what you pay out of pocket during a claim.`,
+      `Here are the add-ons that protect your car. Recommended add-ons are highlighted based on your vehicle profile.`,
     ],
     subText: `Select the ones that matter to you. You can add multiple.`,
   }),
@@ -1543,6 +2164,12 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'registration.has_number': registrationHasNumber,
   'registration.enter_number': registrationEnterNumber,
   'vehicle_fetch.loading': vehicleFetchLoading,
+  // Preliminary checks
+  'prelim.check': prelimCheck,
+  'prelim.insured_same_user': prelimInsuredSameUser,
+  'prelim.insured_different_user': prelimInsuredDifferentUser,
+  'prelim.two_wheeler_entered': prelimTwoWheelerEntered,
+  'prelim.payment_pending': prelimPaymentPending,
   'vehicle_fetch.found': vehicleFetchFound,
   'manual_entry.congratulations': manualEntryCongratulations,
   'manual_entry.start': manualEntryStart,
@@ -1559,6 +2186,8 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'brand_new.summary': brandNewSummary,
   'brand_new.view_prices': brandNewViewPrices,
   'login.phone_gate': loginPhoneGate,
+  'login.phone_gate_prequote': loginPhoneGatePrequote,
+  'login.phone_gate_before_plans': loginPhoneGateBeforePlans,
   'login.phone_gate_mandatory': loginPhoneGateMandatory,
   'owner_details.intro': ownerDetailsIntro,
   'owner_details.name': ownerDetailsName,
@@ -1569,6 +2198,10 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'owner_details.gst_input': ownerDetailsGstInput,
   'owner_details.loan_check': ownerDetailsLoanCheck,
   'owner_details.loan_provider': ownerDetailsLoanProvider,
+  // Data collection (dynamic per all-or-nothing)
+  'pre_quote.pincode_ask': preQuotePincodeAsk,
+  'pre_quote.policy_type_ask': preQuotePolicyTypeAsk,
+  'pre_quote.last_claim_ask': preQuoteLastClaimAsk,
   'pre_quote.cng_check': preQuoteCngCheck,
   'pre_quote.commercial_check': preQuoteCommercialCheck,
   'pre_quote.commercial_rejection': preQuoteCommercialRejection,
@@ -1584,6 +2217,17 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'pre_quote.view_prices': preQuoteViewPrices,
   'quote.calculating': quoteCalculating,
   'quote.plans_ready': quotePlansReady,
+  // Guided plan selection
+  'guided.od_tp_active': guidedOdTpActive,
+  'guided.od_only_info': guidedOdOnlyInfo,
+  'guided.od_zd_vs_standard': guidedOdZdVsStandard,
+  'guided.od_zd_variant': guidedOdZdVariant,
+  'guided.comp_vs_tp': guidedCompVsTp,
+  'guided.zd_vs_standard_comp': guidedZdVsStandardComp,
+  'guided.comp_variant': guidedCompVariant,
+  'guided.zd_comp_variant': guidedZdCompVariant,
+  'guided.single_plan': guidedSinglePlan,
+  'guided.plan_confirmed': guidedPlanConfirmed,
   'quote.plan_selection': quotePlanSelection,
   'help.usage_pattern': helpUsagePattern,
   'help.vehicle_age': helpVehicleAge,
@@ -1591,6 +2235,9 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'help.repair_preference': helpRepairPreference,
   'help.recommendation': helpRecommendation,
   'quote.plan_selected': quotePlanSelected,
+  // Add-on personalization
+  'addons.paid_driver_question': addonsPaidDriverQuestion,
+  'addons.accessories_question': addonsAccessoriesQuestion,
   'addons.out_of_pocket': addonsOutOfPocket,
   'addons.protect_everyone': addonsProtectEveryone,
   'addons.complete': addonsComplete,

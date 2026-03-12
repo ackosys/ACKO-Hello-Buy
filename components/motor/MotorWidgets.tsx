@@ -1406,35 +1406,28 @@ export function PlanCalculator({ onComplete }: { onComplete: (result: any) => vo
       }
       setStagesComplete(true);
       
-      // Generate plans (import inline to avoid issues)
       setTimeout(async () => {
         try {
-          const { getMotorPlanDetails, calculateIDV } = await import('../../lib/motor/plans');
+          const { getPlansForCombination, determinePlanCombination, calculateIDV } = await import('../../lib/motor/plans');
           const state = useMotorStore.getState() as MotorJourneyState;
           
-          // Calculate IDV
-          const makePrice = 800000; // Mock: ₹8L
+          const makePrice = 800000;
           const vehicleAge = vehicleData.registrationYear 
             ? new Date().getFullYear() - vehicleData.registrationYear 
             : 3;
           const idvData = calculateIDV(makePrice, vehicleAge);
           
-          // Generate all plan variations
-          // Note: Only Comprehensive has garage tier options
-          const comprehensiveAll = getMotorPlanDetails(state, 'comprehensive', 'all');
-          const comprehensiveNetwork = getMotorPlanDetails(state, 'comprehensive', 'network');
-          const zeroDep = getMotorPlanDetails(state, 'zero_dep');
-          const thirdParty = getMotorPlanDetails(state, 'third_party');
+          const combo = determinePlanCombination(state);
+          const plans = getPlansForCombination(state, combo);
           
           onComplete({
-            plans: [comprehensiveAll, comprehensiveNetwork, zeroDep, thirdParty],
+            plans,
             idv: idvData.recommended,
             idvMin: idvData.min,
             idvMax: idvData.max,
           });
         } catch (error) {
           console.error('Error generating plans:', error);
-          // Fallback: just complete with empty data
           onComplete({ plans: [], idv: 750000, idvMin: 675000, idvMax: 787500 });
         }
       }, 600);
@@ -2058,12 +2051,12 @@ function PlanCard({
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98]"
               style={{
-                background: 'var(--motor-bg)',
-                color: 'var(--motor-text)',
-                border: '1px solid var(--motor-border-strong)',
-                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+                background: 'var(--btn-secondary-bg)',
+                color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--btn-secondary-border)',
+                boxShadow: 'var(--btn-secondary-shadow)',
               }}
             >
               {isComprehensive ? 'Explore plan' : 'Select this plan'}
@@ -2524,7 +2517,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
   const tw = useT().motorWidgets;
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'out_of_pocket');
+  const state = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns('car', state).filter((a: any) => a.category === 'out_of_pocket');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2723,7 +2717,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
   const tw = useT().motorWidgets;
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'protect_everyone');
+  const currentState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns(vType as 'car' | 'bike', currentState).filter((a: any) => a.category === 'protect_everyone');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 

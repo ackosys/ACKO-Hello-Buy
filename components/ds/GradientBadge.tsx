@@ -15,7 +15,7 @@ export default function GradientBadge({ children, className = '' }: GradientBadg
       className={`inline-flex items-center px-2 py-1 rounded-full whitespace-nowrap ${className}`}
       style={{ background: GRADIENT_BG }}
     >
-      <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--app-text)' }}>
+      <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--motor-text, var(--app-text))' }}>
         {children}
       </span>
     </span>
