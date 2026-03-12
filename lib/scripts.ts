@@ -1341,7 +1341,7 @@ const reviewConsent: ConversationStep = {
   getNextStep: (_response, state) => {
     // Platinum Lite requires STP medical questions before payment
     if (state.selectedPlan?.tier === 'platinum_lite') return 'stp.medical_questions';
-    return 'payment.method_selection';
+    return 'payment.process';
   },
 };
 
@@ -1405,33 +1405,11 @@ const stpMedicalQuestions: ConversationStep = {
     ],
   }),
   processResponse: () => ({}),
-  getNextStep: () => 'payment.method_selection',
-};
-
-const paymentMethodSelection: ConversationStep = {
-  id: 'payment.method_selection',
-  module: 'payment',
-  widgetType: 'selection_cards',
-  getScript: (persona, state) => {
-    const isMonthly = state.paymentFrequency === 'monthly';
-    const options: any[] = [
-      { id: 'upi', label: 'UPI', description: 'GPay, PhonePe, Paytm & more', icon: 'upi' },
-      { id: 'card', label: 'Credit / Debit Card', description: 'Visa, Mastercard, RuPay', icon: 'card' },
-      { id: 'netbanking', label: 'Net Banking', description: 'All major banks supported', icon: 'bank' },
-    ];
-    if (!isMonthly) {
-      options.push({ id: 'emi', label: 'EMI', description: 'No-cost EMI on select cards', icon: 'emi' });
-    } else {
-      options.push({ id: 'autopay', label: 'Set up AutoPay', description: 'Auto-debit mandate for monthly payments', icon: 'autopay', badge: 'Required for monthly' });
-    }
-    return {
-      botMessages: [`How would you like to pay? Choose your preferred payment method.`],
-      options,
-    };
-  },
-  processResponse: (response) => ({ paymentMethod: response }),
   getNextStep: () => 'payment.process',
 };
+
+// payment.method_selection removed — method selection is now embedded inside
+// the PaymentWidget (inline gateway), consistent with the Motor journey pattern.
 
 const paymentProcess: ConversationStep = {
   id: 'payment.process',
@@ -1516,7 +1494,7 @@ const reproposalExplanation: ConversationStep = {
   getNextStep: (_, state) => {
     // If monthly and loading > 1 month premium diff, show mandate update
     if (state.paymentFrequency === 'monthly' && (state as any).hasLoading) return 'reproposal.mandate_update';
-    return 'payment.method_selection';
+    return 'payment.process';
   },
 };
 
@@ -1606,7 +1584,7 @@ const telemerOutcome: ConversationStep = {
     options: [{ id: 'proceed', label: 'Proceed to payment', icon: 'check' }],
   }),
   processResponse: () => ({}),
-  getNextStep: () => 'payment.method_selection',
+  getNextStep: () => 'payment.process',
 };
 
 const telemerStatusTracker: ConversationStep = {
@@ -1784,7 +1762,7 @@ export const STEPS: Record<string, ConversationStep> = {
   'stp.medical_questions': stpMedicalQuestions,
 
   /* Payment */
-  'payment.method_selection': paymentMethodSelection,
+  // payment.method_selection step removed
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
 

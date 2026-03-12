@@ -2000,47 +2000,132 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
    Payment
    ═══════════════════════════════════════════════════════ */
 
+// Health Payment Gateway — mirrors the Motor PaymentGateway UX pattern:
+// method selector → processing spinner → success, all inline in chat.
 export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
-  const t = useT();
   const selectedPlan = useJourneyStore(s => s.selectedPlan);
   const sumInsured = useJourneyStore(s => s.sumInsured);
   const members = useJourneyStore(s => s.members);
   const hasConditions = useJourneyStore(s => s.hasConditions);
   const paymentFrequency = useJourneyStore(s => s.paymentFrequency);
-  const [processing, setProcessing] = useState(false);
-  const [complete, setComplete] = useState(false);
   const language = useJourneyStore(s => s.language);
   const plan = selectedPlan ? getPlanDetails(selectedPlan.tier, sumInsured, members, hasConditions, language) : null;
   const premium = plan ? (paymentFrequency === 'monthly' ? plan.monthlyPremium : plan.yearlyPremium) : 0;
+  const freqLabel = paymentFrequency === 'monthly' ? '/mo' : '/yr';
+
+  const [stage, setStage] = useState<'methods' | 'processing' | 'success'>('methods');
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+  const methods = [
+    { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: '⚡' },
+    { id: 'card', label: 'Card', desc: 'Visa, Mastercard, RuPay', icon: '💳' },
+    { id: 'netbanking', label: 'Net Banking', desc: 'All major banks', icon: '🏦' },
+    ...(paymentFrequency === 'monthly'
+      ? [{ id: 'autopay', label: 'AutoPay / Mandate', desc: 'Auto-debit every month', icon: '🔄' }]
+      : [{ id: 'wallet', label: 'Wallet', desc: 'Paytm, Amazon Pay', icon: '👝' }]),
+  ];
 
   const handlePay = () => {
-    setProcessing(true);
-    setTimeout(() => { setProcessing(false); setComplete(true); setTimeout(onSuccess, 800); }, 2500);
+    setStage('processing');
+    setTimeout(() => {
+      setStage('success');
+      setTimeout(onSuccess, 1500);
+    }, 2500);
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md">
-      <div className="bg-white border-2 border-onyx-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-baseline justify-between mb-5 pb-4 border-b border-onyx-100">
-          <span className="text-body-md text-onyx-500">{t.widgets.amount}</span>
-          <span className="text-heading-md text-purple-700">{formatCurrency(premium)}<span className="text-body-sm text-onyx-500 ml-1">{paymentFrequency === 'monthly' ? '/mo' : '/yr'}</span></span>
-        </div>
-        {complete ? (
-          <div className="text-center py-4">
-            <svg className="w-10 h-10 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <p className="text-heading-sm text-green-600 mt-2">{t.widgets.paymentSuccessful}</p>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl overflow-hidden border border-white/10" style={{ background: '#1a1f36' }}>
+      {/* Header — mirrors Motor's Razorpay-style header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2b3a67 0%, #1a1f36 100%)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+            <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
           </div>
-        ) : (
-          <button onClick={handlePay} disabled={processing}
-            className="w-full py-3.5 bg-purple-600 text-white rounded-xl text-label-lg font-semibold hover:bg-purple-700 disabled:opacity-60 transition-all active:scale-[0.97]">
-            {processing ? t.common.processing : t.widgets.pay(formatCurrency(premium))}
-          </button>
-        )}
+          <div>
+            <p className="text-[13px] font-semibold text-white">ACKO Health Insurance</p>
+            <p className="text-[11px] text-white/40">{selectedPlan?.name ?? 'ACKO Platinum'}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[11px] text-white/40">Amount</p>
+          <p className="text-[18px] font-bold text-white">{formatCurrency(premium)}<span className="text-[11px] font-normal text-white/40">{freqLabel}</span></p>
+        </div>
       </div>
-      <p className="text-caption text-onyx-400 text-center mt-2 flex items-center justify-center gap-1">
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-        {t.common.securedBy}
-      </p>
+
+      <div className="p-5">
+        <AnimatePresence mode="wait">
+          {stage === 'methods' && (
+            <motion.div key="methods" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
+              <p className="text-[12px] font-semibold text-white/50 uppercase tracking-wider mb-3">Payment Method</p>
+              <div className="space-y-2.5">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                    className="w-full flex items-center gap-3.5 p-3.5 rounded-xl transition-all text-left"
+                    style={{
+                      background: selectedMethod === m.id ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${selectedMethod === m.id ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    }}
+                  >
+                    <span className="text-[20px]">{m.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-semibold text-white">{m.label}</p>
+                      <p className="text-[11px] text-white/40">{m.desc}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedMethod === m.id ? 'border-purple-400 bg-purple-400' : 'border-white/20'}`}>
+                      {selectedMethod === m.id && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handlePay}
+                disabled={!selectedMethod}
+                className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-30"
+                style={{ background: selectedMethod ? 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' : 'rgba(167,139,250,0.4)' }}
+              >
+                Pay {formatCurrency(premium)}{freqLabel}
+              </button>
+
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <svg className="w-3.5 h-3.5 text-white/25" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm4 8H8v-1c0-1.33 2.67-2 4-2s4 .67 4 2v1z"/></svg>
+                <p className="text-[10px] text-white/25">Secured by Razorpay | PCI DSS Compliant</p>
+              </div>
+            </motion.div>
+          )}
+
+          {stage === 'processing' && (
+            <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-8">
+              <div className="w-14 h-14 rounded-full border-[3px] border-white/10 border-t-purple-400 animate-spin mb-5" />
+              <p className="text-[15px] font-semibold text-white mb-1">Processing Payment</p>
+              <p className="text-[12px] text-white/40">Please do not close this screen...</p>
+            </motion.div>
+          )}
+
+          {stage === 'success' && (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center py-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4"
+              >
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </motion.div>
+              <p className="text-[16px] font-bold text-green-400 mb-1">Payment Successful!</p>
+              <p className="text-[12px] text-white/40">{formatCurrency(premium)}{freqLabel} paid via {methods.find(m => m.id === selectedMethod)?.label}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }
