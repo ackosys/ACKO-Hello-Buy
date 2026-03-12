@@ -776,7 +776,10 @@ const coverageWorkplaceInsurance: ConversationStep = {
   module: 'coverage',
   widgetType: 'selection_cards',
   getScript: (_, state) => ({
-    botMessages: [`${userName(state)}, does your workplace offer health insurance?`],
+    botMessages: [
+      `${userName(state)}, does your workplace offer health insurance?`,
+      `This helps us understand what cover you already have, and where a personal plan can fill the gaps.`,
+    ],
     options: [
       { id: 'yes', label: 'Yes, it does', icon: 'building' },
       { id: 'no', label: 'No, it doesn\'t', icon: 'x' },
@@ -795,7 +798,10 @@ const coverageExistingPolicy: ConversationStep = {
   module: 'coverage',
   widgetType: 'selection_cards',
   getScript: (_, state) => ({
-    botMessages: [`Apart from that, have you or anyone in your family bought a health insurance policy?`],
+    botMessages: [
+      `Apart from that, have you or anyone in your family bought a health insurance policy?`,
+      `This tells us whether you're starting fresh or looking to switch — so we can guide you to the right path.`,
+    ],
     options: [
       { id: 'none', label: 'No', icon: 'x' },
       { id: 'one_policy', label: 'Yes, we have one policy', icon: 'document' },

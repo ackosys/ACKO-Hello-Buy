@@ -122,7 +122,7 @@ export function SelectionCards({ options, onSelect }: { options: Option[]; onSel
               <div className="mb-2 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
                 {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : <OptionIcon icon={opt.icon!} className="w-6 h-6 !text-purple-300" />}
               </div>
-              <span className="text-body-md font-medium text-white/90">{opt.label}</span>
+              <span className={`text-label-md font-medium ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
               {opt.description && (
                 <p className="text-caption text-white/40 mt-1">{opt.description}</p>
               )}
@@ -155,7 +155,7 @@ export function SelectionCards({ options, onSelect }: { options: Option[]; onSel
               ${opt.disabled ? 'opacity-40' : ''}
             `}
           >
-            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
               {diseaseIcon ? (
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-purple-300">{diseaseIcon}</div>
               ) : opt.icon ? (
@@ -163,12 +163,19 @@ export function SelectionCards({ options, onSelect }: { options: Option[]; onSel
                   <OptionIcon icon={opt.icon} className="w-4.5 h-4.5 !text-purple-300" />
                 </div>
               ) : null}
-              <div className="flex-1">
-                <span className="text-body-md font-medium text-white/90">{opt.label}</span>
+              <div className="flex-1 min-w-0">
+                <span className={`text-label-md font-medium block ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
                 {opt.description && <p className="text-caption text-white/40 mt-0.5">{opt.description}</p>}
               </div>
               {opt.badge && (
                 <span className="text-label-sm bg-purple-500/50 text-white px-2 py-0.5 rounded-full border border-purple-400/30">{opt.badge}</span>
+              )}
+              {selected === opt.id && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </motion.div>
               )}
             </div>
           </motion.button>
@@ -389,14 +396,76 @@ export function NumberInput({ placeholder, subText, inputType = 'number', min, m
         onChange={(e) => { setValue(e.target.value); setError(''); }}
         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         placeholder={placeholder}
-        className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-body-md text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors backdrop-blur-sm"
+        className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
         autoFocus
       />
       {subText && <p className="text-caption text-white/40 mt-1.5">{subText}</p>}
-      {error && <p className="text-caption text-red-400 mt-1">{error}</p>}
-      <button onClick={handleSubmit} className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
+      {error && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-caption text-red-400 mt-1.5">{error}</motion.p>}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        onClick={handleSubmit}
+        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold active:scale-[0.97] transition-transform"
+      >
         {t.common.continue}
-      </button>
+      </motion.button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Text Input — For name, short text answers
+   ═══════════════════════════════════════════════════════ */
+
+export function TextInput({
+  placeholder,
+  inputType = 'text',
+  maxLength,
+  onSubmit,
+}: {
+  placeholder: string;
+  inputType?: string;
+  maxLength?: number;
+  onSubmit: (val: string) => void;
+}) {
+  const t = useT();
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    if (!value.trim()) { setError(t.widgets.required); return; }
+    if (inputType === 'tel' && value.length !== 10) { setError('Please enter a valid 10-digit number'); return; }
+    setError('');
+    onSubmit(value.trim());
+  };
+
+  return (
+    <div className="max-w-sm">
+      <input
+        type={inputType}
+        value={value}
+        onChange={(e) => { setValue(e.target.value); setError(''); }}
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
+        autoFocus
+      />
+      {error && (
+        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
+          {error}
+        </motion.p>
+      )}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        onClick={handleSubmit}
+        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
+      >
+        {t.common.continue}
+      </motion.button>
     </div>
   );
 }
@@ -427,7 +496,7 @@ export function PincodeInput({ placeholder, onSubmit }: { placeholder: string; o
           onChange={(e) => { setValue(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder={placeholder}
-          className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-body-md text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors backdrop-blur-sm"
+          className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
           autoFocus
         />
       </div>

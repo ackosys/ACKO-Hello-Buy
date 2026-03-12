@@ -10,6 +10,7 @@ import {
   SelectionCards,
   MultiSelect,
   NumberInput,
+  TextInput,
   PincodeInput,
   CalculationTheater,
   PlanSwitcher,
@@ -287,6 +288,7 @@ export default function ChatContainer() {
       case 'multi_select':
         return <MultiSelect options={script.options || []} onSelect={handleEditResponse} />;
       case 'text_input':
+        return <TextInput placeholder={script.placeholder || ''} inputType={script.inputType} onSubmit={handleEditResponse} />;
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleEditResponse} />;
       case 'pincode_input':
@@ -321,6 +323,7 @@ export default function ChatContainer() {
       case 'multi_select':
         return <MultiSelect options={script.options || []} onSelect={handleResponse} />;
       case 'text_input':
+        return <TextInput placeholder={script.placeholder || ''} inputType={script.inputType} onSubmit={handleResponse} />;
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleResponse} />;
       case 'pincode_input':
@@ -397,7 +400,7 @@ export default function ChatContainer() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="mt-2 mb-4"
+                className="mt-2 mb-4 ml-11"
               >
                 {renderWidget()}
               </motion.div>

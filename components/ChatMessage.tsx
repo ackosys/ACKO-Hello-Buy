@@ -3,6 +3,21 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 
+/* ── Health Avatar — shield/heart identity ── */
+function HealthAvatar() {
+  return (
+    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-lg shadow-purple-900/20 flex-shrink-0">
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 21C12 21 3 15.5 3 9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6.5-9 12-9 12Z"
+          fill="#7C3AED"
+        />
+        <path d="M9.5 9.5h5M12 7v5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
 interface ChatMessageProps {
   message: {
     id: string;
@@ -26,7 +41,7 @@ export default function ChatMessage({ message, onEdit, animate = false }: ChatMe
         animate={{ opacity: 1 }}
         className="flex justify-center my-4"
       >
-        <span className="text-label-md px-4 py-1.5 rounded-full" style={{ color: 'var(--motor-text-muted)', background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+        <span className="text-label-md text-purple-300/60 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
           {message.content}
         </span>
       </motion.div>
@@ -52,8 +67,7 @@ export default function ChatMessage({ message, onEdit, animate = false }: ChatMe
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               onClick={() => onEdit(message.stepId!)}
-              className="absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
-              style={{ background: 'var(--app-surface, var(--motor-surface))', border: '1px solid var(--app-border-strong, var(--motor-border-strong))' }}
+              className="absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/10 border border-white/20 rounded-full flex items-center justify-center shadow-md hover:bg-white/20 transition-colors"
               title="Edit this answer"
             >
               <svg className="w-3 h-3 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,12 +120,15 @@ export default function ChatMessage({ message, onEdit, animate = false }: ChatMe
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.215, 0.61, 0.355, 1] }}
-      className="flex mb-4"
+      className="flex gap-3 mb-4"
     >
+      <div className="flex-shrink-0 mt-0.5">
+        <HealthAvatar />
+      </div>
       <div className="max-w-[85%]">
         <div className="backdrop-blur-sm px-4 py-3 chat-bubble-bot" style={{ background: 'var(--app-surface, var(--motor-surface))', border: '1px solid var(--app-border, var(--motor-border))' }}>
           {visibleParagraphs.map((words, i) => (
-            <p key={i} className={`text-body-md ${i > 0 ? 'mt-2' : ''}`} style={{ color: 'var(--app-bot-text, var(--motor-bot-text))' }}>
+            <p key={i} className={`text-body-md text-white/90 ${i > 0 ? 'mt-2' : ''}`} style={{ color: 'var(--app-bot-text, var(--motor-bot-text))' }}>
               {words.join(' ')}
               {isTypingOut && i === visibleParagraphs.length - 1 && (
                 <span className="inline-block w-[2px] h-[1em] align-middle ml-[2px] rounded-full bg-purple-400 animate-pulse" />
@@ -131,8 +148,11 @@ export function TypingIndicator() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="flex mb-4"
+      className="flex gap-3 mb-4"
     >
+      <div className="flex-shrink-0">
+        <HealthAvatar />
+      </div>
       <div className="backdrop-blur-sm px-4 py-3 chat-bubble-bot flex items-center gap-1.5" style={{ background: 'var(--app-surface, var(--motor-surface))', border: '1px solid var(--app-border, var(--motor-border))' }}>
         <span className="w-2 h-2 bg-purple-400 rounded-full animate-typing" style={{ animationDelay: '0ms' }} />
         <span className="w-2 h-2 bg-purple-400 rounded-full animate-typing" style={{ animationDelay: '200ms' }} />
