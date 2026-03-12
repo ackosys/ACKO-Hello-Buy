@@ -175,6 +175,12 @@ function HealthJourneyInner() {
       setShowWelcome(false);
     }
 
+    // Skip EntryScreen — go directly to chat for new sessions
+    if (!snap && screenParam !== 'dashboard') {
+      updateState({ isExistingAckoUser: false, userName: '', currentStepId: 'entry.welcome', currentModule: 'entry' });
+      setScreen('chat');
+    }
+
     setHydrated(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

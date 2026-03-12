@@ -446,27 +446,49 @@ const familyWhoToCover: ConversationStep = {
         { id: 'children', label: t.widgets.children, icon: 'child' },
         { id: 'father', label: t.widgets.father, icon: 'father' },
         { id: 'mother', label: t.widgets.mother, icon: 'mother' },
-        { id: 'parents_only', label: 'Parents only (exclude self)', icon: 'father', description: 'Purchase a policy for your parents without including yourself' },
+        { id: 'father_in_law', label: t.widgets.fatherInLaw, icon: 'father' },
+        { id: 'mother_in_law', label: t.widgets.motherInLaw, icon: 'mother' },
       ],
     };
   },
   processResponse: (response: string[]) => {
-    // "parents_only" shortcut — set father+mother, exclude self (feedback #16)
-    if (response.includes('parents_only')) {
-      return {
-        coverageFor: ['father', 'mother'],
-        numChildren: 0,
-        buyingForParents: true,
-      };
-    }
     const childrenEntry = response.find((r: string) => r.startsWith('children'));
     const numChildren = childrenEntry?.includes(':') ? parseInt(childrenEntry.split(':')[1]) || 1 : childrenEntry ? 1 : 0;
     const coverageFor = response.map((r: string) => r.startsWith('children:') ? 'children' : r);
+    const hasParents = coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
     return {
       coverageFor,
       numChildren,
-      buyingForParents: (coverageFor.includes('father') || coverageFor.includes('mother')) && !coverageFor.includes('self'),
+      buyingForParents: hasParents && !coverageFor.includes('self'),
     };
+  },
+  getNextStep: (_response: string[], state: JourneyState) => {
+    // If self is not selected, show confirmation before proceeding
+    if (!state.coverageFor.includes('self')) return 'family.self_exclusion_confirm';
+    return 'family.cover_ack';
+  },
+};
+
+// Self-exclusion confirmation — shown when user selects members but not themselves
+const familySelfExclusionConfirm: ConversationStep = {
+  id: 'family.self_exclusion_confirm',
+  module: 'family',
+  widgetType: 'selection_cards',
+  getScript: () => ({
+    botMessages: [`You've excluded yourself from coverage. Are you sure you want to continue without adding yourself?`],
+    options: [
+      { id: 'exclude', label: 'Yes — exclude me', icon: 'check' },
+      { id: 'include', label: 'No — include me', icon: 'plus' },
+    ],
+  }),
+  processResponse: (response, state) => {
+    if (response === 'include') {
+      return {
+        coverageFor: ['self', ...state.coverageFor.filter(c => c !== 'self')],
+        buyingForParents: false,
+      };
+    }
+    return {};
   },
   getNextStep: () => 'family.cover_ack',
 };
@@ -504,19 +526,24 @@ const familyCoverAck: ConversationStep = {
   },
   processResponse: () => ({}),
   getNextStep: (_, state) => {
-    // Parents-only: skip self age, go directly to parents age (feedback #16)
-    if (state.buyingForParents && !state.coverageFor.includes('self')) {
+    // Parents-only (no self): go directly to parents age
+    if (!state.coverageFor.includes('self')) {
       return 'family.parents_age';
+    }
+    // Self + Spouse: ask eldest age (single question)
+    if (state.coverageFor.includes('spouse')) {
+      return 'family.spouse_age';
     }
     return 'family.your_age';
   },
 };
 
+// If self only (no spouse) — ask self age directly
 const familyYourAge: ConversationStep = {
   id: 'family.your_age',
   module: 'family',
   widgetType: 'number_input',
-  condition: (state) => state.coverageFor.includes('self'),
+  condition: (state) => state.coverageFor.includes('self') && !state.coverageFor.includes('spouse'),
   getScript: (persona, state) => {
     const t = getT(state.language);
     return {
@@ -536,55 +563,49 @@ const familyYourAge: ConversationStep = {
     };
   },
   getNextStep: (_, state) => {
-    const hasSpouse = state.coverageFor.includes('spouse');
-    if (hasSpouse) return 'family.spouse_age';
     const hasParents = state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
     if (hasParents) return 'family.parents_age';
-    const hasChildren = state.coverageFor.includes('children');
-    if (hasChildren) return 'family.age_ack';
     return 'family.age_ack';
   },
 };
 
-/* Spouse age — asked when spouse is selected (feedback #15a) */
+// Self + Spouse — ask age of the eldest only (single question)
 const familySpouseAge: ConversationStep = {
   id: 'family.spouse_age',
   module: 'family',
   widgetType: 'number_input',
-  condition: (state) => state.coverageFor.includes('spouse'),
-  getScript: (persona, state) => {
-    const t = getT(state.language);
-    return {
-      botMessages: [`And how old is your spouse?`],
-      placeholder: "Spouse's age",
-      inputType: 'number',
-      min: 18,
-      max: 99,
-    };
-  },
+  condition: (state) => state.coverageFor.includes('self') && state.coverageFor.includes('spouse'),
+  getScript: () => ({
+    botMessages: [`What is the age of the eldest between you and your spouse?`],
+    placeholder: 'Age of the eldest',
+    inputType: 'number',
+    min: 18,
+    max: 99,
+  }),
   processResponse: (response, state) => {
-    const age = parseInt(response);
-    const member = { id: 'spouse', relation: 'spouse' as const, name: 'Spouse', age, conditions: [] };
-    const members = [...state.members.filter(m => m.relation !== 'spouse'), member];
-    // Also add children with estimated ages if children are selected
-    const hasChildren = state.coverageFor.includes('children');
-    if (hasChildren) {
-      const selfAge = state.members.find(m => m.relation === 'self')?.age || 30;
+    const eldestAge = parseInt(response);
+    // Store eldest as self, approximate spouse as slightly younger
+    const selfMember = { id: 'self', relation: 'self' as const, name: 'You', age: eldestAge, conditions: [] };
+    const spouseMember = { id: 'spouse', relation: 'spouse' as const, name: 'Spouse', age: Math.max(18, eldestAge - 2), conditions: [] };
+    const members = [
+      ...state.members.filter(m => m.relation !== 'self' && m.relation !== 'spouse'),
+      selfMember,
+      spouseMember,
+    ];
+    // Add children with estimated ages
+    if (state.coverageFor.includes('children')) {
       const numKids = state.numChildren || 1;
       for (let i = 0; i < numKids; i++) {
         members.push({
           id: `child_${i + 1}`,
           relation: 'children' as any,
           name: `Child ${i + 1}`,
-          age: Math.max(1, selfAge - 25 + i * 2),
+          age: Math.max(1, eldestAge - 28 + i * 2),
           conditions: [],
         });
       }
     }
-    return {
-      members,
-      hasSenior: state.hasSenior || age >= 45,
-    };
+    return { members, hasSenior: eldestAge >= 45 };
   },
   getNextStep: (_, state) => {
     const hasParents = state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
@@ -737,13 +758,87 @@ const familyPincodeResult: ConversationStep = {
     if (state.pdfExtractedData || (state.intent === 'check_gaps' || state.intent === 'switch')) {
       if (state.totalExistingCover || state.coverageStatus) return 'health.conditions';
     }
-    return 'coverage.current_insurance';
+    // Parents-only purchasers skip the workplace question
+    if (state.buyingForParents && !state.coverageFor.includes('self')) {
+      return 'coverage.existing_policy';
+    }
+    return 'coverage.workplace_insurance';
   },
 };
 
 /* ═══════════════════════════════════════════════
    MODULE: EXISTING COVERAGE
    ═══════════════════════════════════════════════ */
+
+// Step 1: Does your workplace offer health insurance?
+const coverageWorkplaceInsurance: ConversationStep = {
+  id: 'coverage.workplace_insurance',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => ({
+    botMessages: [`${userName(state)}, does your workplace offer health insurance?`],
+    options: [
+      { id: 'yes', label: 'Yes, it does', icon: 'building' },
+      { id: 'no', label: 'No, it doesn\'t', icon: 'x' },
+      { id: 'not_sure', label: 'I\'m not sure', icon: 'help' },
+    ],
+  }),
+  processResponse: (response) => ({
+    coverageStatus: response === 'yes' ? 'gmc' : 'none',
+  }),
+  getNextStep: () => 'coverage.existing_policy',
+};
+
+// Step 2: Apart from that, have you or your family bought a health insurance policy?
+const coverageExistingPolicy: ConversationStep = {
+  id: 'coverage.existing_policy',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => ({
+    botMessages: [`Apart from that, have you or anyone in your family bought a health insurance policy?`],
+    options: [
+      { id: 'none', label: 'No', icon: 'x' },
+      { id: 'one_policy', label: 'Yes, we have one policy', icon: 'document' },
+      { id: 'multiple_policies', label: 'Yes, we have a couple of policies', icon: 'stack' },
+      { id: 'not_sure', label: 'I\'m not sure', icon: 'help' },
+    ],
+  }),
+  processResponse: (response, state) => {
+    if (response === 'one_policy') {
+      return { coverageStatus: state.coverageStatus === 'gmc' ? 'both' : 'individual_policy' };
+    }
+    return {};
+  },
+  getNextStep: (response) => {
+    if (response === 'multiple_policies') return 'coverage.complex_case';
+    if (response === 'one_policy') return 'coverage.total_cover';
+    return 'health.conditions';
+  },
+};
+
+// Complex case — redirect to Talk to Expert
+const coverageComplexCase: ConversationStep = {
+  id: 'coverage.complex_case',
+  module: 'coverage',
+  widgetType: 'selection_cards',
+  getScript: (_, state) => ({
+    botMessages: [
+      `${userName(state)}, managing multiple policies can get complicated — especially when it comes to claims, porting, and avoiding overlaps.\n\nI'd recommend speaking with one of our advisors who can review all your policies together and suggest the most efficient path forward.`,
+    ],
+    options: [
+      { id: 'talk_to_expert', label: 'Talk to an Expert', icon: 'phone' },
+      { id: 'continue_anyway', label: 'Continue on my own', icon: 'arrow' },
+    ],
+  }),
+  processResponse: () => ({}),
+  getNextStep: (response, state) => {
+    if (response === 'talk_to_expert') {
+      state.showExpertPanel = true;
+      return 'coverage.complex_case';
+    }
+    return 'health.conditions';
+  },
+};
 
 const coverageCurrentInsurance: ConversationStep = {
   id: 'coverage.current_insurance',
@@ -1637,6 +1732,7 @@ export const STEPS: Record<string, ConversationStep> = {
 
   /* Family */
   'family.who_to_cover': familyWhoToCover,
+  'family.self_exclusion_confirm': familySelfExclusionConfirm,
   'family.cover_ack': familyCoverAck,
   'family.your_age': familyYourAge,
   'family.spouse_age': familySpouseAge,
@@ -1647,6 +1743,9 @@ export const STEPS: Record<string, ConversationStep> = {
   'family.pincode_result': familyPincodeResult,
 
   /* Coverage */
+  'coverage.workplace_insurance': coverageWorkplaceInsurance,
+  'coverage.existing_policy': coverageExistingPolicy,
+  'coverage.complex_case': coverageComplexCase,
   'coverage.current_insurance': coverageCurrentInsurance,
   'coverage.total_cover': coverageTotalCover,
   'coverage.gap_check': coverageGapCheck,
