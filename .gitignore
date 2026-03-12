@@ -44,4 +44,6 @@ Thumbs.db
 
 # Screenshots folder
 lemonade screenshots/
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
