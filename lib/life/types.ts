@@ -59,6 +59,8 @@ export type LifeWidgetType =
   | 'underwriting_status'     // Underwriting timeline
   | 'nps_feedback'            // NPS emoji rating
   | 'app_download_cta'        // App download card
+  | 'login_gate'              // Phone+OTP login before income
+  | 'login_gate_skippable'    // Skippable Phone+OTP login
   | 'life_end';               // End — navigation options
 
 // Smoking status

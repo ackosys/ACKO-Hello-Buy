@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useT } from '../../lib/translations';
 
 type EkycStep =
   | 'intro'
@@ -53,6 +54,7 @@ export interface UseEkycFlowReturn {
 }
 
 export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions): UseEkycFlowReturn {
+  const ek = useT().ekycFlow;
   const skipIntro = options?.skipIntro ?? false;
   const [step, setStep] = useState<EkycStep>(skipIntro ? 'aadhaar_input' : 'intro');
   const [messages, setMessages] = useState<EkycMessage[]>([]);
@@ -95,15 +97,15 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
     const addMessages = async () => {
       await new Promise(resolve => setTimeout(resolve, 300));
       if (!mounted) return;
-      addBotMessage('Payment received – your coverage of ₹1.0 Cr is reserved for you. 🎉');
+      addBotMessage(ek.paymentReceived('₹1.0 Cr'));
 
       await new Promise(resolve => setTimeout(resolve, 700));
       if (!mounted) return;
-      addBotMessage("Now let's complete your e-KYC. It's mandatory for policy issuance and takes under 2 minutes.");
+      addBotMessage(ek.kycIntroStep1);
 
       await new Promise(resolve => setTimeout(resolve, 700));
       if (!mounted) return;
-      addBotMessage("You'll need your **Aadhaar number** and access to the **mobile linked with Aadhaar**.");
+      addBotMessage(ek.kycIntroStep2);
 
       await new Promise(resolve => setTimeout(resolve, 700));
       if (!mounted) return;
@@ -151,12 +153,12 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
     setStep('sending_otp');
 
     setTimeout(() => {
-      addBotMessage('Sending OTP to your Aadhaar-linked mobile...');
+      addBotMessage(ek.sendingOtp);
     }, 300);
 
     setTimeout(() => {
       const maskedMobile = 'XXXX XXXX I 32';
-      addBotMessage(`OTP sent to your mobile linked with ${maskedMobile}`);
+      addBotMessage(ek.otpSentToMobile(maskedMobile));
       setStep('otp_input');
       setTimerSeconds(OTP_EXPIRY_SECONDS);
       setOtpExpired(false);
@@ -167,12 +169,12 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
     const digits = otp.replace(/\D/g, '');
 
     if (digits.length < 6) {
-      addBotMessage('❌ Please enter the complete 6-digit OTP');
+      addBotMessage(ek.otpIncompleteError);
       return;
     }
 
     if (otpExpired) {
-      addBotMessage('❌ OTP has expired. Please request a new one.');
+      addBotMessage(ek.otpExpiredError);
       return;
     }
 
@@ -180,7 +182,7 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
     setStep('verifying');
 
     setTimeout(() => {
-      addBotMessage('Verifying OTP...');
+      addBotMessage(ek.verifyingOtp);
     }, 300);
 
     setTimeout(() => {
@@ -194,8 +196,8 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-1">Identity Verified</h3>
-              <p className="text-purple-200/70 text-sm">e-KYC completed successfully</p>
+              <h3 className="text-xl font-bold text-white mb-1">{ek.identityVerified}</h3>
+              <p className="text-purple-200/70 text-sm">{ek.kycCompleted}</p>
             </div>
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
               <div className="flex items-center gap-3">
@@ -205,12 +207,12 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-semibold text-sm mb-0.5">Aadhaar KYC Complete</p>
-                  <p className="text-emerald-300/70 text-xs">Linked to {maskedMobile}</p>
+                  <p className="text-white font-semibold text-sm mb-0.5">{ek.aadhaarKycComplete}</p>
+                  <p className="text-emerald-300/70 text-xs">{ek.linkedTo(maskedMobile)}</p>
                 </div>
               </div>
             </div>
-            <p className="text-center text-purple-200/60 text-sm">Proceeding to next step...</p>
+            <p className="text-center text-purple-200/60 text-sm">{ek.proceedingNextStep}</p>
           </div>
         );
         setStep('success');
@@ -220,9 +222,9 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
         setOtpAttempts(newAttempts);
 
         if (newAttempts >= MAX_OTP_ATTEMPTS) {
-          addBotMessage('❌ Maximum OTP attempts reached. Please try again later or contact support at 1800 266 5433.');
+          addBotMessage(ek.otpMaxAttemptsError);
         } else {
-          addBotMessage(`❌ Incorrect OTP. ${MAX_OTP_ATTEMPTS - newAttempts} attempt${MAX_OTP_ATTEMPTS - newAttempts > 1 ? 's' : ''} remaining.`);
+          addBotMessage(ek.otpIncorrect(MAX_OTP_ATTEMPTS - newAttempts));
           setOtp('');
           setStep('otp_input');
         }
@@ -231,12 +233,12 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
   };
 
   const handleResendOtp = () => {
-    addBotMessage('Resending OTP...');
+    addBotMessage(ek.resendingOtp);
     setOtp('');
     setOtpExpired(false);
     setTimerSeconds(OTP_EXPIRY_SECONDS);
     setTimeout(() => {
-      addBotMessage('New OTP sent to XXXX XXXX I 32');
+      addBotMessage(ek.newOtpSent('XXXX XXXX I 32'));
     }, 1500);
   };
 

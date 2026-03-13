@@ -13,6 +13,5 @@ export {
   UspCards,
   ReviewSummary,
   DobCollectionWidget,
-  PaymentWidget,
   LabScheduleWidget,
 } from '../ChatWidgets';

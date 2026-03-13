@@ -1,469 +1,224 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { useThemeStore } from '../../lib/themeStore';
-import { useLanguageStore } from '../../lib/languageStore';
-import { useJourneyStore } from '../../lib/store';
-import type { Language } from '../../lib/types';
+import { useT } from '../../lib/translations';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const PROFILE_POLICIES = [
-  {
-    id: '1',
-    make: 'Tata',
-    model: 'Harrier',
-    regNumber: 'KA01 AB 1234',
-    planType: 'Zero depreciation plan',
-    validTill: '31 Aug 2026',
-    imageUrl: `${BASE}/car-images/harrier.png`,
-  },
-  {
-    id: '2',
-    make: 'Tata',
-    model: 'Nexon',
-    regNumber: 'KA01 AB 3243',
-    planType: 'Comprehensive plan',
-    validTill: '31 Aug 2026',
-    imageUrl: `${BASE}/car-images/Nexon.png`,
-  },
-];
+const APP_FEATURE_ICONS = ['/icons/Policy.svg', '/icons/Claim.svg', '/icons/Alarm.svg', '/icons/Towing.svg'];
 
-const LANGUAGES: { id: Language; label: string; sublabel: string }[] = [
-  { id: 'en', label: 'English', sublabel: 'Continue in English' },
-  { id: 'hi', label: 'हिन्दी', sublabel: 'हिंदी में जारी रखें' },
-  { id: 'hinglish', label: 'Hinglish', sublabel: 'Hindi in English script' },
-  { id: 'kn', label: 'ಕನ್ನಡ', sublabel: 'ಕನ್ನಡದಲ್ಲಿ ಮುಂದುವರಿಸಿ' },
-];
-
-const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ' };
-
-/* ── Back Arrow SVG ── */
-function BackArrow() {
+function BackArrow({ color }: { color: string }) {
   return (
-    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke="var(--app-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="10" height="18" viewBox="0 0 10 18" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 1L1 9l8 8" />
     </svg>
   );
 }
 
-/* ── Chevron Right SVG ── */
-function ChevronRight() {
+function PlayStoreIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text-subtle)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18l6-6-6-6" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M3.61 1.814L13.793 12 3.61 22.186a1.007 1.007 0 01-.61-.92V2.734c0-.388.223-.723.61-.92z" fill="#4285F4" />
+      <path d="M17.114 8.683l-3.32 3.32-3.322-3.32L3.61 1.814a1.007 1.007 0 011.178-.164l12.325 6.854v.179z" fill="#EA4335" />
+      <path d="M17.114 15.497l-3.32-3.5-3.322 3.32-6.862 6.869c.34.195.75.21 1.178-.164l12.326-6.525z" fill="#34A853" />
+      <path d="M20.39 12l-3.276-3.317-3.32 3.32 3.32 3.497L20.39 12.82a1.079 1.079 0 000-1.64v.82z" fill="#FBBC04" />
     </svg>
   );
 }
 
-/* ── Translate Icon ── */
-function TranslateIcon() {
+function AppStoreIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7l1.62-4.33L19.12 17h-3.24z" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="5.4" fill="#0D96F6" />
+      <path d="M17.04 12.865l-2.658-4.604a.623.623 0 00-1.08 0l-.684 1.186 1.364 2.363h2.435c.345 0 .623.128.623.473h-3.684l-1.364-2.363-2.046 3.546h-2.25a.623.623 0 000 .623h2.873l1.364 2.363-.684 1.186a.623.623 0 001.08 0l4.711-4.773z" fill="white" />
     </svg>
   );
 }
 
-/* ── Theme Icon ── */
-function ThemeIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3a6 6 0 009 9 9 9 0 11-9-9z" />
-    </svg>
-  );
-}
-
-/* ── Info Icon ── */
-function InfoIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4M12 8h.01" />
-    </svg>
-  );
-}
-
-/* ── Privacy Icon ── */
-function PrivacyIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-/* ── Terms Icon ── */
-function TermsIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
-
-/* ── Logout Icon ── */
-function LogoutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-    </svg>
-  );
-}
-
-/* ── Language Bottom Sheet ── */
-function LanguageSheet({
-  isOpen,
-  onClose,
-  theme,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  theme: string;
-}) {
-  const { setLanguage } = useLanguageStore();
-  const { setLanguage: setJourneyLang } = useJourneyStore();
-  const { language } = useLanguageStore();
-
-  const handleSelect = (lang: Language) => {
-    setLanguage(lang);
-    setJourneyLang(lang);
-    onClose();
-  };
-
-  if (typeof window === 'undefined') return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className={`app-${theme}`}>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9998]"
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-            onClick={onClose}
-          />
-          {/* Sheet */}
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[9999] rounded-t-2xl pb-8"
-            style={{ background: 'var(--app-surface)', maxHeight: '80vh' }}
-          >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-4">
-              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--app-border-strong)' }} />
-            </div>
-
-            <div className="px-5 pb-2">
-              <h2 className="text-[20px] font-semibold" style={{ color: 'var(--app-text)' }}>
-                Choose language
-              </h2>
-            </div>
-
-            <div className="px-5 space-y-2 overflow-y-auto">
-              {LANGUAGES.map((lang) => {
-                const isActive = language === lang.id;
-                return (
-                  <button
-                    key={lang.id}
-                    onClick={() => handleSelect(lang.id)}
-                    className="w-full flex items-center gap-4 p-4 rounded-xl transition-all"
-                    style={{
-                      background: isActive ? 'var(--app-accent)' : 'var(--app-overlay-bg)',
-                      color: isActive ? 'white' : 'var(--app-text)',
-                    }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-[16px] font-semibold shrink-0"
-                      style={{
-                        background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--app-surface-2)',
-                        color: isActive ? 'white' : 'var(--app-text)',
-                      }}
-                    >
-                      {lang.id === 'en' ? 'A' : lang.id === 'hi' ? 'अ' : lang.id === 'hinglish' ? 'Hi' : 'ಅ'}
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="text-[15px] font-medium leading-[20px]">{lang.label}</div>
-                      <div
-                        className="text-[12px] leading-[16px] mt-0.5"
-                        style={{ opacity: isActive ? 0.8 : 0.6 }}
-                      >
-                        {lang.sublabel}
-                      </div>
-                    </div>
-                    {isActive && (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
-    document.body
-  );
-}
-
-/* ── Settings Row ── */
-function SettingsRow({
-  icon,
-  label,
-  value,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value?: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      className="w-full flex items-center justify-between transition-colors"
-      onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
-    >
-      <div className="flex items-center gap-4">
-        {icon}
-        <span className="text-[14px] font-medium leading-[20px]" style={{ color: 'var(--app-text)' }}>
-          {label}
-          {value && <span style={{ color: 'var(--app-text-muted)' }}>: {value}</span>}
-        </span>
-      </div>
-      <ChevronRight />
-    </button>
-  );
-}
-
-/* ── Profile Page ── */
 export default function ProfilePage() {
   const router = useRouter();
-  const { firstName, phone, isLoggedIn, policies, setProfile } = useUserProfileStore();
-  const { theme, cycleTheme } = useThemeStore();
-  const { language } = useLanguageStore();
-  const [showLangSheet, setShowLangSheet] = useState(false);
+  const { firstName } = useUserProfileStore();
+  const { theme } = useThemeStore();
+  const t = useT();
   const isLight = theme === 'light';
 
-  // Auth guard — redirect to /login if not logged in
-  useEffect(() => {
-    if (!isLoggedIn) router.replace('/login');
-  }, [isLoggedIn, router]);
+  const APP_FEATURES = [
+    { icon: APP_FEATURE_ICONS[0], title: t.appDownload.feature1Title, desc: t.appDownload.feature1Desc },
+    { icon: APP_FEATURE_ICONS[1], title: t.appDownload.feature2Title, desc: t.appDownload.feature2Desc },
+    { icon: APP_FEATURE_ICONS[2], title: t.appDownload.feature3Title, desc: t.appDownload.feature3Desc },
+    { icon: APP_FEATURE_ICONS[3], title: t.appDownload.feature4Title, desc: t.appDownload.feature4Desc },
+  ];
 
-  if (!isLoggedIn) return null;
-
-  const handleLogout = useCallback(() => {
-    setProfile({ isLoggedIn: false, firstName: '', phone: '' });
-    window.location.href = '/';
-  }, [setProfile]);
+  const handleGetApp = useCallback(() => {
+    window.open('https://acko.onelink.me/app', '_blank');
+  }, []);
 
   return (
-    <div className={`app-${theme} min-h-screen`} style={{ background: isLight ? '#ebebeb' : 'var(--app-bg)' }}>
+    <div className={`app-${theme} min-h-screen pb-24`} style={{ background: isLight ? '#ebebeb' : 'var(--app-bg)' }}>
       <div className="max-w-[430px] mx-auto">
         {/* Nav Bar */}
         <div className="flex items-center px-5 py-3.5">
           <button onClick={() => router.back()} className="p-1">
-            <BackArrow />
+            <BackArrow color={isLight ? '#040222' : 'var(--app-text)'} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="px-4 pt-2 flex flex-col gap-8">
-          {/* Profile Card */}
-          <div className="flex flex-col gap-2">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-              className="flex flex-col items-center pt-8 pb-6 px-6 rounded-2xl"
-              style={{
-                background: isLight ? '#fbfbfb' : 'var(--app-surface)',
-                border: isLight ? '1px solid white' : '1px solid var(--app-border)',
-                boxShadow: isLight
-                  ? '0 2px 4px rgba(0,0,0,0.04), inset 0 1px 4px white'
-                  : '0 2px 4px rgba(0,0,0,0.1)',
-              }}
-            >
-              {/* Avatar */}
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-[28px] font-semibold"
-                style={{
-                  background: '#8B6F47',
-                  color: 'white',
-                }}
+        {/* Hero Card */}
+        <div className="px-4 pt-2">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-3xl overflow-hidden"
+            style={{
+              background: isLight ? '#fbfbfb' : 'var(--app-surface)',
+              border: isLight ? '1px solid white' : '1px solid var(--app-border)',
+              boxShadow: isLight
+                ? '0 20px 20px -3px rgba(0,0,0,0.02), 0 6px 6px -2px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.02)'
+                : '0 2px 8px rgba(0,0,0,0.15)',
+            }}
+          >
+            {/* Heading Section */}
+            <div className="flex flex-col items-center pt-8 px-6 pb-2">
+              <p
+                className="text-[13px] font-medium tracking-[0.5px] uppercase"
+                style={{ color: '#7C47E1' }}
               >
-                {(firstName?.[0] || 'R').toUpperCase()}
-              </div>
-
-              {/* Name */}
-              <h2
-                className="text-[24px] font-semibold tracking-[-0.1px] leading-[32px] text-center mt-4"
+                {t.appDownload.trustedBy}
+              </p>
+              <h1
+                className="text-[24px] font-semibold tracking-[-0.1px] leading-[32px] text-center mt-2"
                 style={{ color: isLight ? '#040222' : 'var(--app-text)' }}
               >
-                {firstName || 'Guest User'}
-              </h2>
+                {t.appDownload.title}
+              </h1>
+              <p
+                className="text-[14px] leading-[22px] text-center mt-2"
+                style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}
+              >
+                {t.appDownload.subtitle}
+              </p>
+            </div>
 
-              {/* Phone */}
-              <div className="flex items-center gap-1 mt-1">
-                <span
-                  className="text-[16px] leading-[24px]"
-                  style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}
-                >
-                  {phone || '—'}
-                </span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isLight ? '#1B73E8' : 'var(--app-link)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
+            {/* App Screenshot */}
+            <div className="flex justify-center pt-4 pb-0 overflow-hidden">
+              <div className="w-[280px] relative">
+                <Image
+                  src={`${BASE}/App-shot/Frame 2085661463.png`}
+                  alt="ACKO App screenshot"
+                  width={560}
+                  height={800}
+                  className="w-full h-auto"
+                  priority
+                />
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
+        </div>
 
-          </div>
-
-        {/* Your ACKO Policies — horizontal carousel */}
+        {/* Why download section */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.05 }}
-          className="flex flex-col gap-4"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="px-4 mt-6"
         >
-          <h2 className="text-[20px] font-semibold tracking-[-0.1px] leading-[28px]" style={{ color: 'var(--app-text)' }}>
-            Your ACKO policies
-          </h2>
-          {/* Carousel — negative margin to bleed past px-4 container */}
-          <div
-            className="flex gap-3 overflow-x-auto pb-2"
-            style={{
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
-          >
-            {PROFILE_POLICIES.map((policy) => (
-              <div
-                key={policy.id}
-                className="relative shrink-0 overflow-hidden"
+          <div className="flex flex-col gap-3">
+            {APP_FEATURES.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 + i * 0.06 }}
+                className="flex items-start gap-3 px-4 py-3 rounded-xl"
                 style={{
-                  width: '310px',
-                  height: '172px',
-                  borderRadius: '24px',
-                  padding: '20px',
-                  background: 'var(--app-surface)',
-                  scrollSnapAlign: 'start',
-                  boxShadow: '0 20px 20px -3px rgba(0,0,0,0.02), 0 6px 6px -2px rgba(0,0,0,0.02), 0 3.5px 3.5px -1.5px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02)',
+                  background: isLight ? '#fbfbfb' : 'var(--app-surface)',
+                  border: isLight ? '1px solid rgba(0,0,0,0.04)' : '1px solid var(--app-border)',
                 }}
               >
-                {/* Text info */}
-                <div className="flex flex-col gap-1" style={{ width: '204px' }}>
-                  <p className="text-[18px] font-semibold leading-[22px]" style={{ color: 'var(--app-text)' }}>
-                    {policy.make} {policy.model}
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: isLight ? '#f0ebfa' : 'rgba(124,71,225,0.15)' }}
+                >
+                  <Image src={`${BASE}${f.icon}`} alt="" width={20} height={20} className={isLight ? 'invert brightness-0' : ''} />
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold leading-[20px]" style={{ color: isLight ? '#040222' : 'var(--app-text)' }}>
+                    {f.title}
                   </p>
-                  <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>{policy.regNumber}</p>
-                  <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>{policy.planType}</p>
-                  <p className="text-[12px] leading-[16px]" style={{ color: 'var(--app-text-muted)' }}>Valid till {policy.validTill}</p>
+                  <p className="text-[12px] leading-[18px] mt-0.5" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>
+                    {f.desc}
+                  </p>
                 </div>
-
-                {/* Car image — top right, overlapping */}
-                <div className="absolute top-0 right-0 w-[105px] h-[105px] pointer-events-none">
-                  <Image src={policy.imageUrl} alt={`${policy.make} ${policy.model}`} width={105} height={105} className="object-contain w-full h-full" />
-                </div>
-
-                {/* Primary: File a claim */}
-                <button
-                  className="absolute text-[12px] font-medium leading-[16px] px-4 py-2 rounded-lg transition-all active:opacity-80"
-                  style={{ bottom: '20px', left: '20px', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-                >
-                  File a claim
-                </button>
-
-                {/* Secondary: Download policy */}
-                <button
-                  className="absolute text-[12px] font-medium leading-[16px] px-4 py-2 rounded-lg transition-all active:opacity-80"
-                  style={{ bottom: '20px', left: '126px', background: 'var(--btn-secondary-bg)', border: '1px solid var(--btn-secondary-border)', color: 'var(--btn-secondary-text)', boxShadow: 'var(--btn-secondary-shadow)' }}
-                >
-                  Download policy
-                </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
 
-          {/* Settings List */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.1 }}
-            className="flex flex-col gap-6"
-          >
-            <SettingsRow
-              icon={<TranslateIcon />}
-              label="Language"
-              value={LANG_LABELS[language] || language}
-              onClick={() => setShowLangSheet(true)}
-            />
-            <SettingsRow
-              icon={<ThemeIcon />}
-              label="Theme"
-              value={theme === 'light' ? 'Light' : 'Dark'}
-              onClick={cycleTheme}
-            />
-            <SettingsRow icon={<InfoIcon />} label="About us" />
-            <SettingsRow icon={<PrivacyIcon />} label="Privacy policy" />
-            <SettingsRow icon={<TermsIcon />} label="Terms & conditions" />
-            <SettingsRow
-              icon={<LogoutIcon />}
-              label="Log out"
-              onClick={handleLogout}
-            />
-          </motion.div>
-        </div>
-
-        {/* Footer */}
+        {/* Store Ratings */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-col items-center gap-4 mt-12 pb-8"
+          transition={{ delay: 0.35 }}
+          className="px-4 mt-6 flex gap-3"
         >
           <div
-            className="mx-4 p-3 rounded-xl text-center"
-            style={{ background: isLight ? '#efe9fb' : 'rgba(124,58,237,0.12)' }}
+            className="flex-1 flex items-center gap-3 px-4 py-3.5 rounded-xl"
+            style={{
+              background: isLight ? '#fbfbfb' : 'var(--app-surface)',
+              border: isLight ? '1px solid rgba(0,0,0,0.04)' : '1px solid var(--app-border)',
+            }}
           >
-            <p className="text-[12px] leading-[18px]" style={{ color: isLight ? '#4b4b4b' : 'var(--app-text-muted)' }}>
-              All the non-insurance services listed on this app are facilitated by ACKO Tech.{' '}
-              <span className="font-medium" style={{ color: isLight ? '#121212' : 'var(--app-text)' }}>Read more</span>
-            </p>
+            <PlayStoreIcon />
+            <div>
+              <p className="text-[18px] font-bold leading-[22px]" style={{ color: isLight ? '#040222' : 'var(--app-text)' }}>4.6</p>
+              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>{t.appDownload.playStore}</p>
+            </div>
           </div>
-          <p className="text-[12px] leading-[18px]" style={{ color: isLight ? '#4b4b4b' : 'var(--app-text-muted)' }}>
-            Version 4.0.2 &nbsp;|&nbsp; Last visited: {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}, {new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
-          </p>
+          <div
+            className="flex-1 flex items-center gap-3 px-4 py-3.5 rounded-xl"
+            style={{
+              background: isLight ? '#fbfbfb' : 'var(--app-surface)',
+              border: isLight ? '1px solid rgba(0,0,0,0.04)' : '1px solid var(--app-border)',
+            }}
+          >
+            <AppStoreIcon />
+            <div>
+              <p className="text-[18px] font-bold leading-[22px]" style={{ color: isLight ? '#040222' : 'var(--app-text)' }}>4.8</p>
+              <p className="text-[11px] leading-[14px]" style={{ color: isLight ? '#5b5675' : 'var(--app-text-muted)' }}>{t.appDownload.appStore}</p>
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      {/* Language Bottom Sheet */}
-      <LanguageSheet
-        isOpen={showLangSheet}
-        onClose={() => setShowLangSheet(false)}
-        theme={theme}
-      />
+      {/* Sticky CTA Button */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          background: isLight
+            ? 'linear-gradient(to top, #ebebeb 70%, transparent)'
+            : 'linear-gradient(to top, var(--app-bg) 70%, transparent)',
+        }}
+      >
+        <div className="max-w-[430px] mx-auto px-4 pt-4 pb-6">
+          <button
+            onClick={handleGetApp}
+            className="w-full h-[52px] rounded-2xl text-[16px] font-semibold transition-all active:scale-[0.97]"
+            style={{
+              background: '#7C47E1',
+              color: 'white',
+              boxShadow: '0 4px 14px rgba(124,71,225,0.4)',
+            }}
+          >
+            {t.appDownload.downloadCta}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

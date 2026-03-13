@@ -32,6 +32,19 @@ const SCENARIOS_EN: { id: PostPaymentScenario; label: string; description: strin
 
 const SCENARIOS = SCENARIOS_EN;
 
+/* ── Helper: auto-assign scenario based on user profile ── */
+function determineScenario(state: JourneyState): PostPaymentScenario {
+  const { members, hasConditions } = state;
+  const maxAge = members.length > 0 ? Math.max(...members.map(m => m.age)) : 30;
+  const allUnder35 = members.every(m => m.age < 35);
+
+  if (hasConditions && maxAge >= 55) return 'extra_payment';
+  if (hasConditions) return 'waiting_period';
+  if (allUnder35 && members.length > 0) return 'no_test';
+  if (maxAge < 45) return 'home_test_only';
+  return 'all_clear';
+}
+
 /* ── Helper: get scenario-aware members ── */
 function getScenarioMembers(state: JourneyState) {
   const { members, userName, postPaymentScenario: scenario } = state;
@@ -148,30 +161,15 @@ const postPaymentSteps: ConversationStep[] = [
       return {
         botMessages: [
           t.ppScripts.callCompleteMsg,
-          t.ppScripts.scenarioSelectMsg,
         ],
       };
     },
-    processResponse: () => ({}),
-    getNextStep: () => 'pp.scenario_select',
-  },
-
-  /* ─── Scenario Select (Prototype Only) ─── */
-  {
-    id: 'pp.scenario_select',
-    module: 'post_payment',
-    widgetType: 'selection_cards',
-    getScript: (_p, state) => {
-      const t = getT(state.language);
-      const scenarios = getScenarios(state.language);
-      return {
-        botMessages: [t.ppScripts.pickScenario],
-        options: scenarios.map(s => ({ id: s.id, label: s.label, description: s.description })),
-      };
-    },
-    processResponse: (response) => ({ postPaymentScenario: response as PostPaymentScenario }),
-    getNextStep: (response) => {
-      if (response === 'no_test') return 'pp.no_test_result';
+    processResponse: (_response, state) => ({
+      postPaymentScenario: determineScenario(state),
+    }),
+    getNextStep: (_response, state) => {
+      const scenario = determineScenario(state);
+      if (scenario === 'no_test') return 'pp.no_test_result';
       return 'pp.test_needed';
     },
   },
@@ -458,7 +456,7 @@ const postPaymentSteps: ConversationStep[] = [
     getNextStep: () => 'pp.end',
   },
 
-  /* ─── End — Go home or buy another policy ─── */
+  /* ─── End — Journey complete ─── */
   {
     id: 'pp.end',
     module: 'completion',
@@ -469,7 +467,6 @@ const postPaymentSteps: ConversationStep[] = [
       ],
       options: [
         { id: 'home', label: 'Go to Home', description: 'Back to the main page' },
-        { id: 'dashboard', label: 'View my policy', description: 'Go to your policy dashboard' },
       ],
     }),
     processResponse: () => ({ journeyComplete: true }),

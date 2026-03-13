@@ -8,10 +8,11 @@ import { hinglish } from './hinglish';
 import { kn } from './kn';
 import { ta } from './ta';
 import { ml } from './ml';
+import { te } from './te';
 
 export type TranslationSet = typeof en;
 
-const translations: Record<Language, TranslationSet> = { en, hi, hinglish, kn, ta, ml };
+const translations: Record<Language, TranslationSet> = { en, hi, hinglish, kn, ta, ml, te };
 
 /** Hook: returns the current translation set — reads from the global language store */
 export function useT(): TranslationSet {
@@ -37,6 +38,7 @@ export function getLocaleTag(lang: Language): string {
     case 'kn':       return 'kn-IN';
     case 'ta':       return 'ta-IN';
     case 'ml':       return 'ml-IN';
+    case 'te':       return 'te-IN';
     default:         return 'en-IN';
   }
 }
@@ -49,6 +51,7 @@ export function getHtmlLang(lang: Language): string {
     case 'kn':       return 'kn';
     case 'ta':       return 'ta';
     case 'ml':       return 'ml';
+    case 'te':       return 'te';
     default:         return 'en';
   }
 }

@@ -11,7 +11,7 @@ import { useThemeStore } from '../../lib/themeStore';
 import AuraMotorEntryNav from '../../components/motor/aura/AuraMotorEntryNav';
 import AuraMotorHeader from '../../components/motor/aura/AuraMotorHeader';
 import AuraMotorChatContainer from '../../components/motor/aura/AuraMotorChatContainer';
-import { MotorExpertPanel, MotorAIChatPanel } from '../../components/motor/MotorPanels';
+import { MotorHelpPanel } from '../../components/motor/MotorPanels';
 import AckoLogo from '../../components/AckoLogo';
 import { VehicleType, MotorJourneyState } from '../../lib/motor/types';
 
@@ -230,8 +230,7 @@ function MotorV3JourneyInner() {
 
   return (
     <div className={theme === 'light' ? 'aura-light' : 'aura-dark'}>
-      <MotorExpertPanel />
-      <MotorAIChatPanel />
+      <MotorHelpPanel />
 
       <AnimatePresence mode="wait">
         {screen === 'explore' && (

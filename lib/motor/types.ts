@@ -10,7 +10,7 @@ export type FuelType = 'petrol' | 'diesel' | 'cng' | 'electric';
 
 export type PolicyStatus = 'active' | 'expired' | 'not_sure';
 
-export type PolicyType = 'comprehensive' | 'third_party' | 'not_sure';
+export type PolicyType = 'comprehensive' | 'third_party' | 'own_damage' | 'not_sure';
 
 export type ExpiryWindow = 'within_10_days' | '10_to_90_days' | 'over_90_days';
 
@@ -40,6 +40,7 @@ export type MotorWidgetType =
   | 'vehicle_reg_input'
   | 'progressive_loader'
   | 'vehicle_details_card'
+  | 'preliminary_check'
   | 'brand_selector'
   | 'model_selector'
   | 'variant_selector'
@@ -54,10 +55,13 @@ export type MotorWidgetType =
   | 'plan_calculator'
   | 'plan_selector'
   | 'plan_recommendation'
+  | 'guided_plan_step'
+  | 'plan_variant_selector'
   | 'garage_tier_selector'
   | 'addon_selector'
   | 'out_of_pocket_addons'
   | 'protect_everyone_addons'
+  | 'addon_questions'
   | 'premium_breakdown'
   | 'motor_celebration'
   | 'payment_gateway'
@@ -65,6 +69,8 @@ export type MotorWidgetType =
   | 'nps_feedback'
   | 'app_download_cta'
   | 'login_gate'
+  | 'login_gate_skippable'
+  | 'login_gate_mandatory'
   | 'dashboard_cta'
   | 'document_upload'
   | 'safety_condition_picker'
@@ -106,12 +112,44 @@ export interface ExpiredPolicyData {
   ncbAtRisk: boolean;
 }
 
+export type PrelimCheckResult =
+  | 'clear'
+  | 'insured_same_user'
+  | 'insured_different_user'
+  | 'two_wheeler_entered'
+  | 'payment_pending_steps';
+
+export type ExpandedPlanType =
+  | 'od'
+  | 'od_zd_safe'
+  | 'od_zd_standard'
+  | 'comprehensive_network'
+  | 'comprehensive_standard'
+  | 'zd_comprehensive_safe'
+  | 'zd_comprehensive_standard'
+  | 'third_party';
+
+export type PlanCombination =
+  | 'OD-1' | 'OD-2' | 'OD-3'
+  | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+
+export interface FetchedDataFlags {
+  carDetailsFetched: boolean;
+  policyDetailsFetched: boolean;
+  ncbFetched: boolean;
+  lastClaimFetched: boolean;
+}
+
 export interface MotorJourneyState extends BaseJourneyState {
   /* ── Snapshot tracking ── */
   journeyId: string;
 
   /* ── Theme ── */
   theme: 'dark' | 'light';
+
+  /* ── Unified Help Panel ── */
+  showHelpPanel: boolean;
+  helpPanelTab: 'chat' | 'talk';
 
   /* ── Vehicle Type ── */
   vehicleType: VehicleType | null;
@@ -122,9 +160,15 @@ export interface MotorJourneyState extends BaseJourneyState {
   /* ── Registration ── */
   registrationNumber: string;
 
+  /* ── Preliminary Checks ── */
+  prelimCheckResult: PrelimCheckResult;
+  prelimExistingPolicyPhone: string;
+  prelimPendingStep: string;
+
   /* ── Vehicle Data (auto-fetched or manual) ── */
   vehicleDataSource: 'auto_fetched' | 'manual_entry' | null;
   autoFetchSuccess: boolean | null;
+  fetchedDataFlags: FetchedDataFlags;
   vehicleData: VehicleData;
 
   /* ── Policy Status ── */
@@ -135,6 +179,10 @@ export interface MotorJourneyState extends BaseJourneyState {
 
   /* ── Expired Policy Data ── */
   expiredPolicyData: ExpiredPolicyData;
+
+  /* ── Active TP Policy (for OD-only renewal) ── */
+  hasActiveTpPolicy: boolean;
+  activeTpExpiryDate: string;
 
   /* ── Pre-Quote State ── */
   newNcbPercentage: NcbPercentage | null;
@@ -159,13 +207,23 @@ export interface MotorJourneyState extends BaseJourneyState {
   /* ── Feedback ── */
   missingVehicleFeedback: string;
 
+  /* ── Guided Plan Selection ── */
+  planCombination: PlanCombination | null;
+  guidedPlanChoice: 'comprehensive' | 'third_party' | null;
+  guidedZdChoice: 'zd' | 'standard' | null;
+  guidedVariantChoice: string | null;
+
   /* ── Plan Selection ── */
   calculatingPlans: boolean;
-  availablePlans: any[]; // MotorPlanDetails[] from plans.ts
-  selectedPlanType: 'comprehensive' | 'zero_dep' | 'third_party' | null;
+  availablePlans: any[];
+  selectedPlanType: ExpandedPlanType | 'comprehensive' | 'zero_dep' | 'third_party' | null;
   selectedGarageTier: 'network' | 'all' | null;
-  selectedPlan: any | null; // MotorPlanDetails
+  selectedPlan: any | null;
   selectedAddOns: string[];
+
+  /* ── Add-on Personalization ── */
+  hasPaidDriver: boolean | null;
+  hasAftermarketAccessories: boolean | null;
 
   /* ── Help Me Choose ── */
   helpAnswers: Record<string, string>;
@@ -223,6 +281,7 @@ export interface MotorStepScript {
   subText?: string;
   options?: Option[];
   placeholder?: string;
+  defaultValue?: string;
   inputType?: 'text' | 'number' | 'tel';
 }
 
@@ -249,6 +308,8 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   isTyping: false,
   showExpertPanel: false,
   showAIChat: false,
+  showHelpPanel: false,
+  helpPanelTab: 'chat',
   journeyComplete: false,
   paymentComplete: false,
   paymentFrequency: 'yearly',
@@ -258,8 +319,17 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   vehicleType: null,
   vehicleEntryType: null,
   registrationNumber: '',
+  prelimCheckResult: 'clear',
+  prelimExistingPolicyPhone: '',
+  prelimPendingStep: '',
   vehicleDataSource: null,
   autoFetchSuccess: null,
+  fetchedDataFlags: {
+    carDetailsFetched: false,
+    policyDetailsFetched: false,
+    ncbFetched: false,
+    lastClaimFetched: false,
+  },
   vehicleData: {
     make: '',
     model: '',
@@ -286,6 +356,8 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
     requiresInspection: false,
     ncbAtRisk: false,
   },
+  hasActiveTpPolicy: false,
+  activeTpExpiryDate: '',
   newNcbPercentage: null,
   ncbIncreased: false,
   preQuoteComplete: false,
@@ -301,6 +373,12 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   hasCarLoan: null,
   loanProvider: '',
   missingVehicleFeedback: '',
+
+  /* Guided Plan Selection */
+  planCombination: null,
+  guidedPlanChoice: null,
+  guidedZdChoice: null,
+  guidedVariantChoice: null,
   
   /* Plan Selection */
   calculatingPlans: false,
@@ -309,6 +387,10 @@ export const MOTOR_INITIAL_STATE: MotorJourneyState = {
   selectedGarageTier: null,
   selectedPlan: null,
   selectedAddOns: [],
+
+  /* Add-on Personalization */
+  hasPaidDriver: null,
+  hasAftermarketAccessories: null,
 
   /* Help Me Choose */
   helpAnswers: {},

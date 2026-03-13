@@ -92,11 +92,13 @@ export type WidgetType =
   | 'si_selector'
   | 'coverage_chat'
   | 'coverage_card'
+  | 'login_gate'
+  | 'login_gate_skippable'
   | 'none';
 
 export type PostPaymentScenario = 'all_clear' | 'waiting_period' | 'member_rejected' | 'extra_payment' | 'no_test' | 'home_test_only';
 
-export type Language = 'en' | 'hi' | 'hinglish' | 'kn' | 'ta' | 'ml';
+export type Language = 'en' | 'hi' | 'hinglish' | 'kn' | 'ta' | 'ml' | 'te';
 
 export interface FamilyMember {
   id: string;

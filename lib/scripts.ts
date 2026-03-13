@@ -17,7 +17,7 @@ import { useUserProfileStore } from './userProfileStore';
 type PersonaScripts = Record<PersonaType, StepScript>;
 
 function userName(state: JourneyState): string {
-  return state.userName || 'there';
+  return (state.userName || 'there').split(' ')[0];
 }
 
 function cityFromPincode(pincode: string): string {
@@ -47,7 +47,7 @@ const entryWelcome: ConversationStep = {
   widgetType: 'none',
   getScript: (persona, state) => {
     const t = getT(state.language);
-    const name = state.userName || 'Rahul';
+    const name = (state.userName || 'Rahul').split(' ')[0];
 
     const crossLobGreeting = useUserProfileStore.getState().getCrossLobGreeting('health');
     if (crossLobGreeting) {
@@ -63,7 +63,7 @@ const entryWelcome: ConversationStep = {
     if (state.isExistingAckoUser) {
       return { botMessages: [t.scripts.welcomeExisting(name), t.scripts.welcomeUsp] };
     }
-    return { botMessages: [t.scripts.welcomeNew, t.scripts.welcomeUsp] };
+    return { botMessages: [t.scripts.welcomeNew] };
   },
   processResponse: () => ({}),
   getNextStep: (_, state) => {
@@ -112,8 +112,29 @@ const entryNameAck: ConversationStep = {
     };
   },
   processResponse: () => ({}),
+  getNextStep: () => 'login.early_gate',
+};
+
+/* ═══════════════════════════════════════════════
+   MODULE: LOGIN EARLY GATE — Skippable phone+OTP right after name
+   ═══════════════════════════════════════════════ */
+
+const loginEarlyGate: ConversationStep = {
+  id: 'login.early_gate',
+  module: 'entry',
+  widgetType: 'login_gate_skippable',
+  getScript: (_persona, state) => {
+    const t = getT(state.language);
+    const name = userName(state) || (useUserProfileStore.getState().firstName || '').split(' ')[0];
+    return {
+      botMessages: [
+        t.scripts.loginEarlyGreeting(name),
+        t.scripts.loginEarlyVerify,
+      ],
+    };
+  },
+  processResponse: () => ({}),
   getNextStep: (_, state) => {
-    // If coming from landing page with specific intent, skip the intent selection
     if (state.intent === 'check_gaps') return 'gap_analysis.intro';
     if (state.intent === 'switch') return 'gap_analysis.switch_intro';
     return 'intent.readiness';
@@ -622,10 +643,11 @@ const familyParentsAge: ConversationStep = {
   condition: (state) => state.coverageFor.some(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c)),
   getScript: (persona, state) => {
     const parentMembers = state.coverageFor.filter(c => ['father', 'mother', 'father_in_law', 'mother_in_law'].includes(c));
+    const t = getT(state.language);
     const who = parentMembers.length === 1 ? `your ${parentMembers[0].replace(/_/g, '-')}` : 'the eldest parent you\'d like to cover';
     return {
-      botMessages: [`How old is ${who}? ${parentMembers.length > 1 ? 'Enter the age of the eldest parent.' : ''}`],
-      placeholder: "Eldest parent's age",
+      botMessages: [t.scripts.parentAgeQ(who, parentMembers.length > 1)],
+      placeholder: t.scripts.parentAgePlaceholder,
       inputType: 'number',
       min: 35,
       max: 99,
@@ -1138,8 +1160,9 @@ const healthConditionsUnderstood: ConversationStep = {
   module: 'health',
   widgetType: 'selection_cards',
   getScript: (persona, state) => {
+    const t = getT(state.language);
     return {
-      botMessages: ['Got it? Ready to look at coverage options?'],
+      botMessages: [t.scripts.customizeReady],
       options: [
         { id: 'yes', label: 'Yes, show me options', icon: 'check' },
         { id: 'questions', label: 'I have a question first', icon: 'help' },
@@ -1253,6 +1276,30 @@ const customizationSIRebuttal: ConversationStep = {
 };
 
 /* ═══════════════════════════════════════════════
+   MODULE: LOGIN GATE — Phone+OTP before showing plans
+   Shown only when the user has not logged in yet.
+   ═══════════════════════════════════════════════ */
+
+const loginPhoneGate: ConversationStep = {
+  id: 'login.phone_gate',
+  module: 'recommendation',
+  widgetType: 'login_gate',
+  condition: () => !useUserProfileStore.getState().isLoggedIn,
+  getScript: (persona, state) => {
+    const name = userName(state) || (useUserProfileStore.getState().firstName || '').split(' ')[0];
+    const greeting = name ? `Almost there, ${name}!` : 'Almost there!';
+    return {
+      botMessages: [
+        greeting,
+        `To show your personalized plans and save your progress, please verify your mobile number.`,
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'recommendation.result',
+};
+
+/* ═══════════════════════════════════════════════
    MODULE: RECOMMENDATION
    ═══════════════════════════════════════════════ */
 
@@ -1267,7 +1314,7 @@ const recommendationCalculating: ConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'recommendation.result',
+  getNextStep: () => 'login.phone_gate',
 };
 
 const recommendationResult: ConversationStep = {
@@ -1411,6 +1458,32 @@ const stpMedicalQuestions: ConversationStep = {
     ],
   }),
   processResponse: () => ({}),
+  getNextStep: () => 'payment.method_selection',
+};
+
+const paymentMethodSelection: ConversationStep = {
+  id: 'payment.method_selection',
+  module: 'payment',
+  widgetType: 'selection_cards',
+  getScript: (persona, state) => {
+    const t = getT(state.language);
+    const isMonthly = state.paymentFrequency === 'monthly';
+    const options: any[] = [
+      { id: 'upi', label: 'UPI', description: 'GPay, PhonePe, Paytm & more', icon: 'upi' },
+      { id: 'card', label: 'Credit / Debit Card', description: 'Visa, Mastercard, RuPay', icon: 'card' },
+      { id: 'netbanking', label: 'Net Banking', description: 'All major banks supported', icon: 'bank' },
+    ];
+    if (!isMonthly) {
+      options.push({ id: 'emi', label: 'EMI', description: 'No-cost EMI on select cards', icon: 'emi' });
+    } else {
+      options.push({ id: 'autopay', label: 'Set up AutoPay', description: 'Auto-debit mandate for monthly payments', icon: 'autopay', badge: 'Required for monthly' });
+    }
+    return {
+      botMessages: [t.scripts.paymentMethodQ],
+      options,
+    };
+  },
+  processResponse: (response) => ({ paymentMethod: response }),
   getNextStep: () => 'payment.process',
 };
 
@@ -1557,9 +1630,10 @@ const telemerMedicalSummary: ConversationStep = {
   id: 'telemer.medical_summary',
   module: 'payment',
   widgetType: 'health_summary_card',
-  getScript: (_, state) => ({
-    botMessages: [`Here's your Medical Summary from the evaluation:`],
-  }),
+  getScript: (_, state) => {
+    const t = getT(state.language);
+    return { botMessages: [t.scripts.medicalSummaryIntro] };
+  },
   processResponse: () => ({}),
   getNextStep: () => 'telemer.confirm_summary',
 };
@@ -1568,13 +1642,16 @@ const telemerConfirmSummary: ConversationStep = {
   id: 'telemer.confirm_summary',
   module: 'payment',
   widgetType: 'selection_cards',
-  getScript: () => ({
-    botMessages: [`Please confirm this summary is accurate before we proceed.`],
-    options: [
-      { id: 'confirmed', label: 'Yes, this is correct', icon: 'check' },
-      { id: 'incorrect', label: 'Something needs correction', icon: 'edit' },
-    ],
-  }),
+  getScript: (_, state) => {
+    const t = getT(state.language);
+    return {
+      botMessages: [t.scripts.medicalSummaryConfirm],
+      options: [
+        { id: 'confirmed', label: 'Yes, this is correct', icon: 'check' },
+        { id: 'incorrect', label: 'Something needs correction', icon: 'edit' },
+      ],
+    };
+  },
   processResponse: () => ({}),
   getNextStep: (response) => response === 'incorrect' ? 'telemer.connect_prompt' : 'telemer.outcome',
 };
@@ -1751,6 +1828,10 @@ export const STEPS: Record<string, ConversationStep> = {
   'customization.si_selection': customizationSI,
   'customization.si_rebuttal': customizationSIRebuttal,
 
+  /* Login Gates */
+  'login.early_gate': loginEarlyGate,
+  'login.phone_gate': loginPhoneGate,
+
   /* Recommendation */
   'recommendation.calculating': recommendationCalculating,
   'recommendation.result': recommendationResult,
@@ -1768,7 +1849,6 @@ export const STEPS: Record<string, ConversationStep> = {
   'stp.medical_questions': stpMedicalQuestions,
 
   /* Payment */
-  // payment.method_selection step removed
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
 

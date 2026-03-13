@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useJourneyStore } from '../lib/store';
 import LanguageSelector from '../components/LanguageSelector';
 import AckoLogo from '../components/AckoLogo';
+import GradientBadge from '../components/ds/GradientBadge';
 import PolicyActionScreen, { type PolicyStatusInfo } from '../components/global/PolicyActionScreen';
 import { useUserProfileStore, type PolicyLob } from '../lib/userProfileStore';
 import { useThemeStore } from '../lib/themeStore';
 import { useLanguageStore } from '../lib/languageStore';
+import { useT } from '../lib/translations';
 import {
   loadSnapshot,
   loadProductSnapshots,
@@ -17,6 +19,7 @@ import {
   clearAllSnapshots,
   type ProductKey,
 } from '../lib/journeyPersist';
+import { readSessionCookie } from '../lib/sessionCookie';
 import type { Language } from '../lib/types';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -47,9 +50,9 @@ const LOB_TO_PRODUCT: Record<LobId, ProductKey> = {
   car: 'car', bike: 'bike', health: 'health', life: 'life',
 };
 
-const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ' };
-const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
+const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'];
+const LANG_LABELS: Record<string, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം', te: 'తెలుగు' };
+const THEME_LABELS: Record<string, string> = { midnight: 'Midnight', dark: 'Dark', light: 'Light' };
 
 interface LobOverride {
   journeyId: string;
@@ -128,18 +131,29 @@ function computeSnapshots(): LobOverride[] {
         statusInfo = { badge: 'Update in progress', message: `${l} policy update · Effective next billing cycle`, urgency: 'low' };
       }
 
-      const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
-      const regNumber = snap.registrationNumber?.toUpperCase() || '';
+      let imageUrl: string;
+      let title: string;
+      let subtitle: string;
 
-      const make = snap.vehicleData?.make || '';
-      const model = snap.vehicleData?.model || '';
-      const vType = snap.vehicleType || 'car';
-      const fallback = vType === 'bike' ? `${BASE}/offerings/bike-card.png` : `${BASE}/offerings/car-card.png`;
-      const imageUrl = PWILO_MODEL_IMAGE[model] || PWILO_MAKE_IMAGE[make] || fallback;
-
-      const subtitle = regNumber
-        ? regNumber
-        : isMotor ? display.badge : (display.subtitle || '');
+      if (isMotor) {
+        const vehicleName = [snap.vehicleData?.make, snap.vehicleData?.model].filter(Boolean).join(' ');
+        const regNumber = snap.registrationNumber?.toUpperCase() || '';
+        const make = snap.vehicleData?.make || '';
+        const model = snap.vehicleData?.model || '';
+        const vType = snap.vehicleType || 'car';
+        const fallback = vType === 'bike' ? `${BASE}/offerings/bike-card.png` : `${BASE}/offerings/car-card.png`;
+        imageUrl = PWILO_MODEL_IMAGE[model] || PWILO_MAKE_IMAGE[make] || fallback;
+        title = vehicleName || display.title;
+        subtitle = regNumber || display.badge;
+      } else {
+        const lobImage: Record<string, string> = {
+          health: `${BASE}/offerings/health-card.png`,
+          life: `${BASE}/offerings/life-card.png`,
+        };
+        imageUrl = lobImage[lobId] || `${BASE}/offerings/health-card.png`;
+        title = display.title;
+        subtitle = display.subtitle || '';
+      }
 
       let route = display.route;
       if (isMotor && snap.journeyId) {
@@ -150,7 +164,7 @@ function computeSnapshots(): LobOverride[] {
         journeyId: snap.journeyId || '',
         lobId,
         badge: display.badge,
-        title: vehicleName || display.title,
+        title,
         subtitle,
         route,
         urgency: display.urgency,
@@ -199,6 +213,7 @@ function HeaderPill({
   onThemeCycle,
   onLangCycle,
   onResetFTU,
+  onLogout,
   langLabel,
 }: {
   isLoggedIn: boolean;
@@ -209,12 +224,19 @@ function HeaderPill({
   onThemeCycle: () => void;
   onLangCycle: () => void;
   onResetFTU: () => void;
+  onLogout: () => void;
   langLabel: string;
 }) {
   const router = useRouter();
+  const t = useT();
   const isLight = theme === 'light';
+  const isDark = theme !== 'light';
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+
+  const pillBg = isLight ? '#f5f5f5' : theme === 'midnight' ? '#1C0B47' : '#121212';
+  const loginBg = isLight ? '#e0e0e1' : theme === 'midnight' ? 'rgba(255,255,255,0.06)' : '#19191a';
+  const loginBorder = isLight ? 'none' : '1px solid #6841e6';
 
   useEffect(() => {
     const onScroll = () => {
@@ -237,7 +259,7 @@ function HeaderPill({
       <div
         className="flex items-center justify-between px-3 h-[56px] rounded-2xl"
         style={{
-          background: isLight ? '#f5f5f5' : '#121212',
+          background: pillBg,
           boxShadow: '0 20px 20px rgba(0,0,0,0.02), 0 6px 6px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.02)',
         }}
       >
@@ -248,7 +270,7 @@ function HeaderPill({
             <button
               onClick={() => router.push('/profile')}
               className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[15px] font-medium"
-              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isLight ? '#121212' : 'white' }}
+              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isDark ? 'white' : '#121212' }}
             >
               {initial}
             </button>
@@ -257,12 +279,12 @@ function HeaderPill({
               onClick={() => router.push('/login')}
               className="h-[36px] px-4 rounded-lg text-[14px] font-medium tracking-[-0.28px]"
               style={{
-                background: isLight ? '#e0e0e1' : '#19191a',
+                background: loginBg,
                 color: isLight ? 'black' : '#fefefe',
-                border: isLight ? 'none' : '1px solid #6841e6',
+                border: loginBorder,
               }}
             >
-              Login
+              {t.global.menuLogin}
             </button>
           )}
 
@@ -290,7 +312,7 @@ function HeaderPill({
                     transition={{ duration: 0.15 }}
                     className="absolute right-0 top-full mt-2 z-50 rounded-xl overflow-hidden shadow-2xl min-w-[200px]"
                     style={{
-                      background: isLight ? 'white' : 'rgba(30,30,30,0.95)',
+                      background: isLight ? 'white' : theme === 'midnight' ? 'rgba(30,15,70,0.95)' : 'rgba(30,30,30,0.95)',
                       border: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.1)',
                       backdropFilter: 'blur(20px)',
                     }}
@@ -303,12 +325,14 @@ function HeaderPill({
                         borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
                       }}
                     >
-                      {theme === 'dark' ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-                      ) : (
+                      {theme === 'light' ? (
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                      ) : theme === 'midnight' ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" /></svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                       )}
-                      Mode: {THEME_LABELS[theme]}
+                      {t.global.menuMode} {THEME_LABELS[theme]}
                     </button>
                     <button
                       onClick={onLangCycle}
@@ -322,8 +346,23 @@ function HeaderPill({
                         <circle cx="12" cy="12" r="10" />
                         <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                       </svg>
-                      Lang: {langLabel}
+                      {t.global.menuLang} {langLabel}
                     </button>
+                    {isLoggedIn && (
+                      <button
+                        onClick={() => { onToggleMenu(); onLogout(); }}
+                        className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
+                        style={{
+                          color: isLight ? '#121212' : 'rgba(255,255,255,0.85)',
+                          borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                        </svg>
+                        {t.global.menuLogout}
+                      </button>
+                    )}
                     <button
                       onClick={onResetFTU}
                       className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
@@ -333,7 +372,7 @@ function HeaderPill({
                         <path d="M1 4v6h6M23 20v-6h-6" />
                         <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
                       </svg>
-                      Reset to FTU
+                      {t.global.menuResetFtu}
                     </button>
                   </motion.div>
                 </>
@@ -347,7 +386,9 @@ function HeaderPill({
 }
 
 /* ── Hero Greeting with transparent-bg webm logo ── */
-function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
+function HeroGreeting({ displayName, subtitle, videoBg }: { displayName: string; subtitle?: string; videoBg?: boolean }) {
+  const t = useT();
+
   return (
     <motion.div
       className="flex flex-col items-center gap-2 px-6 pt-8 pb-10"
@@ -355,7 +396,7 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <div className="w-[84px] h-[84px] mb-1">
+      <div className="w-[84px] h-[84px] mb-1" style={{ opacity: videoBg ? 0 : 1 }}>
         <video
           src={`${BASE}/offerings/logo-animation.webm`}
           autoPlay
@@ -366,17 +407,19 @@ function HeroGreeting({ firstName, subtitle }: { firstName: string; subtitle?: s
         />
       </div>
       <div className="text-center">
-        <h1
-          className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
-          style={{ color: 'var(--app-text)' }}
-        >
-          {firstName ? `Hello ${firstName}` : 'Hello'}
-        </h1>
+        {displayName && (
+          <h1
+            className="text-[24px] font-semibold tracking-[-0.3px] leading-[32px]"
+            style={{ color: 'var(--app-text)' }}
+          >
+            {t.global.helloName(displayName)}
+          </h1>
+        )}
         <p
-          className="text-[18px] leading-[26px] mt-1 whitespace-pre-line"
-          style={{ color: 'var(--app-text-muted)' }}
+          className={`leading-[32px] whitespace-pre-line ${displayName ? 'text-[18px] mt-1' : 'text-[24px] font-semibold tracking-[-0.3px]'}`}
+          style={{ color: displayName ? 'var(--app-text-muted)' : 'var(--app-text)' }}
         >
-          {subtitle || 'What insurance are you interested in?'}
+          {subtitle || t.global.heroTitle}
         </p>
       </div>
     </motion.div>
@@ -401,6 +444,7 @@ function PwiloSection({
   onContinue: (entry: LobOverride) => void;
   onStartNew: (entry: LobOverride) => void;
 }) {
+  const t = useT();
   if (entries.length === 0) return null;
 
   const isSingle = entries.length === 1;
@@ -429,7 +473,9 @@ function PwiloSection({
               className="text-[16px] font-semibold leading-[22px]"
               style={{ color: 'var(--app-text)' }}
             >
-              Continue insuring your {entry.title}
+              {(entry.lobId === 'car' || entry.lobId === 'bike')
+                ? t.global.pwiloContinueInsuring(entry.title)
+                : entry.title}
             </h3>
             {entry.subtitle && (
               <p
@@ -446,7 +492,7 @@ function PwiloSection({
               style={{ background: '#6841e6', color: 'white' }}
               onClick={(e) => { e.stopPropagation(); onContinue(entry); }}
             >
-              Continue
+              {t.global.pwiloContinue}
             </button>
             <button
               className="h-[32px] px-4 rounded-lg text-[12px] font-medium whitespace-nowrap"
@@ -457,7 +503,7 @@ function PwiloSection({
               }}
               onClick={(e) => { e.stopPropagation(); onStartNew(entry); }}
             >
-              Start new
+              {t.global.pwiloStartNew}
             </button>
           </div>
         </div>
@@ -481,7 +527,7 @@ function PwiloSection({
         className="text-[16px] font-semibold leading-[22px] text-center mb-4"
         style={{ color: 'var(--app-text)' }}
       >
-        Continue where you left off
+        {t.global.pwiloTitle}
       </p>
 
       {isSingle ? (
@@ -497,6 +543,7 @@ function PwiloSection({
 
 /* ── Bento LOB Grid ── */
 function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) {
+  const t = useT();
   const car = LOB_CARDS.find(c => c.id === 'car')!;
   const bike = LOB_CARDS.find(c => c.id === 'bike')!;
   const health = LOB_CARDS.find(c => c.id === 'health')!;
@@ -534,16 +581,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
             whileTap={{ scale: 0.98 }}
           >
             <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-              {car.title}
+              {t.global.carLabel}
             </h3>
             <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
-              Simple prices. Super fast claims. That&apos;s our promise.
+              {t.global.carCardDesc}
             </p>
             <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={car.heroImage}
-              alt={car.title}
+              alt={t.global.carLabel}
               className="absolute object-contain pointer-events-none"
               style={{ bottom: -1, right: -1, width: 80, height: 80 }}
               draggable={false}
@@ -561,16 +608,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
             whileTap={{ scale: 0.98 }}
           >
             <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-              {bike.title}
+              {t.global.bikeLabel}
             </h3>
             <p className="text-[10px] leading-[12px] mt-1.5 max-w-[90px]" style={{ color: 'var(--app-text-muted)' }}>
-              Insure your bike or scooter in just 1 min
+              {t.global.bikeCardDesc}
             </p>
             <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={bike.heroImage}
-              alt={bike.title}
+              alt={t.global.bikeLabel}
               className="absolute object-contain pointer-events-none"
               style={{ bottom: -1, right: -1, width: 80, height: 80 }}
               draggable={false}
@@ -589,26 +636,17 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
           whileTap={{ scale: 0.98 }}
         >
           <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-            Health insurance
+            {t.global.healthLabel}
           </h3>
           <p className="text-[10px] leading-[12px] mt-1.5" style={{ color: 'var(--app-text-muted)' }}>
-            100% hospital bill payments. No surprises.
+            {t.global.healthCardDesc}
           </p>
-          <div
-            className="inline-flex items-center px-2 py-1.5 rounded-full mt-1.5"
-            style={{
-              background: 'linear-gradient(90deg, rgba(153,116,249,0.36) 0%, rgba(236,72,153,0.08) 89%)',
-            }}
-          >
-            <span className="text-[10px] font-medium leading-[12px]" style={{ color: 'var(--app-text)' }}>
-              From &#x20B9;534/month
-            </span>
-          </div>
+          <GradientBadge className="mt-1.5">{t.global.healthCardFrom}</GradientBadge>
           <div className="absolute left-3 bottom-3">{arrowBtn}</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={health.heroImage}
-            alt={health.title}
+            alt={t.global.healthLabel}
             className="absolute object-cover pointer-events-none"
             style={{ bottom: -1, right: -1, width: 90, height: 131, transform: 'scaleX(-1)' }}
             draggable={false}
@@ -627,16 +665,16 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
         whileTap={{ scale: 0.98 }}
       >
         <h3 className="text-[16px] font-semibold leading-[20px]" style={{ color: 'var(--app-text)' }}>
-          {life.title}
+          {t.global.lifeLabel}
         </h3>
         <p className="text-[10px] leading-[12px] mt-1.5 max-w-[200px]" style={{ color: 'var(--app-text-muted)' }}>
-          Secure your loved ones with term life insurance
+          {t.global.lifeCardDesc}
         </p>
         <div className="absolute left-[11px] bottom-[11px]">{arrowBtn}</div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={life.heroImage}
-          alt={life.title}
+          alt={t.global.lifeLabel}
           className="absolute object-contain pointer-events-none"
           style={{ bottom: -1, right: -1, width: 150, height: 120 }}
           draggable={false}
@@ -648,91 +686,91 @@ function BentoLobGrid({ onCardClick }: { onCardClick: (lobId: LobId) => void }) 
 
 /* ── Why ACKO Section ── */
 function WhyAckoSection() {
-  const WHY_CARDS = [
+  const { theme } = useThemeStore();
+  const t = useT();
+  const isDark = theme !== 'light';
+
+  const WHY_ITEMS = [
     {
-      icon: `${BASE}/icons/why-acko/icon-digital.svg`,
-      title: '100% Digital',
-      description: 'Buy, manage and claim - all online',
+      icon: `${BASE}/icons/100%25 digital.svg`,
+      title: t.global.prop2Title,
+      description: t.global.prop2Desc,
     },
     {
-      icon: `${BASE}/icons/why-acko/icon-claim.svg`,
-      title: '98.8%',
-      description: 'Claims settled in 1 week',
+      icon: `${BASE}/icons/24X7 support.svg`,
+      title: t.global.supportSub,
+      description: t.global.support,
     },
     {
-      icon: `${BASE}/icons/why-acko/icon-support.svg`,
-      title: '24x7',
-      description: 'Instant claims support',
+      icon: `${BASE}/icons/Honest pricing.svg`,
+      title: t.global.needHelp,
+      description: t.global.talkExpert,
     },
     {
-      icon: `${BASE}/icons/why-acko/icon-pricing.svg`,
-      title: 'Honest Pricing',
-      description: 'No middle men & no hidden costs',
+      icon: `${BASE}/icons/Claims settled.svg`,
+      title: t.global.claimsStat,
+      description: t.global.claimsStatSub,
     },
   ];
 
   return (
-    <div className="px-4 py-8">
-      <div className="flex flex-col gap-4">
-        {/* Heading */}
-        <div className="text-center mb-1">
-          <h2
-            className="text-[24px] font-semibold leading-[30px]"
-            style={{ color: 'var(--app-text)' }}
-          >
-            Why ACKO ?
-          </h2>
-          <p
-            className="text-[14px] leading-[16px] mt-1"
-            style={{ color: 'var(--app-text-muted)' }}
-          >
-            Insurance that actually makes sense
-          </p>
-        </div>
-
-        {/* Award banner */}
-        <div
-          className="flex items-center justify-center h-[88px] rounded-3xl overflow-hidden"
-          style={{ background: 'var(--app-surface-2)' }}
-        >
-          <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${BASE}/icons/why-acko/award-laurel-left.svg`} alt="" className="h-12 w-auto" draggable={false} />
-            <div className="text-center leading-[19px]">
-              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
-                India&apos;s #1*
-              </p>
-              <p className="text-[14px] font-medium" style={{ color: '#FFAB00' }}>
-                insurance app
-              </p>
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${BASE}/icons/why-acko/award-laurel-right.svg`} alt="" className="h-12 w-auto" draggable={false} />
+    <div className="px-4 pt-6 pb-8">
+      <div className="flex flex-col gap-6">
+        {/* Badge + heading */}
+        <div className="flex flex-col items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${BASE}/offerings/App-first.svg`}
+            alt="India's 1st Insurance App"
+            className="w-20 h-20 object-contain"
+            draggable={false}
+          />
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <h2
+              className="text-[24px] font-semibold leading-[30px] text-center"
+              style={{ color: 'var(--app-text)' }}
+            >
+              {t.global.whyAcko}
+            </h2>
+            <p
+              className="text-[14px] leading-[16px] text-center"
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              {t.global.whyAckoSub}
+            </p>
           </div>
         </div>
 
-        {/* 2×2 bento grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {WHY_CARDS.map((card) => (
+        {/* Card list */}
+        <div className="flex flex-col gap-3">
+          {WHY_ITEMS.map((item) => (
             <div
-              key={card.title}
-              className="flex flex-col gap-1.5 h-[154px] rounded-3xl overflow-hidden p-5"
-              style={{ background: 'var(--app-surface-2)' }}
+              key={item.title}
+              className="flex items-center gap-4 h-[72px] px-3 py-2 rounded-lg"
+              style={{ background: isDark ? 'var(--app-surface)' : 'white' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={card.icon} alt="" className="w-10 h-10 object-contain" draggable={false} />
-              <p
-                className="text-[16px] font-semibold leading-[22px] mt-1"
-                style={{ color: 'var(--app-text)' }}
-              >
-                {card.title}
-              </p>
-              <p
-                className="text-[14px] leading-[16px]"
-                style={{ color: 'var(--app-text-muted)' }}
-              >
-                {card.description}
-              </p>
+              <img
+                src={item.icon}
+                alt=""
+                className="w-8 h-8 shrink-0 object-contain"
+                style={isDark ? { filter: 'brightness(0) invert(1) brightness(0.85)' } : undefined}
+                draggable={false}
+              />
+              <div className="flex flex-col">
+                <p
+                  className="text-[14px] font-semibold leading-[22px]"
+                  style={{ color: 'var(--app-text)' }}
+                >
+                  {item.title}
+                </p>
+                <p
+                  className="text-[12px] leading-[18px]"
+                  style={{ color: isDark ? 'var(--app-text-muted)' : 'rgba(0,0,0,0.56)' }}
+                >
+                  {item.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -743,6 +781,7 @@ function WhyAckoSection() {
 
 /* ── Footer ── */
 function PageFooter() {
+  const t = useT();
   const socialLinks = [
     { name: 'Instagram', icon: `${BASE}/footer/instagram.svg` },
     { name: 'LinkedIn', icon: `${BASE}/footer/linkedin.svg` },
@@ -762,7 +801,7 @@ function PageFooter() {
         <AckoLogo variant="white" className="h-[22px]" />
 
         <p className="text-[16px] leading-[24px] font-medium mt-6" style={{ color: 'white' }}>
-          ACKO Technology &amp; Services Private Limited
+          {t.global.footerCompany}
         </p>
 
         <div className="flex items-center gap-4 mt-6">
@@ -775,15 +814,15 @@ function PageFooter() {
         </div>
 
         <p className="text-[14px] leading-[20px] mt-8" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          CIN: U74110KA2016PTC120161
+          {t.global.footerCin}
         </p>
 
         <p className="text-[14px] leading-[20px] mt-5" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          *Listed #1 for &ldquo;insurance&rdquo; on the Apple App Store
+          {t.global.footerNote1}
         </p>
 
         <p className="text-[14px] leading-[22px] mt-5" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          The use of images and brands are only for the purpose of indication and illustration. ACKO claims no rights on the IP rights of any third parties.
+          {t.global.footerDisclaimer}
         </p>
 
         <div className="flex items-center gap-4 mt-8">
@@ -815,9 +854,13 @@ export default function GlobalHomepage() {
 function GlobalHomepageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  // Video background: enabled when deployed as /newhomepage OR via build-time env var
+  const videoBg = process.env.NEXT_PUBLIC_VIDEO_BG === 'true' || pathname === '/newhomepage';
   const { setLanguage: setJourneyLang } = useJourneyStore();
   const { theme, cycleTheme } = useThemeStore();
   const { language, setLanguage: setGlobalLang } = useLanguageStore();
+  const t = useT();
   const [screen, setScreen] = useState<Screen>('language');
   const [hydrated, setHydrated] = useState(false);
   const [selectedLobId, setSelectedLobId] = useState<LobId | null>(null);
@@ -828,12 +871,22 @@ function GlobalHomepageInner() {
   const { firstName, isLoggedIn } = useUserProfileStore();
   const hasOverrides = overrides.length > 0;
 
+  // Resolve display name: prefer store (logged-in or previously entered), fall back to session cookie
+  const cookieName = typeof window !== 'undefined' ? (readSessionCookie()?.firstName || '') : '';
+  const displayName = (firstName || cookieName).split(' ')[0];
+
   const handleLanguageCycle = useCallback(() => {
     const idx = LANG_ORDER.indexOf(language as Language);
     const next = LANG_ORDER[(idx + 1) % LANG_ORDER.length];
     setGlobalLang(next);
     setJourneyLang(next);
   }, [language, setGlobalLang, setJourneyLang]);
+
+  const handleLogout = useCallback(() => {
+    useUserProfileStore.getState().setProfile({ isLoggedIn: false, firstName: '', phone: '' });
+    localStorage.removeItem('acko_user_profile');
+    window.location.href = BASE || '/';
+  }, []);
 
   const handleResetFTU = useCallback(() => {
     setShowMenu(false);
@@ -901,10 +954,38 @@ function GlobalHomepageInner() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen"
+            className="min-h-screen relative overflow-hidden"
             style={{ background: 'var(--app-bg)' }}
           >
-            <div className="max-w-[430px] mx-auto pb-4">
+            {/* Animated video background — newhomepage only */}
+            {videoBg && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none max-w-[430px] w-full">
+                <video
+                  key={theme}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="mx-auto object-cover"
+                  style={{ width: 410, height: 300 }}
+                  src={`${BASE}/Animated_BG/${theme === 'light' ? 'Light theme-BG' : 'Dark theme-BG'}.mp4`}
+                />
+                {theme !== 'light' && (
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none"
+                    style={{
+                      width: 410,
+                      height: 300,
+                      background: theme === 'midnight'
+                        ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #1C0B47 88.12%)'
+                        : 'linear-gradient(180deg, rgba(0, 0, 0, 0.00) 41.25%, #0F0F10 88.12%)',
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Content — always on top */}
+            <div className="max-w-[430px] mx-auto pb-4 relative z-10">
               <HeaderPill
                 isLoggedIn={isLoggedIn}
                 initial={firstName?.[0]?.toUpperCase() || 'R'}
@@ -914,12 +995,14 @@ function GlobalHomepageInner() {
                 onThemeCycle={() => { cycleTheme(); }}
                 onLangCycle={handleLanguageCycle}
                 onResetFTU={handleResetFTU}
+                onLogout={handleLogout}
                 langLabel={LANG_LABELS[language as string] || language}
               />
 
               <HeroGreeting
-                firstName={firstName}
-                subtitle={hasOverrides ? 'Good to see you again.\nWhat would you like to do?' : undefined}
+                displayName={displayName}
+                subtitle={hasOverrides ? t.global.heroTitleUser : undefined}
+                videoBg={videoBg}
               />
 
               {/* PWILO Section — continue where you left off */}
@@ -933,10 +1016,10 @@ function GlobalHomepageInner() {
               {hasOverrides && (
                 <div className="px-4 pb-8 text-center">
                   <p className="text-[18px] font-semibold leading-[24px]" style={{ color: 'var(--app-text)' }}>
-                    Explore another insurance
+                    {t.global.pwiloExploreTitle}
                   </p>
                   <p className="text-[13px] leading-[18px] mt-0.5" style={{ color: 'var(--app-text-muted)' }}>
-                    Find the right cover for your needs
+                    {t.global.pwiloExploreDesc}
                   </p>
                 </div>
               )}
@@ -944,6 +1027,14 @@ function GlobalHomepageInner() {
               {/* LOB Bento Grid */}
               <BentoLobGrid onCardClick={handleCardClick} />
 
+              <p
+                className="text-[10px] leading-[14px] text-center mt-4"
+                style={{ color: 'var(--app-text-muted)' }}
+              >
+                {t.global.footerTagline}
+              </p>
+
+              <div className="h-8" />
               <WhyAckoSection />
             </div>
             <PageFooter />
@@ -971,7 +1062,7 @@ function GlobalHomepageInner() {
               onBuyNew={() => router.push(card.route)}
               onManagePolicy={() => {
                 const routes: Record<string, string> = {
-                  health: '/health?screen=dashboard', car: '/motor?vehicle=car&screen=dashboard',
+                  health: '/health', car: '/motor?vehicle=car&screen=dashboard',
                   bike: '/motor?vehicle=bike&screen=dashboard', life: '/life?screen=dashboard',
                 };
                 router.push(routes[selectedLobId] || card.route);

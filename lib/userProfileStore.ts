@@ -118,7 +118,7 @@ export const useUserProfileStore = create<UserProfileStore>((set, get) => {
       const otherLobs = get().getOtherActiveLobs(currentLob);
       if (otherLobs.length === 0) return null;
 
-      const name = state.firstName || 'there';
+      const name = (state.firstName || 'there').split(' ')[0];
       const currentLabel = NEW_LOB_LABELS[currentLob];
 
       if (otherLobs.length === 1) {

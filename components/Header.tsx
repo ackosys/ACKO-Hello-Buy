@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useJourneyStore } from '../lib/store';
 import { useThemeStore } from '../lib/themeStore';
-import { useUserProfileStore } from '../lib/userProfileStore';
 import { useLanguageStore } from '../lib/languageStore';
 import { clearSnapshot } from '../lib/journeyPersist';
 import AckoLogo from './AckoLogo';
@@ -21,8 +20,8 @@ const THEME_ICONS: Record<string, React.ReactNode> = {
 };
 const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
 
-const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം' };
+const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'];
+const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം', te: 'తెలుగు' };
 
 export default function Header() {
   const t = useT();
@@ -36,18 +35,11 @@ export default function Header() {
   const progress = Math.round((currentIndex / (MODULE_ORDER.length - 1)) * 100);
   const [showMenu, setShowMenu] = useState(false);
 
-  const hasExistingPolicy = useUserProfileStore((s) => s.hasActivePolicyInLob('health'));
-
   const handleRestart = useCallback(() => {
     setShowMenu(false);
     clearSnapshot('health');
     resetJourney();
   }, [resetJourney]);
-
-  const handleViewPolicy = useCallback(() => {
-    setShowMenu(false);
-    router.push('/?lob=health');
-  }, [router]);
 
   const handleGoHome = useCallback(() => {
     setShowMenu(false);
@@ -143,18 +135,6 @@ export default function Header() {
                     </svg>
                     Start over
                   </button>
-                  {hasExistingPolicy && (
-                    <button
-                      onClick={handleViewPolicy}
-                      className="w-full px-4 py-3 text-left text-sm flex items-center gap-2 transition-colors hover:opacity-80"
-                      style={{ color: isLight ? '#7C3AED' : '#C4B5FD', borderBottom: '1px solid var(--app-border)' }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                      </svg>
-                      View existing policy
-                    </button>
-                  )}
                   <button
                     onClick={handleGoHome}
                     className="w-full px-4 py-3 text-left text-sm flex items-center gap-2 transition-colors hover:opacity-80"

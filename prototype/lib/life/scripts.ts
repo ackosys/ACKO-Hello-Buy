@@ -98,7 +98,7 @@ function calculateRecommendedCoverage(state: LifeJourneyState): {
 
   // 7. Final recommended cover (min ₹25L, max ₹100 Cr, rounded to nearest ₹5L)
   let recommendedCover = Math.max(totalNeed - existingCover, 2500000);
-  recommendedCover = Math.min(recommendedCover, 10000000000); // ₹100 Cr cap
+  recommendedCover = Math.min(recommendedCover, 1000000000); // ₹100 Cr cap
   recommendedCover = Math.round(recommendedCover / 500000) * 500000; // Round to nearest ₹5L
 
   const multiplierUsed = annualIncome > 0 ? Math.round((recommendedCover / annualIncome) * 10) / 10 : 0;

@@ -1,15 +1,19 @@
-import { MotorJourneyState, FuelType, NcbPercentage } from './types';
+import { MotorJourneyState, FuelType, NcbPercentage, ExpandedPlanType, PlanCombination } from './types';
 
 /* ═══════════════════════════════════════════════
    ACKO Motor Insurance — Premium Calculation Engine
    Based on realistic Indian motor insurance pricing
+   Plan hierarchy per car-planning-logic SKILL.md
    ═══════════════════════════════════════════════ */
 
-export type MotorPlanType = 'comprehensive' | 'zero_dep' | 'third_party';
+export type MotorPlanType = 'comprehensive' | 'zero_dep' | 'third_party' | 'od' | 'od_zd';
 export type GarageTier = 'network' | 'all';
+export type PlanVariant = 'safe_driver' | 'standard' | 'network' | null;
 
 export interface MotorPlanDetails {
   type: MotorPlanType;
+  expandedType: ExpandedPlanType;
+  variant: PlanVariant;
   garageTier?: GarageTier;
   name: string;
   tagline: string;
@@ -18,6 +22,8 @@ export interface MotorPlanDetails {
   odPremium: number;
   tpPremium: number;
   ncbDiscount: number;
+  deductible: number;
+  deductibleDescription: string;
   basePrice: number;
   gst: number;
   totalPrice: number;
@@ -26,6 +32,9 @@ export interface MotorPlanDetails {
   addOnsAvailable: string[];
   badge?: string;
   recommended?: boolean;
+  coversOwnCar: boolean;
+  coversThirdParty: boolean;
+  hasZeroDep: boolean;
 }
 
 export interface MotorAddOn {
@@ -166,7 +175,35 @@ export function calculateZeroDepPremium(
   return Math.round(odPremium * markup);
 }
 
-/* ── Plan Details Generator ── */
+/* ── Determine Plan Combination ──
+   Based on vehicle age and eligibility per skill file */
+
+export function determinePlanCombination(state: MotorJourneyState): PlanCombination {
+  const vehicleAge = state.vehicleData.registrationYear
+    ? new Date().getFullYear() - state.vehicleData.registrationYear
+    : 3;
+
+  if (state.hasActiveTpPolicy && vehicleAge >= 1 && vehicleAge <= 3) {
+    if (vehicleAge <= 1) return 'OD-3';
+    if (vehicleAge <= 2) return 'OD-2';
+    return 'OD-1';
+  }
+
+  if (vehicleAge <= 1) return 'F';
+  if (vehicleAge <= 3) return 'E';
+  if (vehicleAge <= 5) return 'D';
+  if (vehicleAge <= 8) return 'C';
+  return 'C';
+}
+
+/* ── Safe Driver deductible calculation ── */
+const SAFE_DRIVER_DEDUCTIBLE = 5000;
+const NETWORK_GARAGE_DEDUCTIBLE = 5000;
+
+/* ── Plan Details Generator ──
+   Now supports the full hierarchy per skill file:
+   OD, OD ZD (Safe/Standard), Comp (Network/Standard),
+   ZD Comp (Safe/Standard), Third Party */
 
 export function getMotorPlanDetails(
   state: MotorJourneyState,
@@ -175,259 +212,438 @@ export function getMotorPlanDetails(
   idvOverride?: number
 ): MotorPlanDetails {
   const { vehicleType, vehicleData, previousPolicy } = state;
-  
-  // Mock values for demo
-  const makePrice = 800000; // ₹8L for Swift
+
+  const makePrice = 800000;
   const engineCC = vehicleType === 'bike' ? 150 : 1200;
   const vehicleAge = vehicleData.registrationYear ? new Date().getFullYear() - vehicleData.registrationYear : 3;
-  
+
   const idvData = calculateIDV(makePrice, vehicleAge);
   const idv = idvOverride !== undefined ? idvOverride : idvData.recommended;
   const ncb = previousPolicy.ncbPercentage || 0;
-  
+
   const tpPremium = calculateTPPremium(vehicleType || 'car', engineCC);
-  
+  const commonNotCovered = [
+    'Damage due to regular wear and tear',
+    'Commercial use of the car',
+    'Pre-existing damage',
+    'Illegal driving (without valid licence, under influence, etc.)',
+  ];
+  const commonOdAddons = [
+    'engine_protection', 'extra_car_protection', 'consumables_cover',
+    'ncb_protect', 'return_to_invoice',
+    'personal_accident', 'passenger_protection', 'paid_driver',
+    'electrical_accessory', 'non_electrical_accessory',
+  ];
+
   if (planType === 'third_party') {
     return {
       type: 'third_party',
-      name: 'Third-party Plan',
+      expandedType: 'third_party',
+      variant: null,
+      name: 'Third Party',
       tagline: 'Minimum coverage required by law',
-      description: 'It covers damage caused by your car to others and their property, but does not cover any damage caused to your car.',
-      idv: 0,
-      odPremium: 0,
-      tpPremium,
-      ncbDiscount: 0,
+      description: 'Covers legal liabilities towards third parties (other people, vehicles, or property) in case of an accident. Does not cover your own car.',
+      idv: 0, odPremium: 0, tpPremium, ncbDiscount: 0,
+      deductible: 0, deductibleDescription: '',
       basePrice: tpPremium,
       gst: Math.round(tpPremium * 0.18),
       totalPrice: Math.round(tpPremium * 1.18),
-      features: [
-        'Third-party liabilities — Covers damage caused to others and their property in case of an accident',
-      ],
-      notCovered: [
-        'Own car damage — Doesn\'t cover damage to your car',
-        'Illegal driving — Doesn\'t cover expenses arising from traffic law violations like driving without a valid licence or under the influence of alcohol, drugs etc.',
-      ],
-      addOnsAvailable: [
-        'personal_accident',
-        'passenger_protection',
-        'paid_driver',
-      ],
-      badge: 'Best suited for old vehicles that have low resale value',
+      features: ['Third-party liabilities — Covers damage caused to others and their property'],
+      notCovered: ['Own car damage — Does not cover any damage to your car', ...commonNotCovered],
+      addOnsAvailable: ['personal_accident', 'passenger_protection', 'paid_driver'],
+      badge: 'Legal minimum',
+      coversOwnCar: false, coversThirdParty: true, hasZeroDep: false,
     };
   }
-  
+
   const { odPremium, ncbDiscount } = calculateODPremium(
-    vehicleType || 'car',
-    idv,
-    vehicleData.fuelType || 'petrol',
-    ncb,
-    garageTier || 'all'
+    vehicleType || 'car', idv, vehicleData.fuelType || 'petrol', ncb, garageTier || 'all'
   );
-  
+
+  if (planType === 'od') {
+    const basePrice = odPremium;
+    return {
+      type: 'od', expandedType: 'od', variant: 'standard',
+      name: 'Own Damage (OD)',
+      tagline: 'Covers damage to your own car',
+      description: 'Covers damage to your own car and assets only. Does not cover third-party liabilities. Depreciation applies on parts replaced during claims.',
+      idv, odPremium, tpPremium: 0, ncbDiscount,
+      deductible: 0, deductibleDescription: '',
+      basePrice, gst: Math.round(basePrice * 0.18), totalPrice: Math.round(basePrice * 1.18),
+      features: [
+        'Accident damage — Covers your car repairs after an accident',
+        'Fire, theft and natural calamities',
+        'Rat-bite protection',
+        'Free car pick up & drop',
+      ],
+      notCovered: ['Third-party liabilities — Not covered (use your existing active TP policy)', 'Zero depreciation — Not included; depreciation applies on parts', ...commonNotCovered],
+      addOnsAvailable: commonOdAddons,
+      coversOwnCar: true, coversThirdParty: false, hasZeroDep: false,
+    };
+  }
+
+  if (planType === 'od_zd') {
+    const zeroDepOD = calculateZeroDepPremium(odPremium, vehicleAge);
+    const basePrice = zeroDepOD;
+    return {
+      type: 'od_zd', expandedType: 'od_zd_standard', variant: 'standard',
+      name: 'OD Zero Depreciation — Standard',
+      tagline: 'Full claim payout, no out-of-pocket cost',
+      description: 'Covers damage to your own car with zero depreciation — full cost of parts covered during claims. No deductible.',
+      idv, odPremium: zeroDepOD, tpPremium: 0, ncbDiscount,
+      deductible: 0, deductibleDescription: 'No deductible',
+      basePrice, gst: Math.round(basePrice * 0.18), totalPrice: Math.round(basePrice * 1.18),
+      features: [
+        'Zero depreciation — Full cost of parts during a claim',
+        'Accident damage — Covers your car repairs',
+        'Fire, theft and natural calamities',
+        'No deductible — No out-of-pocket cost at claim time',
+      ],
+      notCovered: ['Third-party liabilities — Not covered (use your existing active TP policy)', ...commonNotCovered],
+      addOnsAvailable: commonOdAddons,
+      coversOwnCar: true, coversThirdParty: false, hasZeroDep: true,
+    };
+  }
+
   if (planType === 'comprehensive') {
+    const tier = garageTier || 'all';
+    const isNetwork = tier === 'network';
     const basePrice = odPremium + tpPremium;
-    const gst = Math.round(basePrice * 0.18);
-    const totalPrice = basePrice + gst;
-    
     return {
       type: 'comprehensive',
-      garageTier: garageTier || 'all',
-      name: garageTier === 'network' ? 'Comprehensive Plan — Network Garages' : 'Comprehensive Plan — All Garages',
-      tagline: 'Complete protection for your vehicle',
-      description: 'This plan includes fire, theft, accident, and third party liability cover.',
-      idv,
-      odPremium,
-      tpPremium,
-      ncbDiscount,
-      basePrice,
-      gst,
-      totalPrice,
+      expandedType: isNetwork ? 'comprehensive_network' : 'comprehensive_standard',
+      variant: isNetwork ? 'network' : 'standard',
+      garageTier: tier,
+      name: isNetwork ? 'Comprehensive — Network Garage' : 'Comprehensive — Standard',
+      tagline: isNetwork ? 'Lower premium, top network garages' : 'Maximum flexibility, any garage',
+      description: isNetwork
+        ? 'Covers your car and third-party liabilities. Repairs must be done at ACKO network garages. ₹5,000 deductible if repaired outside the network.'
+        : 'Covers your car and third-party liabilities. Repair at any garage of your choice with no deductible.',
+      idv, odPremium, tpPremium, ncbDiscount,
+      deductible: isNetwork ? NETWORK_GARAGE_DEDUCTIBLE : 0,
+      deductibleDescription: isNetwork ? '₹5,000 if repaired outside network' : 'No deductible',
+      basePrice, gst: Math.round(basePrice * 0.18), totalPrice: Math.round(basePrice * 1.18),
       features: [
-        'Accidents — Covers car repairs if your car is damaged in an accident',
-        'Fire, theft and calamities — Covers car theft, and car damage caused by fire, and natural calamities',
-        'Rat-bite protection — Covers car damage caused by rat bites',
-        'Third-party liabilities — Covers damage caused to others and their property in case of an accident',
+        'Accident damage — Covers your car repairs',
+        'Fire, theft and natural calamities',
+        'Rat-bite protection',
+        'Third-party liabilities — Covers damage to others',
         'Free car pick up & drop',
-        garageTier === 'network' ? 'Cashless claims at 5,400+ network garages' : 'Cashless claims at any garage',
+        isNetwork ? 'Cashless claims at 5,400+ ACKO network garages' : 'Cashless claims at any garage',
         'Real-time repair updates',
       ],
-      notCovered: [
-        'Damage due to regular wear and tear — Doesn\'t cover natural wear and tear of parts like tyres, tubes, and engine',
-        'Commercial use of the car — Doesn\'t cover damage caused to the car if it\'s used for business-related activities',
-        'Pre-existing damage — Doesn\'t cover any damage suffered by your car before the purchase of this policy',
-        'Illegal driving — Doesn\'t cover expenses arising from traffic law violations',
-      ],
-      addOnsAvailable: [
-        'engine_protection',
-        'extra_car_protection',
-        'consumables_cover',
-        'personal_accident',
-        'passenger_protection',
-        'paid_driver',
-      ],
-      recommended: garageTier === 'all',
-      badge: garageTier === 'network' ? 'Popular in your area' : 'Recommended for your car',
+      notCovered: ['Zero depreciation — Not included; depreciation applies on parts replaced', ...commonNotCovered],
+      addOnsAvailable: commonOdAddons,
+      recommended: !isNetwork,
+      badge: isNetwork ? 'Lower premium' : 'Recommended',
+      coversOwnCar: true, coversThirdParty: true, hasZeroDep: false,
     };
   }
-  
-  // Zero Dep
+
+  // zero_dep → ZD Comprehensive (Safe Driver or Standard)
   const zeroDepOD = calculateZeroDepPremium(odPremium, vehicleAge);
   const basePrice = zeroDepOD + tpPremium;
-  const gst = Math.round(basePrice * 0.18);
-  const totalPrice = basePrice + gst;
-  
   return {
     type: 'zero_dep',
-    name: 'Zero Depreciation',
-    tagline: 'Zero out-of-pocket on repairs',
-    description: 'It covers damage to your car, and damage caused by your car to others and their property. It also covers full cost of car parts if they\'re replaced during a claim.',
-    idv,
-    odPremium: zeroDepOD,
-    tpPremium,
-    ncbDiscount,
-    basePrice,
-    gst,
-    totalPrice,
+    expandedType: 'zd_comprehensive_standard',
+    variant: 'standard',
+    name: 'ZD Comprehensive — Standard',
+    tagline: 'Zero depreciation + full flexibility',
+    description: 'Covers your car and third-party liabilities with zero depreciation on parts. No deductible.',
+    idv, odPremium: zeroDepOD, tpPremium, ncbDiscount,
+    deductible: 0, deductibleDescription: 'No deductible',
+    basePrice, gst: Math.round(basePrice * 0.18), totalPrice: Math.round(basePrice * 1.18),
     features: [
-      'Zero depreciation — Covers full cost of car parts during a claim and saves you from depreciation charges',
-      'Accidents — Covers car repairs if your car is damaged in an accident',
-      'Fire, theft and calamities — Covers car theft, and car damage caused by fire, and natural calamities',
-      'Rat-bite protection — Covers car damage caused by rat bites',
-      'Third-party liabilities — Covers damage caused to others and their property',
+      'Zero depreciation — Full cost of car parts during a claim',
+      'Accident damage — Covers your car repairs',
+      'Fire, theft and natural calamities',
+      'Third-party liabilities — Covers damage to others',
       'Free car pick up & drop',
       'Cashless claims at any garage',
       'Real-time repair updates',
     ],
-    notCovered: [
-      'Damage due to regular wear and tear — Doesn\'t cover natural wear and tear of parts like tyres, tubes, and engine',
-      'Commercial use of the car — Doesn\'t cover damage caused to the car if it\'s used for business-related activities',
-      'Pre-existing damage — Doesn\'t cover any damage suffered by your car before the purchase of this policy',
-      'Illegal driving — Doesn\'t cover expenses arising from traffic law violations',
-    ],
-    addOnsAvailable: [
-      'engine_protection',
-      'extra_car_protection',
-      'consumables_cover',
-      'personal_accident',
-      'passenger_protection',
-      'paid_driver',
-    ],
+    notCovered: commonNotCovered,
+    addOnsAvailable: commonOdAddons,
     recommended: true,
     badge: 'Best value',
+    coversOwnCar: true, coversThirdParty: true, hasZeroDep: true,
   };
+}
+
+/* ── Expanded Plan Generator ──
+   Generates plan details for the full expanded type system */
+
+export function getExpandedPlanDetails(
+  state: MotorJourneyState,
+  expandedType: ExpandedPlanType,
+  idvOverride?: number
+): MotorPlanDetails {
+  const { vehicleType, vehicleData, previousPolicy } = state;
+  const makePrice = 800000;
+  const engineCC = vehicleType === 'bike' ? 150 : 1200;
+  const vehicleAge = vehicleData.registrationYear ? new Date().getFullYear() - vehicleData.registrationYear : 3;
+  const idvData = calculateIDV(makePrice, vehicleAge);
+  const idv = idvOverride !== undefined ? idvOverride : idvData.recommended;
+  const ncb = previousPolicy.ncbPercentage || 0;
+  const tpPremium = calculateTPPremium(vehicleType || 'car', engineCC);
+  const { odPremium, ncbDiscount } = calculateODPremium(
+    vehicleType || 'car', idv, vehicleData.fuelType || 'petrol', ncb, 'all'
+  );
+  const { odPremium: odPremiumNetwork } = calculateODPremium(
+    vehicleType || 'car', idv, vehicleData.fuelType || 'petrol', ncb, 'network'
+  );
+  const zeroDepOD = calculateZeroDepPremium(odPremium, vehicleAge);
+  const safeDriverZdOD = Math.round(zeroDepOD * 0.88);
+
+  const commonNotCovered = [
+    'Damage due to regular wear and tear',
+    'Commercial use of the car',
+    'Pre-existing damage',
+    'Illegal driving',
+  ];
+  const allAddons = [
+    'engine_protection', 'extra_car_protection', 'consumables_cover',
+    'ncb_protect', 'return_to_invoice',
+    'personal_accident', 'passenger_protection', 'paid_driver',
+    'electrical_accessory', 'non_electrical_accessory',
+  ];
+
+  const base = { idv, ncbDiscount };
+
+  switch (expandedType) {
+    case 'od': {
+      const bp = odPremium;
+      return { ...base, type: 'od', expandedType: 'od', variant: 'standard', name: 'Own Damage', tagline: 'Covers your own car damage', description: 'Covers damage to your own car. Depreciation applies on parts.', odPremium, tpPremium: 0, deductible: 0, deductibleDescription: '', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Accident damage', 'Fire, theft, natural calamities'], notCovered: ['Third-party liabilities', 'Zero depreciation', ...commonNotCovered], addOnsAvailable: allAddons, coversOwnCar: true, coversThirdParty: false, hasZeroDep: false };
+    }
+    case 'od_zd_safe': {
+      const bp = safeDriverZdOD;
+      return { ...base, type: 'od_zd', expandedType: 'od_zd_safe', variant: 'safe_driver', name: 'OD Zero Dep — Safe Driver', tagline: 'Lower premium, ₹5,000 deductible per claim', description: 'OD with zero depreciation. ₹5,000 deductible payable during any claim.', odPremium: safeDriverZdOD, tpPremium: 0, deductible: SAFE_DRIVER_DEDUCTIBLE, deductibleDescription: '₹5,000 payable during any claim', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Zero depreciation on parts', 'Accident damage', 'Lower premium for safe drivers'], notCovered: ['Third-party liabilities', ...commonNotCovered], addOnsAvailable: allAddons, recommended: true, badge: 'Recommended', coversOwnCar: true, coversThirdParty: false, hasZeroDep: true };
+    }
+    case 'od_zd_standard': {
+      const bp = zeroDepOD;
+      return { ...base, type: 'od_zd', expandedType: 'od_zd_standard', variant: 'standard', name: 'OD Zero Dep — Standard', tagline: 'No deductible, full claim payout', description: 'OD with zero depreciation. No deductible — full claim payout.', odPremium: zeroDepOD, tpPremium: 0, deductible: 0, deductibleDescription: 'No deductible', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Zero depreciation on parts', 'Accident damage', 'No out-of-pocket cost'], notCovered: ['Third-party liabilities', ...commonNotCovered], addOnsAvailable: allAddons, coversOwnCar: true, coversThirdParty: false, hasZeroDep: true };
+    }
+    case 'comprehensive_network': {
+      const bp = odPremiumNetwork + tpPremium;
+      return { ...base, type: 'comprehensive', expandedType: 'comprehensive_network', variant: 'network', garageTier: 'network', name: 'Comprehensive — Network Garage', tagline: 'Lower premium, top network garages', description: 'Full coverage. Repairs at ACKO network garages. ₹5,000 deductible if repaired outside.', odPremium: odPremiumNetwork, tpPremium, deductible: NETWORK_GARAGE_DEDUCTIBLE, deductibleDescription: '₹5,000 if repaired outside network', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Own car damage + third-party', 'Cashless at 5,400+ network garages', 'Lower premium'], notCovered: ['Zero depreciation not included', ...commonNotCovered], addOnsAvailable: allAddons, recommended: true, badge: 'Popular', coversOwnCar: true, coversThirdParty: true, hasZeroDep: false };
+    }
+    case 'comprehensive_standard': {
+      const bp = odPremium + tpPremium;
+      return { ...base, type: 'comprehensive', expandedType: 'comprehensive_standard', variant: 'standard', garageTier: 'all', name: 'Comprehensive — Standard', tagline: 'Any garage, no deductible', description: 'Full coverage. Repair at any garage of your choice with no deductible.', odPremium, tpPremium, deductible: 0, deductibleDescription: 'No deductible', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Own car damage + third-party', 'Any garage of your choice', 'No deductible'], notCovered: ['Zero depreciation not included', ...commonNotCovered], addOnsAvailable: allAddons, coversOwnCar: true, coversThirdParty: true, hasZeroDep: false };
+    }
+    case 'zd_comprehensive_safe': {
+      const safeBp = safeDriverZdOD + tpPremium;
+      return { ...base, type: 'zero_dep', expandedType: 'zd_comprehensive_safe', variant: 'safe_driver', name: 'ZD Comprehensive — Safe Driver', tagline: 'Zero dep + lower premium, ₹5,000 deductible', description: 'Full coverage with zero depreciation. ₹5,000 deductible per claim.', odPremium: safeDriverZdOD, tpPremium, deductible: SAFE_DRIVER_DEDUCTIBLE, deductibleDescription: '₹5,000 payable during any claim', basePrice: safeBp, gst: Math.round(safeBp * 0.18), totalPrice: Math.round(safeBp * 1.18), features: ['Zero depreciation on parts', 'Own car + third-party', 'Lower premium for safe drivers'], notCovered: commonNotCovered, addOnsAvailable: allAddons, recommended: true, badge: 'Recommended', coversOwnCar: true, coversThirdParty: true, hasZeroDep: true };
+    }
+    case 'zd_comprehensive_standard': {
+      const bp = zeroDepOD + tpPremium;
+      return { ...base, type: 'zero_dep', expandedType: 'zd_comprehensive_standard', variant: 'standard', name: 'ZD Comprehensive — Standard', tagline: 'Zero dep, no deductible, full protection', description: 'Full coverage with zero depreciation. No deductible.', odPremium: zeroDepOD, tpPremium, deductible: 0, deductibleDescription: 'No deductible', basePrice: bp, gst: Math.round(bp * 0.18), totalPrice: Math.round(bp * 1.18), features: ['Zero depreciation on parts', 'Own car + third-party', 'No out-of-pocket cost'], notCovered: commonNotCovered, addOnsAvailable: allAddons, badge: 'Best value', coversOwnCar: true, coversThirdParty: true, hasZeroDep: true };
+    }
+    case 'third_party': {
+      return { ...base, type: 'third_party', expandedType: 'third_party', variant: null, name: 'Third Party', tagline: 'Legal minimum coverage', description: 'Covers legal liabilities towards third parties only.', odPremium: 0, tpPremium, deductible: 0, deductibleDescription: '', basePrice: tpPremium, gst: Math.round(tpPremium * 0.18), totalPrice: Math.round(tpPremium * 1.18), features: ['Third-party liabilities'], notCovered: ['Own car damage', ...commonNotCovered], addOnsAvailable: ['personal_accident', 'passenger_protection', 'paid_driver'], badge: 'Legal minimum', coversOwnCar: false, coversThirdParty: true, hasZeroDep: false };
+    }
+  }
+}
+
+/* ── Get all plans for a combination ── */
+
+export function getPlansForCombination(
+  state: MotorJourneyState,
+  combination: PlanCombination
+): MotorPlanDetails[] {
+  const planMap: Record<PlanCombination, ExpandedPlanType[]> = {
+    'OD-1': ['od'],
+    'OD-2': ['od', 'od_zd_safe'],
+    'OD-3': ['od', 'od_zd_safe', 'od_zd_standard'],
+    'A': ['third_party'],
+    'B': ['comprehensive_standard'],
+    'C': ['third_party', 'comprehensive_standard'],
+    'D': ['third_party', 'comprehensive_standard', 'comprehensive_network'],
+    'E': ['third_party', 'comprehensive_standard', 'comprehensive_network', 'zd_comprehensive_safe'],
+    'F': ['third_party', 'comprehensive_standard', 'comprehensive_network', 'zd_comprehensive_safe', 'zd_comprehensive_standard'],
+  };
+  return (planMap[combination] || []).map(t => getExpandedPlanDetails(state, t));
+}
+
+/* ── Recommendation logic per skill file ── */
+
+export function getRecommendedPlanType(state: MotorJourneyState, combination: PlanCombination): {
+  step1Rec: 'comprehensive' | 'third_party';
+  step2Rec: 'zd' | 'standard';
+  variantRec: string;
+} {
+  const vehicleAge = state.vehicleData.registrationYear
+    ? new Date().getFullYear() - state.vehicleData.registrationYear
+    : 3;
+  const prevPolicyType = state.previousPolicy.policyType;
+  const prevHadZd = false; // not tracked yet, default
+
+  const step1Rec = prevPolicyType === 'third_party' ? 'third_party' as const : 'comprehensive' as const;
+
+  let step2Rec: 'zd' | 'standard';
+  if (vehicleAge <= 3) {
+    step2Rec = 'zd';
+  } else if (prevHadZd) {
+    step2Rec = 'zd';
+  } else {
+    step2Rec = 'standard';
+  }
+
+  const variantRec = combination.startsWith('OD')
+    ? 'safe_driver'
+    : step2Rec === 'zd' ? 'safe_driver' : 'network';
+
+  return { step1Rec, step2Rec, variantRec };
+}
+
+/* ── Add-on recommendation logic per skill file ── */
+
+export function getRecommendedAddOns(state: MotorJourneyState): string[] {
+  const vehicleAge = state.vehicleData.registrationYear
+    ? new Date().getFullYear() - state.vehicleData.registrationYear
+    : 3;
+  const ncb = state.previousPolicy.ncbPercentage || 0;
+
+  const recommended: string[] = [];
+
+  // Base by vehicle age
+  if (vehicleAge < 8) {
+    recommended.push('engine_protection', 'extra_car_protection', 'personal_accident', 'passenger_protection');
+  } else {
+    recommended.push('extra_car_protection', 'personal_accident', 'passenger_protection');
+  }
+
+  if (vehicleAge <= 3) recommended.push('return_to_invoice');
+  if (ncb > 0) recommended.push('ncb_protect');
+  if (state.hasPaidDriver) recommended.push('paid_driver');
+  if (state.hasAftermarketAccessories) {
+    recommended.push('electrical_accessory', 'non_electrical_accessory');
+  }
+
+  return recommended;
 }
 
 /* ── Add-ons ── */
 
-export function getMotorAddOns(vehicleType: 'car' | 'bike' = 'car'): MotorAddOn[] {
-  return [
+export function getMotorAddOns(
+  vehicleType: 'car' | 'bike' = 'car',
+  state?: MotorJourneyState
+): MotorAddOn[] {
+  const ncb = state?.previousPolicy?.ncbPercentage || 0;
+  const hasPaidDriver = state?.hasPaidDriver ?? false;
+  const hasAccessories = state?.hasAftermarketAccessories ?? false;
+  const recommended = state ? getRecommendedAddOns(state) : [];
+
+  const addons: MotorAddOn[] = [
+    // Category 1: Add-ons that cover your family
+    {
+      id: 'personal_accident',
+      name: 'Personal Accident Cover',
+      description: 'Covers the policyholder against accidental death or permanent disability arising from a car accident.',
+      price: 399,
+      category: 'protect_everyone',
+      mandatory: true,
+      recommended: recommended.includes('personal_accident'),
+      hasVariants: true,
+      variants: [
+        { id: '15_lakh', name: '₹15 lakh coverage', price: 399, recommended: true, badge: 'Premium offer', features: ['Full coverage for death or permanent disability', '50% for partial disability'] },
+        { id: '50_lakh', name: '₹50 lakh coverage', price: 999, features: ['Full coverage for death or permanent disability', '50% for partial disability', '4 of 5 users prefer this'] },
+      ],
+    },
+    {
+      id: 'passenger_protection',
+      name: 'Passenger Protect Cover',
+      description: 'Extends accident cover to passengers travelling in the car at the time of an accident. Up to ₹1 lakh per passenger.',
+      price: 399,
+      category: 'protect_everyone',
+      recommended: recommended.includes('passenger_protection'),
+    },
+    // Category 2: Add-ons that cover your car
     {
       id: 'engine_protection',
       name: 'Engine Protect',
-      description: 'Save yourself from costly engine repairs. Covers engine and gearbox damage caused by non-accidental events like floods, heavy rains, and oil leaks.',
+      description: 'Covers damage to the car\'s engine and parts due to water ingression, oil leakage, or hydrostatic lock — not covered under a standard policy.',
       price: 399,
       category: 'out_of_pocket',
-      recommended: true,
+      recommended: recommended.includes('engine_protection'),
+    },
+    {
+      id: 'return_to_invoice',
+      name: 'Return to Invoice (RTI)',
+      description: 'In total loss or theft, the insurer pays the original invoice value instead of the depreciated IDV. Bridges the gap between IDV and purchase price.',
+      price: 499,
+      category: 'out_of_pocket',
+      recommended: recommended.includes('return_to_invoice'),
     },
     {
       id: 'extra_car_protection',
       name: 'Extra Car Protect',
-      description: 'Be prepared for roadside emergencies.',
+      description: 'Bundled add-on: Roadside Assistance + Key Loss Cover + Out-of-Station Accommodation Cover.',
       price: 399,
       category: 'out_of_pocket',
+      recommended: recommended.includes('extra_car_protection'),
       hasVariants: true,
       variants: [
-        {
-          id: 'lite',
-          name: 'LITE',
-          price: 399,
-          features: [
-            'Free 24x7 roadside assistance up to 40km',
-            'Key repair/replacement up to ₹7,000',
-            'Accommodation expenses up to ₹6,500 for outstation repairs',
-          ],
-        },
-        {
-          id: 'plus',
-          name: 'PLUS',
-          price: 799,
-          recommended: true,
-          features: [
-            '24x7 car breakdown assistance - unlimited',
-            'Key repair/replacement up to ₹25,000',
-            'Accommodation expenses up to ₹15,000 during outstation repairs',
-          ],
-        },
+        { id: 'lite', name: 'LITE', price: 399, features: ['24x7 roadside assistance up to 40km', 'Key replacement up to ₹7,000', 'Accommodation up to ₹6,500'] },
+        { id: 'plus', name: 'PLUS', price: 799, recommended: true, features: ['Unlimited breakdown assistance', 'Key replacement up to ₹25,000', 'Accommodation up to ₹15,000'] },
       ],
     },
     {
       id: 'consumables_cover',
       name: 'Consumables Cover',
-      description: 'Save on repair extras. Covers the cost of consumables like nuts, bolts, brake oil, engine oil etc. that get replaced during repair.',
+      description: 'Covers consumables like nuts, bolts, brake oil, engine oil etc. replaced during repair.',
       price: 399,
       category: 'out_of_pocket',
-    },
-    {
-      id: 'ncb_protect',
-      name: 'NCB Protect',
-      description: 'Protect your No Claim Bonus. Make a claim without losing your NCB. Valid only for 1 claim.',
-      price: 399,
-      category: 'out_of_pocket',
-    },
-    {
-      id: 'return_to_invoice',
-      name: 'Return to Invoice Cover',
-      description: 'Ensure full coverage for total loss. Pays the complete invoice value of your car or the current on-road price, whichever is lower, if your car is stolen or damaged beyond repair.',
-      price: 399,
-      category: 'out_of_pocket',
-    },
-    {
-      id: 'personal_accident',
-      name: 'Personal Accident Cover',
-      description: 'Coverage for accidental injury or death of the car owner.',
-      price: 399,
-      category: 'protect_everyone',
-      mandatory: true,
-      hasVariants: true,
-      variants: [
-        {
-          id: '15_lakh',
-          name: '₹15 lakh coverage',
-          price: 399,
-          recommended: true,
-          badge: 'Premium offer',
-          features: [
-            'Full coverage in case of death or permanent disability',
-            '50% coverage for partial disability (loss of one eye or limb)',
-          ],
-        },
-        {
-          id: '50_lakh',
-          name: '₹50 lakh coverage',
-          price: 999,
-          features: [
-            'Full coverage in case of death or permanent disability',
-            '50% coverage for partial disability',
-            '4 out of 5 ACKO users prefer higher coverage',
-          ],
-        },
-      ],
-    },
-    {
-      id: 'passenger_protection',
-      name: 'Passenger Protection',
-      description: 'For your loved ones. Coverage of up to ₹1 lakh per passenger for accidental death or injury.',
-      price: 399,
-      category: 'protect_everyone',
-    },
-    {
-      id: 'paid_driver',
-      name: 'Paid Driver Protection',
-      description: 'For your driver. Pays up to your legal obligation amount in the event of serious injury or death of your paid driver in an accident.',
-      price: 399,
-      category: 'protect_everyone',
     },
   ];
+
+  // NCB Protection: only shown if NCB > 0
+  if (ncb > 0) {
+    addons.push({
+      id: 'ncb_protect',
+      name: 'NCB Protection',
+      description: 'Protects your accumulated NCB even if you make one claim this year.',
+      price: 399,
+      category: 'out_of_pocket',
+      recommended: recommended.includes('ncb_protect'),
+    });
+  }
+
+  // Paid Driver Cover: only shown if user has a paid driver
+  if (hasPaidDriver) {
+    addons.push({
+      id: 'paid_driver',
+      name: 'Paid Driver Cover',
+      description: 'Covers a paid/hired driver against accidental death or disability while driving the insured vehicle.',
+      price: 399,
+      category: 'protect_everyone',
+      recommended: recommended.includes('paid_driver'),
+    });
+  }
+
+  // Accessory covers: only shown if user has accessories
+  if (hasAccessories) {
+    addons.push(
+      {
+        id: 'electrical_accessory',
+        name: 'Electrical Accessory Cover',
+        description: 'Covers electrical accessories fitted after sale (e.g., upgraded audio system, rear camera).',
+        price: 299,
+        category: 'out_of_pocket',
+        recommended: recommended.includes('electrical_accessory'),
+      },
+      {
+        id: 'non_electrical_accessory',
+        name: 'Non-Electrical Accessory Cover',
+        description: 'Covers non-electrical accessories fitted after sale (e.g., seat covers, alloy wheels, roof rails).',
+        price: 299,
+        category: 'out_of_pocket',
+        recommended: recommended.includes('non_electrical_accessory'),
+      },
+    );
+  }
+
+  return addons;
 }
 
 export function formatCurrency(amount: number): string {

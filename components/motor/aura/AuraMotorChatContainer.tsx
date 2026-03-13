@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotorStore } from '../../../lib/motor/store';
 import { getMotorStep } from '../../../lib/motor/scripts';
 import { MotorJourneyState } from '../../../lib/motor/types';
-import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../../lib/journeyPersist';
+import { saveSnapshot, clearSnapshotById, MOTOR_SAVE_STEPS } from '../../../lib/journeyPersist';
+import { useUserProfileStore } from '../../../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../../../lib/mockUsers';
+import { writeSessionCookie } from '../../../lib/sessionCookie';
+import { useT } from '../../../lib/translations';
 import AuraChatMessage, { AuraTypingIndicator } from './AuraChatMessage';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import {
@@ -44,6 +48,124 @@ import {
 } from './AuraClaimsWidgets';
 import { MotorCelebration as AuraCelebration } from './AuraMotorFinalWidgets';
 
+const VALID_OTP = '0000';
+
+function AuraMotorLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
+  const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const ref0 = useRef<HTMLInputElement>(null);
+  const ref1 = useRef<HTMLInputElement>(null);
+  const ref2 = useRef<HTMLInputElement>(null);
+  const ref3 = useRef<HTMLInputElement>(null);
+  const otpRefs = [ref0, ref1, ref2, ref3];
+
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
+  const handlePhoneSubmit = () => {
+    if (!phoneCanSubmit) return;
+    setGateStep('otp');
+    setTimeout(() => otpRefs[0].current?.focus(), 150);
+  };
+
+  const handleOtpChange = (i: number, val: string) => {
+    const d = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[i] = d;
+    setDigits(next);
+    if (d && i < 3) otpRefs[i + 1].current?.focus();
+    if (next.every(x => x !== '')) {
+      const otp = next.join('');
+      if (otp === VALID_OTP) {
+        setOtpError(false);
+        onSuccess(phone);
+      } else {
+        setOtpError(true);
+        setTimeout(() => { setOtpError(false); setDigits(['', '', '', '']); }, 600);
+        setTimeout(() => otpRefs[0].current?.focus(), 650);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) otpRefs[i - 1].current?.focus();
+  };
+
+  return (
+    <div className="max-w-sm">
+      {gateStep === 'phone' ? (
+        <>
+          <div className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm">
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
+            <input
+              autoFocus
+              type="tel"
+              inputMode="numeric"
+              placeholder={t.chat.loginPhonePlaceholder}
+              value={phone}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
+            />
+          </div>
+          <p className="text-caption text-white/40 mt-1.5 text-center">{t.chat.loginSaveProgress}</p>
+          <button
+            onClick={handlePhoneSubmit}
+            disabled={!phoneCanSubmit}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+          >
+            {t.chat.loginSendOtp}
+          </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">{t.chat.loginOtpSentTo(phone)}</p>
+          <motion.div
+            className="flex gap-2 justify-center"
+            animate={otpError ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleOtpChange(i, e.target.value)}
+                onKeyDown={e => handleOtpKeyDown(i, e)}
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
+                }}
+              />
+            ))}
+          </motion.div>
+          {otpError ? (
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
+          ) : (
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AuraMotorChatContainer() {
   const {
     currentStepId,
@@ -53,12 +175,16 @@ export default function AuraMotorChatContainer() {
     updateState,
     trimAndUpdateFromStep,
   } = useMotorStore();
+  const { setProfile, addPolicy } = useUserProfileStore();
+  const t = useT();
+  const tWidgets = t.widgets;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
   const [showWidget, setShowWidget] = useState(false);
   const [editModal, setEditModal] = useState<{ stepId: string; visible: boolean }>({ stepId: '', visible: false });
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -69,6 +195,11 @@ export default function AuraMotorChatContainer() {
   useEffect(() => {
     if (!MOTOR_SAVE_STEPS.has(currentStepId)) return;
     const s = useMotorStore.getState();
+    // Purchase complete — clear PWILO instead of saving a "policy active" card
+    if ((currentStepId === 'payment.success' || currentStepId === 'completion.dashboard') && s.paymentComplete) {
+      if (s.journeyId) clearSnapshotById(s.journeyId);
+      return;
+    }
     const id = saveSnapshot({
       journeyId: s.journeyId || undefined,
       product: s.vehicleType ?? 'car',
@@ -150,6 +281,100 @@ export default function AuraMotorChatContainer() {
     addBotMessage();
   }, [currentStepId]);
 
+  const handleLoginGateSuccess = useCallback((phone: string) => {
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName });
+
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
+  const handleLoginGateSkip = useCallback(() => {
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: currentStep, module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, freshState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
+    }, 300);
+  }, [addMessage, updateState, t]);
+
+  const handleLoginGateMandatorySuccess = useCallback((phone: string) => {
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'review.premium_breakdown',
+          currentModule: 'review',
+        } as Partial<MotorJourneyState>);
+      }
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
   const handleEditRequest = (stepId: string) => {
     setEditModal({ stepId, visible: true });
   };
@@ -208,6 +433,10 @@ export default function AuraMotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleEditResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleEditResponse} />;
@@ -220,9 +449,9 @@ export default function AuraMotorChatContainer() {
             onSubmit={handleEditResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -392,6 +621,10 @@ export default function AuraMotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleResponse} />;
@@ -404,9 +637,9 @@ export default function AuraMotorChatContainer() {
             onSubmit={handleResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -516,6 +749,12 @@ export default function AuraMotorChatContainer() {
         return <ReimbursementUpload onContinue={(result) => handleResponse(result)} />;
       case 'claim_closure':
         return <ClaimClosure onContinue={() => handleResponse('done')} />;
+      case 'login_gate':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
+      case 'login_gate_mandatory':
+        return <AuraMotorLoginGate onSuccess={handleLoginGateMandatorySuccess} />;
       default:
         return null;
     }
@@ -550,6 +789,7 @@ export default function AuraMotorChatContainer() {
                   key={msg.id}
                   message={msg as ChatMessageType}
                   onEdit={handleEditRequest}
+                  onPlanInfo={() => setShowPlanDetails(true)}
                   animate={isLatestBot}
                 />
               );
@@ -645,6 +885,95 @@ export default function AuraMotorChatContainer() {
             </motion.div>
           </>
         )}
+      </AnimatePresence>
+
+      {/* Plan Details Bottom Sheet */}
+      <AnimatePresence>
+        {showPlanDetails && (() => {
+          const st = useMotorStore.getState() as MotorJourneyState;
+          const plan = st.selectedPlan;
+          if (!plan) return null;
+          const formatPrice = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black z-50"
+                onClick={() => setShowPlanDetails(false)}
+              />
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-x-0 bottom-0 max-w-md mx-auto max-h-[70vh] overflow-y-auto rounded-t-3xl shadow-2xl z-50"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)', borderBottom: 'none' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'var(--motor-border-strong)' }} />
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{plan.name}</h3>
+                      {plan.tagline && <p className="text-[12px] mt-1" style={{ color: 'var(--motor-text-subtle)' }}>{plan.tagline}</p>}
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="text-[20px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(plan.totalPrice)}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                    </div>
+                  </div>
+                  {plan.description && (
+                    <p className="text-[13px] mb-5 leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>{plan.description}</p>
+                  )}
+                  {plan.features && plan.features.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>What&apos;s covered</h4>
+                      <div className="space-y-2">
+                        {plan.features.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {plan.notCovered && plan.notCovered.length > 0 && (
+                    <div className="mb-5">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Not covered</h4>
+                      <div className="space-y-2">
+                        {plan.notCovered.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {plan.deductibleDescription && (
+                    <div className="p-3 rounded-xl mb-5" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                      <p className="text-[12px] font-medium" style={{ color: 'var(--motor-text-subtle)' }}>Deductible</p>
+                      <p className="text-[13px] mt-0.5" style={{ color: 'var(--motor-text)' }}>{plan.deductibleDescription}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowPlanDetails(false)}
+                    className="w-full py-3 rounded-xl text-[14px] font-medium transition-colors"
+                    style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)', color: 'var(--motor-text-muted)' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Edit Widget Bottom Sheet */}

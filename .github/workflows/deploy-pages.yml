@@ -23,13 +23,29 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
+      - name: Build root (no video BG, logo visible)
         run: npm run build
         env:
           GITHUB_PAGES: 'true'
 
-      - name: Deploy to GitHub Pages
+      - name: Copy root build to deploy folder
+        run: |
+          mkdir -p deploy
+          cp -r out/. deploy/
+
+      - name: Build newhomepage (animated BG, logo hidden)
+        run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
+          DEPLOY_SUBPATH: 'newhomepage'
+
+      - name: Copy newhomepage build into deploy/newhomepage/
+        run: |
+          mkdir -p deploy/newhomepage
+          cp -r out/. deploy/newhomepage/
+
+      - name: Deploy combined build to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
+          publish_dir: ./deploy

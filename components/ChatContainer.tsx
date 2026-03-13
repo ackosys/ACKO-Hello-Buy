@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../lib/store';
 import { getStep, getCoverageReplyLabel } from '../lib/scripts';
 import { saveSnapshot, HEALTH_SAVE_STEPS } from '../lib/journeyPersist';
+import { useT } from '../lib/translations';
 import ChatMessage, { TypingIndicator } from './ChatMessage';
 import {
   SelectionCards,
@@ -18,7 +20,7 @@ import {
   ReviewSummary,
   ConsentWidget,
   HealthSummaryCard,
-  PaymentWidget,
+  HealthPaymentSheet,
   LabScheduleWidget,
   HospitalList,
   Celebration,
@@ -29,8 +31,136 @@ import {
   UspCards,
 } from './ChatWidgets';
 import { JourneyState } from '../lib/types';
+import { useUserProfileStore } from '../lib/userProfileStore';
+import { detectPostLoginState, buildPoliciesForState } from '../lib/mockUsers';
+import { writeSessionCookie } from '../lib/sessionCookie';
+
+const VALID_OTP = '0000';
+
+function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
+  const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '']);
+  const [otpError, setOtpError] = useState(false);
+  const ref0 = useRef<HTMLInputElement>(null);
+  const ref1 = useRef<HTMLInputElement>(null);
+  const ref2 = useRef<HTMLInputElement>(null);
+  const ref3 = useRef<HTMLInputElement>(null);
+  const otpRefs = [ref0, ref1, ref2, ref3];
+
+  const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
+
+  const handlePhoneSubmit = () => {
+    if (!phoneCanSubmit) return;
+    setGateStep('otp');
+    setTimeout(() => otpRefs[0].current?.focus(), 150);
+  };
+
+  const handleOtpChange = (i: number, val: string) => {
+    const d = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[i] = d;
+    setDigits(next);
+    if (d && i < 3) otpRefs[i + 1].current?.focus();
+    if (next.every(x => x !== '')) {
+      const otp = next.join('');
+      if (otp === VALID_OTP) {
+        setOtpError(false);
+        onSuccess(phone);
+      } else {
+        setOtpError(true);
+        setTimeout(() => { setOtpError(false); setDigits(['', '', '', '']); }, 600);
+        setTimeout(() => otpRefs[0].current?.focus(), 650);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) otpRefs[i - 1].current?.focus();
+  };
+
+  return (
+    <div className="max-w-sm">
+      {gateStep === 'phone' ? (
+        <>
+          <div
+            className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm"
+          >
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
+            <input
+              autoFocus
+              type="tel"
+              inputMode="numeric"
+              placeholder={t.chat.loginPhonePlaceholder}
+              value={phone}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
+            />
+          </div>
+          <p className="text-caption text-white/40 mt-1.5 text-center">
+            {t.chat.loginSaveProgress}
+          </p>
+          <button
+            onClick={handlePhoneSubmit}
+            disabled={!phoneCanSubmit}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+          >
+            {t.chat.loginSendOtp}
+          </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">
+            {t.chat.loginOtpSentTo(phone)}
+          </p>
+          <motion.div
+            className="flex gap-2 justify-center"
+            animate={otpError ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={otpRefs[i]}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleOtpChange(i, e.target.value)}
+                onKeyDown={e => handleOtpKeyDown(i, e)}
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
+                }}
+              />
+            ))}
+          </motion.div>
+          {otpError ? (
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
+          ) : (
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function ChatContainer() {
+  const t = useT();
   const {
     currentStepId,
     conversationHistory,
@@ -188,7 +318,7 @@ export default function ChatContainer() {
     // Preserve full chat history — append an "Updated" user message instead of trimming
     addMessage({
       type: 'user',
-      content: `✏️ Updated: ${userLabel}`,
+      content: t.chat.updatedPrefix(userLabel),
       stepId: editingStepId,
     });
 
@@ -245,9 +375,9 @@ export default function ChatContainer() {
       const tierLabels: Record<string, string> = { platinum: 'Platinum', platinum_lite: 'Platinum Lite', super_topup: 'Super Top-up' };
       userLabel = tierLabels[response] || response;
     } else if (step.widgetType === 'dob_collection') {
-      userLabel = 'Date of birth submitted for all members';
+      userLabel = t.chat.dobSubmitted;
     } else if (step.widgetType === 'usp_cards') {
-      userLabel = 'Got it, let\'s find a plan';
+      userLabel = t.chat.gotItFindPlan;
     }
 
     addMessage({
@@ -273,6 +403,66 @@ export default function ChatContainer() {
     }, 300);
   }, [currentStepId, resolvedPersona]);
 
+  const { setProfile, addPolicy } = useUserProfileStore();
+
+  const handleLoginGateSuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName });
+
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.phone_gate', module: 'recommendation' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: 'recommendation.result',
+        currentModule: 'recommendation',
+      });
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState]);
+
+  const handleEarlyLoginSuccess = useCallback((phone: string) => {
+    const state = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    writeSessionCookie({ firstName });
+
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: 'login.early_gate', module: 'entry' });
+    setShowWidget(false);
+
+    const currentState = useJourneyStore.getState() as JourneyState;
+    const step = getStep('login.early_gate');
+    const nextStepId = step?.getNextStep('verified', currentState) || 'intent.readiness';
+    const nextStep = getStep(nextStepId);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: nextStepId,
+        currentModule: nextStep?.module || 'intent',
+      });
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState]);
+
+  const handleEarlyLoginSkip = useCallback(() => {
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: 'login.early_gate', module: 'entry' });
+    setShowWidget(false);
+
+    const currentState = useJourneyStore.getState() as JourneyState;
+    const step = getStep('login.early_gate');
+    const nextStepId = step?.getNextStep('skipped', currentState) || 'intent.readiness';
+    const nextStep = getStep(nextStepId);
+
+    setTimeout(() => {
+      updateState({
+        currentStepId: nextStepId,
+        currentModule: nextStep?.module || 'intent',
+      });
+    }, 300);
+  }, [addMessage, updateState]);
+
   // Render edit widget (for in-place editing)
   const renderEditWidget = () => {
     if (!editingStepId) return null;
@@ -292,7 +482,7 @@ export default function ChatContainer() {
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleEditResponse} />;
       case 'pincode_input':
-        return <PincodeInput placeholder={script.placeholder || 'Enter pincode'} onSubmit={handleEditResponse} />;
+        return <PincodeInput placeholder={script.placeholder || t.widgets.enterPincode} onSubmit={handleEditResponse} />;
       case 'frequency_select':
         return <FrequencySelect onSelect={handleEditResponse} />;
       case 'plan_switcher':
@@ -327,7 +517,7 @@ export default function ChatContainer() {
       case 'number_input':
         return <NumberInput placeholder={script.placeholder || ''} subText={script.subText} inputType={script.inputType} min={script.min} max={script.max} onSubmit={handleResponse} />;
       case 'pincode_input':
-        return <PincodeInput placeholder={script.placeholder || 'Enter pincode'} onSubmit={handleResponse} />;
+        return <PincodeInput placeholder={script.placeholder || t.widgets.enterPincode} onSubmit={handleResponse} />;
       case 'calculation':
         return <CalculationTheater onComplete={() => handleResponse('done')} />;
       case 'plan_switcher':
@@ -344,8 +534,6 @@ export default function ChatContainer() {
         return <DobCollectionWidget onConfirm={(resp: string) => handleResponse(resp)} />;
       case 'usp_cards':
         return <UspCards onContinue={() => handleResponse('seen_usps')} />;
-      case 'payment_widget':
-        return <PaymentWidget onSuccess={() => handleResponse('paid')} />;
       case 'lab_schedule_widget':
         return <LabScheduleWidget onComplete={() => handleResponse('scheduled')} />;
       case 'hospital_list':
@@ -358,6 +546,10 @@ export default function ChatContainer() {
         return <ConfirmDetailsWidget onConfirm={() => handleResponse('confirmed')} />;
       case 'celebration':
         return <Celebration />;
+      case 'login_gate':
+        return <HealthLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <HealthLoginGate onSuccess={handleEarlyLoginSuccess} onSkip={handleEarlyLoginSkip} />;
       default:
         return null;
     }
@@ -367,8 +559,10 @@ export default function ChatContainer() {
   const isLargeWidget = () => {
     const step = getStep(currentStepId);
     if (!step) return false;
-    return ['plan_switcher', 'review_summary', 'payment_widget', 'lab_schedule_widget', 'celebration', 'calculation', 'pdf_upload', 'gap_results', 'confirm_details', 'usp_cards'].includes(step.widgetType);
+    return ['plan_switcher', 'review_summary', 'lab_schedule_widget', 'celebration', 'calculation', 'pdf_upload', 'gap_results', 'confirm_details', 'usp_cards'].includes(step.widgetType);
   };
+
+  const isOverlayWidget = () => false;
 
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--app-chat-gradient, var(--motor-chat-gradient))' }}>
@@ -413,7 +607,7 @@ export default function ChatContainer() {
 
       {/* Sticky bottom widget for input-type widgets */}
       <AnimatePresence>
-        {showWidget && !isLargeWidget() && (
+        {showWidget && !isLargeWidget() && !isOverlayWidget() && (
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -453,22 +647,22 @@ export default function ChatContainer() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
-                <h3 className="text-heading-sm text-white mb-2">Edit this answer?</h3>
+                <h3 className="text-heading-sm text-white mb-2">{t.chat.editThisAnswer}</h3>
                 <p className="text-body-sm text-white/50 mb-6">
-                  The conversation will continue from this point with your updated answer. Subsequent questions may change based on your new response.
+                  {t.chat.editWarning}
                 </p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setEditModal({ stepId: '', visible: false })}
                     className="flex-1 py-2.5 border border-white/20 text-white/70 rounded-xl text-label-md font-medium hover:bg-white/10 transition-colors"
                   >
-                    Cancel
+                    {t.chat.cancel}
                   </button>
                   <button
                     onClick={confirmEdit}
                     className="flex-1 py-2.5 bg-purple-700 text-white rounded-xl text-label-md font-medium hover:bg-purple-600 transition-colors"
                   >
-                    Edit answer
+                    {t.chat.editAnswer}
                   </button>
                 </div>
               </div>
@@ -476,6 +670,19 @@ export default function ChatContainer() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Payment Bottom Sheet Overlay */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showWidget && isOverlayWidget() && (
+            <HealthPaymentSheet
+              onComplete={() => handleResponse('paid')}
+              onSkip={() => handleResponse('paid')}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Edit Widget Bottom Sheet / Full Overlay */}
       <AnimatePresence>
@@ -501,7 +708,7 @@ export default function ChatContainer() {
               style={{ background: 'var(--app-glass-bg, var(--motor-glass-bg))', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-label-md font-semibold text-white/80">Update your answer</h4>
+                <h4 className="text-label-md font-semibold text-white/80">{t.chat.updateAnswer}</h4>
                 <button onClick={() => setEditingStepId(null)} className="text-white/40 hover:text-white/70 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>

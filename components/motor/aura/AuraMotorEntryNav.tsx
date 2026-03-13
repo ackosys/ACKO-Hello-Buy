@@ -42,7 +42,7 @@ export default function AuraMotorEntryNav({ initialVehicle = 'car', onStartJourn
       {/* Header */}
       <div className="flex items-center justify-between mb-8 relative z-10">
         <Link href="/">
-          <AckoLogo variant={theme === 'light' ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-8" />
+          <AckoLogo variant={theme === 'light' ? 'color' : 'white'} className="h-8" />
         </Link>
         <ThemeToggle />
       </div>

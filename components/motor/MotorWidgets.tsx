@@ -12,6 +12,11 @@ import { useThemeStore } from '../../lib/themeStore';
 import { MotorJourneyState, NcbPercentage } from '../../lib/motor/types';
 import { getMotorAddOns } from '../../lib/motor/plans';
 import Image from 'next/image';
+import { useT } from '../../lib/translations';
+import GradientBadge from '../ds/GradientBadge';
+import BaseSelectionCards, { type SelectionTheme } from '../ds/SelectionCards';
+import BaseTextInput from '../ds/TextInput';
+import type { InputTheme } from '../ds/NumberInput';
 
 const ADDON_ICONS: Record<string, string> = {
   engine_protection:     'Engine_protect.svg',
@@ -129,27 +134,41 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
 }
 
 /* ═══════════════════════════════════════════════
-   Selection Cards (Motor version)
+   Selection Cards (Motor version) — DS base + KYC sheet
    ═══════════════════════════════════════════════ */
 
+const MOTOR_THEME: SelectionTheme = {
+  surface: 'var(--motor-surface)',
+  surfaceSelected: 'var(--motor-selected-bg)',
+  surface2: 'var(--motor-surface-2)',
+  border: 'var(--motor-border)',
+  borderSelected: 'rgb(192,132,252)',
+  text: 'var(--motor-text)',
+  textMuted: 'var(--motor-text-subtle)',
+};
+
+function motorRenderIcon(icon: string, className?: string) {
+  return <MotorIcon icon={icon} className={`${className || 'w-6 h-6'} text-purple-300`} />;
+}
+
+function motorRenderLogo(logoUrl: string, label: string, className?: string) {
+  return <img src={assetPath(logoUrl)} alt={label} className={className || 'w-7 h-7 object-contain'} />;
+}
+
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const tw = useT().motorWidgets;
   const [showKycSheet, setShowKycSheet] = useState(false);
   const theme = useThemeStore((s) => s.theme);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-  const useLogoGrid = options.filter(o => o.logoUrl).length >= 3;
+  const [kycStage, setKycStage] = useState<'info' | 'verify'>('info');
+  const [kycIframeLoading, setKycIframeLoading] = useState(true);
 
   const handleSelect = (id: string) => {
-    setSelected(id);
     if (id === 'start_kyc') {
       setShowKycSheet(true);
       return;
     }
-    setTimeout(() => onSelect(id), 250);
+    onSelect(id);
   };
-
-  const [kycStage, setKycStage] = useState<'info' | 'verify'>('info');
-  const [kycIframeLoading, setKycIframeLoading] = useState(true);
 
   const handleKycComplete = () => {
     setShowKycSheet(false);
@@ -158,165 +177,15 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
     onSelect('start_kyc');
   };
 
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-purple-400 shadow-lg shadow-purple-900/20'
-                : 'hover:border-purple-300/30'
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            {opt.badge && (
-              <span className="absolute -top-2 -right-2 text-[11px] bg-pink-500 text-white px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                {opt.badge}
-              </span>
-            )}
-            <div className="mb-2 w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-              {opt.logoUrl ? (
-                <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-7 h-7 object-contain" />
-              ) : (
-                <MotorIcon icon={opt.icon!} className="w-6 h-6 text-purple-300" />
-              )}
-            </div>
-            <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-            {opt.description && (
-              <p className="text-[12px] mt-1" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
-  if (useLogoGrid) {
-    const logoOptions = options.filter(o => o.logoUrl);
-    const otherOptions = options.filter(o => !o.logoUrl);
-    return (
-      <div>
-        <div className="grid grid-cols-3 gap-2">
-          {logoOptions.map((opt, i) => (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.025 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95]
-                ${selected === opt.id
-                  ? 'border-purple-400 ring-1 ring-purple-400/30'
-                  : ''
-                }
-              `}
-              style={{
-                background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-                borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-              }}
-            >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-                <img src={assetPath(opt.logoUrl!)} alt={opt.label} className="w-7 h-7 object-contain" />
-              </div>
-              <span className="text-[11px] font-medium text-center leading-tight" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-              {opt.description && (
-                <span className="text-[9px] text-center leading-tight" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</span>
-              )}
-              {selected === opt.id && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-        {otherOptions.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (logoOptions.length + i) * 0.025 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              w-full mt-2 text-left px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400'
-                : ''
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {opt.icon && (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--motor-surface-2)' }}>
-                  <MotorIcon icon={opt.icon} className="w-4 h-4 text-purple-300" />
-                </div>
-              )}
-              <span className="text-[13px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="grid grid-cols-1 gap-2.5 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400 shadow-md shadow-purple-900/20'
-                : ''
-              }
-            `}
-            style={{
-              background: selected === opt.id ? 'var(--motor-selected-bg)' : 'var(--motor-surface)',
-              borderColor: selected === opt.id ? undefined : 'var(--motor-border)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {(opt.logoUrl || opt.icon) && (
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: 'var(--motor-surface-2)' }}>
-                  {opt.logoUrl ? (
-                    <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
-                  ) : (
-                    <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-purple-300" />
-                  )}
-                </div>
-              )}
-              <div className="flex-1">
-                <span className="text-[15px] font-medium" style={{ color: 'var(--motor-text)' }}>{opt.label}</span>
-                {opt.description && <p className="text-[12px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{opt.description}</p>}
-              </div>
-            </div>
-          </motion.button>
-        ))}
-      </div>
+      <BaseSelectionCards
+        options={options}
+        onSelect={handleSelect}
+        renderIcon={motorRenderIcon}
+        renderLogo={motorRenderLogo}
+        theme={MOTOR_THEME}
+      />
 
       {typeof document !== 'undefined' && createPortal(
         <div className={`motor-${theme}`}>
@@ -345,7 +214,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                   borderBottom: 'none',
                 }}
               >
-                {/* Header — same for both stages */}
                 <div className="px-5 pt-5 pb-4 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
@@ -355,7 +223,7 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                       <p className="text-[13px] mt-1.5 leading-snug" style={{ color: 'var(--motor-text-muted)' }}>
                         {kycStage === 'info'
                           ? 'HyperVerge, our reliable partner, will handle the KYC process for you with 100% security'
-                          : 'Complete the steps below to verify your identity and activate your policy'}
+                          : tw.kycSubtitle}
                       </p>
                     </div>
                     <button
@@ -372,12 +240,11 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
 
                 {kycStage === 'info' ? (
                   <>
-                    {/* Steps */}
                     <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2">
                       {[
-                        { step: '1', title: 'Verify your identity', desc: 'Upload PAN card or Aadhaar' },
-                        { step: '2', title: 'Take a quick selfie', desc: 'Face match for security' },
-                        { step: '3', title: 'Instant confirmation', desc: 'Approved in most cases' },
+                        { step: '1', title: tw.kycStep1Title, desc: tw.kycStep1Desc },
+                        { step: '2', title: tw.kycStep2Title, desc: tw.kycStep2Desc },
+                        { step: '3', title: tw.kycStep3Title, desc: tw.kycStep3Desc },
                       ].map((item) => (
                         <div key={item.step} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
                           <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-500/20 border border-purple-400/30">
@@ -390,8 +257,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                         </div>
                       ))}
                     </div>
-
-                    {/* CTAs */}
                     <div className="px-5 py-4 flex-shrink-0 space-y-2">
                       <button
                         onClick={() => { setKycStage('verify'); setKycIframeLoading(true); }}
@@ -414,7 +279,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                   </>
                 ) : (
                   <>
-                    {/* iframe fills remaining space */}
                     <div className="flex-1 relative overflow-hidden mx-4 rounded-2xl" style={{ border: '1px solid var(--motor-border)' }}>
                       {kycIframeLoading && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'var(--motor-glass-bg)' }}>
@@ -430,8 +294,6 @@ export function MotorSelectionCards({ options, onSelect }: { options: Option[]; 
                         onLoad={() => setKycIframeLoading(false)}
                       />
                     </div>
-
-                    {/* Done CTA */}
                     <div className="px-5 py-4 flex-shrink-0">
                       <button
                         onClick={handleKycComplete}
@@ -523,65 +385,44 @@ export function VehicleRegInput({ placeholder, onSubmit }: { placeholder?: strin
 }
 
 /* ═══════════════════════════════════════════════
-   Generic Text / Number Input
+   Generic Text / Number Input — DS base
    ═══════════════════════════════════════════════ */
+
+const MOTOR_INPUT_THEME: InputTheme = {
+  inputBg: 'var(--motor-input-bg)',
+  inputBorder: 'var(--motor-input-border)',
+  inputBorderFocus: 'rgb(168,85,247)',
+  inputText: 'var(--motor-input-text)',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+  buttonShadow: 'var(--btn-primary-shadow)',
+};
 
 export function MotorTextInput({
   placeholder,
+  defaultValue,
   inputType = 'text',
   onSubmit,
   validate,
   maxLength,
 }: {
   placeholder?: string;
+  defaultValue?: string;
   inputType?: 'text' | 'number' | 'tel';
   onSubmit: (value: string) => void;
   validate?: (value: string) => string | null;
   maxLength?: number;
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError('Please enter a value');
-      return;
-    }
-    if (validate) {
-      const err = validate(value.trim());
-      if (err) { setError(err); return; }
-    }
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder || 'Type here...'}
-        className="w-full px-4 py-4 rounded-xl text-[16px] focus:outline-none focus:border-purple-400 transition-colors"
-        style={{ background: 'var(--motor-input-bg)', border: '1px solid var(--motor-input-border)', color: 'var(--motor-input-text)' }}
-        autoComplete="off"
-        maxLength={maxLength}
-      />
-      {error && <p className="text-[12px] text-red-400 mt-1.5">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        className="mt-3 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-      >
-        Continue
-      </button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder || 'Type here...'}
+      defaultValue={defaultValue}
+      inputType={inputType}
+      onSubmit={onSubmit}
+      validate={validate}
+      maxLength={maxLength}
+      theme={MOTOR_INPUT_THEME}
+    />
   );
 }
 
@@ -589,18 +430,19 @@ export function MotorTextInput({
    Progressive Loader — Finding your vehicle
    ═══════════════════════════════════════════════ */
 
-const LOADING_STAGES = [
-  { message: 'Searching Vaahan portal...', duration: 1500 },
-  { message: 'Fetching vehicle details...', duration: 1500 },
-  { message: 'Checking registration certificate...', duration: 1200 },
-  { message: 'Loading existing policy data...', duration: 1200 },
-  { message: 'Almost there...', duration: 800 },
-];
-
 export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'success' | 'failed') => void }) {
   const [currentStage, setCurrentStage] = useState(0);
   const [stagesComplete, setStagesComplete] = useState(false);
   const { vehicleType, registrationNumber } = useMotorStore();
+  const tw = useT().motorWidgets;
+
+  const LOADING_STAGES = [
+    { message: tw.regSearchingVaahan, duration: 1500 },
+    { message: tw.regFetching, duration: 1500 },
+    { message: tw.regCheckingRC, duration: 1200 },
+    { message: tw.regLoadingPolicy, duration: 1200 },
+    { message: tw.regAlmostThere, duration: 800 },
+  ];
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -638,7 +480,7 @@ export function ProgressiveLoader({ onComplete }: { onComplete: (result: 'succes
             <MotorIcon icon={vehicleType === 'bike' ? 'bike' : 'car'} className="w-5 h-5 text-purple-300" />
           </div>
           <div>
-            <p className="text-[11px] text-white/40 uppercase tracking-wider">Registration</p>
+            <p className="text-[11px] text-white/40 uppercase tracking-wider">{tw.registration}</p>
             <p className="text-[16px] font-bold text-white tracking-wider">{registrationNumber || 'N/A'}</p>
           </div>
         </div>
@@ -744,6 +586,7 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
   const [confirmed, setConfirmed] = useState(false);
   const vehicleImg = getVehicleImage(v.make, state.vehicleType || 'car');
   const isLight = state.theme === 'light';
+  const tw = useT().motorWidgets;
 
   const formatRegistration = (value: string) => {
     const clean = value.replace(/\s+/g, '').toUpperCase();
@@ -799,20 +642,20 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
         {/* Details */}
         <div className="px-4 py-4 space-y-4">
           <div>
-            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Registration</p>
+            <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.registration}</p>
             <p className="text-[14px] font-semibold mt-1 tracking-[0.01em]" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>
               {formatRegistration(state.registrationNumber)}
             </p>
           </div>
           {p.insurer && (
             <div>
-              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Current Insurance</p>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.currentInsurance}</p>
               <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.insurer}</p>
             </div>
           )}
           {p.expiryDate && (
             <div>
-              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>Policy expiry</p>
+              <p className="text-[14px]" style={{ color: isLight ? '#5B5675' : 'var(--motor-text-muted)' }}>{tw.policyExpiry}</p>
               <p className="text-[14px] font-semibold mt-1" style={{ color: isLight ? '#040222' : 'var(--motor-text)' }}>{p.expiryDate}</p>
             </div>
           )}
@@ -830,7 +673,7 @@ export function VehicleDetailsCard({ onConfirm, onRetry }: { onConfirm: () => vo
               className="w-full h-12 rounded-lg text-[14px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-60"
               style={{ background: isLight ? '#0A0A0F' : 'var(--btn-primary-bg)', color: '#FFFFFF', boxShadow: isLight ? undefined : 'var(--btn-primary-shadow)' }}
             >
-              {confirmed ? 'Confirmed' : 'This is correct'}
+              {confirmed ? tw.confirmed : tw.thisIsCorrect}
             </button>
 
             <button
@@ -1306,6 +1149,7 @@ export function NcbSelector({ onSelect }: { onSelect: (ncb: string) => void }) {
 export function NcbReward({ onContinue }: { onContinue: () => void }) {
   const state = useMotorStore.getState() as MotorJourneyState;
   const [show, setShow] = useState(false);
+  const tw = useT().motorWidgets;
 
   useEffect(() => {
     setTimeout(() => setShow(true), 300);
@@ -1326,12 +1170,12 @@ export function NcbReward({ onContinue }: { onContinue: () => void }) {
         >
           <span className="text-3xl">🎉</span>
         </motion.div>
-        <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>NCB Reward Applied!</h3>
+        <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>{tw.ncbApplied}</h3>
         <p className="text-[14px] mb-3" style={{ color: 'var(--motor-text-muted)' }}>
           {state.newNcbPercentage}% discount on your Own Damage premium
         </p>
         <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2)' }}>
-          <p className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>For staying claim-free</p>
+          <p className="text-[12px]" style={{ color: 'var(--motor-text-subtle)' }}>{tw.ncbStayClaim}</p>
           <p className="text-[20px] font-bold text-green-400">{state.newNcbPercentage}% OFF</p>
         </div>
       </div>
@@ -1340,7 +1184,7 @@ export function NcbReward({ onContinue }: { onContinue: () => void }) {
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
         style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
-        Continue
+        {tw.continueBtn}
       </button>
     </motion.div>
   );
@@ -1360,6 +1204,7 @@ const INSURERS = [
 export function InsurerSelector({ onSelect }: { onSelect: (insurer: string) => void }) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const tw = useT().motorWidgets;
 
   const filtered = search
     ? INSURERS.filter(i => i.toLowerCase().includes(search.toLowerCase()))
@@ -1380,7 +1225,7 @@ export function InsurerSelector({ onSelect }: { onSelect: (insurer: string) => v
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search insurer"
+          placeholder={tw.searchInsurer}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl text-[14px] focus:outline-none focus:border-purple-400/50 transition-colors"
           style={{ background: 'var(--motor-input-bg)', border: '1px solid var(--motor-input-border)', color: 'var(--motor-input-text)' }}
           autoFocus
@@ -1441,6 +1286,7 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
   const v = state.vehicleData;
   const isLight = state.theme === 'light';
   const editable = !!onEditField;
+  const tw = useT().motorWidgets;
 
   return (
     <motion.div
@@ -1459,14 +1305,14 @@ export function EditableSummary({ onConfirm, onEditField, isBrandNew }: {
           Vehicle Summary
         </h3>
 
-        {v.make && <SummaryRow label="Make" value={v.make} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
-        {v.model && <SummaryRow label="Model" value={v.model} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
-        {v.variant && <SummaryRow label="Variant" value={v.variant} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
-        {v.fuelType && <SummaryRow label="Fuel" value={v.fuelType} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
-        {!isBrandNew && state.registrationNumber && <SummaryRow label="Registration number" value={state.registrationNumber} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_number')} />}
-        {!isBrandNew && v.registrationYear && <SummaryRow label="Registration year" value={String(v.registrationYear)} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_year')} />}
-        {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label="NCB" value={`${state.previousPolicy.ncbPercentage}%`} isLight={isLight} editable={editable} onEdit={() => onEditField?.('ncb')} />}
-        {!isBrandNew && state.policyStatus && <SummaryRow label="Policy status" value={state.policyStatus === 'active' ? 'Active' : 'Expired'} isLight={isLight} />}
+        {v.make && <SummaryRow label={tw.labelMake} value={v.make} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_brand')} />}
+        {v.model && <SummaryRow label={tw.labelModel} value={v.model} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_model')} />}
+        {v.variant && <SummaryRow label={tw.labelVariant} value={v.variant} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_variant')} />}
+        {v.fuelType && <SummaryRow label={tw.labelFuel} value={v.fuelType} isLight={isLight} editable={editable} onEdit={() => onEditField?.('manual_entry.select_fuel')} />}
+        {!isBrandNew && state.registrationNumber && <SummaryRow label={tw.labelRegNumber} value={state.registrationNumber} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_number')} />}
+        {!isBrandNew && v.registrationYear && <SummaryRow label={tw.labelRegYear} value={String(v.registrationYear)} isLight={isLight} editable={editable} onEdit={() => onEditField?.('reg_year')} />}
+        {!isBrandNew && state.previousPolicy.ncbPercentage > 0 && <SummaryRow label={tw.labelNcb} value={`${state.previousPolicy.ncbPercentage}%`} isLight={isLight} editable={editable} onEdit={() => onEditField?.('ncb')} />}
+        {!isBrandNew && state.policyStatus && <SummaryRow label={tw.labelPolicyStatus} value={state.policyStatus === 'active' ? tw.statusActive : tw.statusExpired} isLight={isLight} />}
 
         <button
           onClick={onConfirm}
@@ -1507,6 +1353,7 @@ function SummaryRow({ label, value, isLight, highlight, editable, onEdit }: { la
    ═══════════════════════════════════════════════ */
 
 export function RejectionScreen() {
+  const tw = useT().motorWidgets;
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -1519,7 +1366,7 @@ export function RejectionScreen() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <h3 className="text-[16px] font-bold text-white mb-2">Unable to insure</h3>
+        <h3 className="text-[16px] font-bold text-white mb-2">{tw.unableToInsure}</h3>
         <p className="text-[13px] text-white/50">
           We're currently unable to offer insurance for commercial vehicles. We'll notify you when this changes.
         </p>
@@ -1559,35 +1406,28 @@ export function PlanCalculator({ onComplete }: { onComplete: (result: any) => vo
       }
       setStagesComplete(true);
       
-      // Generate plans (import inline to avoid issues)
       setTimeout(async () => {
         try {
-          const { getMotorPlanDetails, calculateIDV } = await import('../../lib/motor/plans');
+          const { getPlansForCombination, determinePlanCombination, calculateIDV } = await import('../../lib/motor/plans');
           const state = useMotorStore.getState() as MotorJourneyState;
           
-          // Calculate IDV
-          const makePrice = 800000; // Mock: ₹8L
+          const makePrice = 800000;
           const vehicleAge = vehicleData.registrationYear 
             ? new Date().getFullYear() - vehicleData.registrationYear 
             : 3;
           const idvData = calculateIDV(makePrice, vehicleAge);
           
-          // Generate all plan variations
-          // Note: Only Comprehensive has garage tier options
-          const comprehensiveAll = getMotorPlanDetails(state, 'comprehensive', 'all');
-          const comprehensiveNetwork = getMotorPlanDetails(state, 'comprehensive', 'network');
-          const zeroDep = getMotorPlanDetails(state, 'zero_dep');
-          const thirdParty = getMotorPlanDetails(state, 'third_party');
+          const combo = determinePlanCombination(state);
+          const plans = getPlansForCombination(state, combo);
           
           onComplete({
-            plans: [comprehensiveAll, comprehensiveNetwork, zeroDep, thirdParty],
+            plans,
             idv: idvData.recommended,
             idvMin: idvData.min,
             idvMax: idvData.max,
           });
         } catch (error) {
           console.error('Error generating plans:', error);
-          // Fallback: just complete with empty data
           onComplete({ plans: [], idv: 750000, idvMin: 675000, idvMax: 787500 });
         }
       }, 600);
@@ -1793,9 +1633,13 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const vehicleType = useMotorStore((s) => s.vehicleType);
   const isBrandNew = vehicleEntryType === 'brand_new';
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
+  const tw = useT().motorWidgets;
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [showZdVsStandard, setShowZdVsStandard] = useState(false);
   const [showGarageTier, setShowGarageTier] = useState(false);
+  const [showZdVariant, setShowZdVariant] = useState(false);
+  const [showOdVariant, setShowOdVariant] = useState(false);
   const [showIDVSlider, setShowIDVSlider] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1803,9 +1647,11 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const comprehensivePlans = availablePlans.filter((p: any) => p.type === 'comprehensive');
   const zeroDepPlans = availablePlans.filter((p: any) => p.type === 'zero_dep');
   const thirdPartyPlan = availablePlans.find((p: any) => p.type === 'third_party');
+  const odPlans = availablePlans.filter((p: any) => p.type === 'od' || p.type === 'od_zd');
 
   const comprehensiveLowest = comprehensivePlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
   const zeroDepLowest = zeroDepPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
+  const odLowest = odPlans.length > 0 ? odPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0] : null;
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
@@ -1832,9 +1678,35 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const handlePlanClick = (plan: any) => {
     if (plan.type === 'comprehensive') {
       setSelectedPlan(plan);
-      setShowGarageTier(true);
+      if (zeroDepPlans.length > 0) {
+        setShowZdVsStandard(true);
+      } else if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: plan.type, garageTier: null, plan });
+      }
+    } else if ((plan.type === 'od' || plan.type === 'od_zd') && odPlans.length > 1) {
+      setSelectedPlan(plan);
+      setShowOdVariant(true);
     } else {
       onSelect({ planType: plan.type, garageTier: null, plan });
+    }
+  };
+
+  const handleZdVsStandardChoice = (choice: 'zd' | 'standard') => {
+    setShowZdVsStandard(false);
+    if (choice === 'zd') {
+      if (zeroDepPlans.length > 1) {
+        setShowZdVariant(true);
+      } else {
+        onSelect({ planType: 'zero_dep', garageTier: null, plan: zeroDepPlans[0] });
+      }
+    } else {
+      if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: 'comprehensive', garageTier: null, plan: comprehensivePlans[0] });
+      }
     }
   };
 
@@ -1845,6 +1717,12 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
     );
     setShowGarageTier(false);
     onSelect({ planType: selectedPlan.type, garageTier: tier, plan: finalPlan });
+  };
+
+  const handleVariantSelect = (plan: any) => {
+    setShowZdVariant(false);
+    setShowOdVariant(false);
+    onSelect({ planType: plan.type, garageTier: null, plan });
   };
 
   return (
@@ -1906,56 +1784,62 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             exit={{ opacity: 0 }}
             className="space-y-3"
           >
-            {/* Zero Depreciation Plan — shown first for brand new, second otherwise */}
-            {isBrandNew && zeroDepLowest && (
-              <PlanCard
-                plan={zeroDepLowest}
-                title="Zero Depreciation Plan (Bumper to Bumper)"
-                badge={`Recommended for your ${vType}`}
-                price={formatPrice(zeroDepLowest.totalPrice)}
-                description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property. Covers full cost of ${vType} parts if they are replaced during repairs.`}
-                onSelect={() => handlePlanClick(zeroDepLowest)}
-                recommended
-              />
-            )}
-
-            {/* Comprehensive Plan */}
+            {/* Comprehensive Plan — ZD is a sub-type, shown in bottom sheet */}
             {comprehensiveLowest && (
               <PlanCard
                 plan={comprehensiveLowest}
-                title={isBrandNew ? 'Comprehensive' : 'Comprehensive Plans'}
-                subtitle={isBrandNew ? undefined : '2 options starting from'}
-                badge={isBrandNew ? undefined : `Recommended for your ${vType}`}
-                price={formatPrice(comprehensiveLowest.totalPrice)}
-                strikePrice={isBrandNew ? undefined : comprehensiveLowest.totalPrice + 1000}
-                description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property.`}
+                title="Comprehensive"
+                subtitle={zeroDepLowest ? 'Includes Zero Depreciation option' : undefined}
+                badge={`Recommended for your ${vType}`}
+                price={formatPrice(zeroDepLowest ? Math.min(comprehensiveLowest.totalPrice, zeroDepLowest.totalPrice) : comprehensiveLowest.totalPrice)}
+                description={`Complete coverage for your ${vType} and third-party liabilities.`}
+                bulletPoints={[
+                  { text: 'Covers theft, damage from fire, accidents, and natural disasters', icon: 'check' },
+                  { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+                  { text: 'Cashless repairs at any GST registered garage', icon: 'check' },
+                  { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                ]}
                 onSelect={() => handlePlanClick(comprehensiveLowest)}
-              />
-            )}
-
-            {/* Zero Depreciation Plan — shown second for existing cars */}
-            {!isBrandNew && zeroDepLowest && (
-              <PlanCard
-                plan={zeroDepLowest}
-                title="Zero Depreciation Plans"
-                subtitle="2 options starting from"
-                badge="Best value"
-                price={formatPrice(zeroDepLowest.totalPrice)}
-                description="This plan includes fire, theft, accident, and third party liability cover and covers 100% cost of replaced parts during repairs."
-                onSelect={() => handlePlanClick(zeroDepLowest)}
                 recommended
               />
             )}
 
-            {/* Third Party Plan — only for existing cars, not brand new */}
+            {/* Third Party Plan */}
             {!isBrandNew && thirdPartyPlan && (
               <PlanCard
                 plan={thirdPartyPlan}
-                title="Third-party Plan"
-                subtitle="Minimum coverage required by law"
-                price={`${formatPrice(thirdPartyPlan.totalPrice)} (Same across all insurers)`}
-                description={`It covers damage caused by your ${vType} to others and their property, but does not cover any damage caused to your ${vType}.`}
+                title="Third Party"
+                badge="Minimum cover required by law"
+                badgeVariant="amber"
+                price={`${formatPrice(thirdPartyPlan.totalPrice)}`}
+                subtitle="Same price across all insurers"
+                description="The minimum coverage required by law to drive on Indian roads."
+                bulletPoints={[
+                  { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+                  { text: `Does not cover any damage caused to your own ${vType}`, icon: 'cross' },
+                  { text: 'No cashless repair benefit', icon: 'cross' },
+                ]}
                 onSelect={() => handlePlanClick(thirdPartyPlan)}
+              />
+            )}
+
+            {/* OD Plans — only when user has active TP policy */}
+            {odLowest && (
+              <PlanCard
+                plan={odLowest}
+                title="Own Damage"
+                subtitle={odPlans.length > 1 ? `${odPlans.length} options starting from` : undefined}
+                badge="For cars with active TP"
+                badgeVariant="amber"
+                price={formatPrice(odLowest.totalPrice)}
+                description={`Your Third Party policy is already active. You only need to renew your Own Damage cover.`}
+                bulletPoints={[
+                  { text: `Covers damage to your own ${vType} — accident, fire, theft, and natural calamities`, icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                  { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+                ]}
+                onSelect={() => handlePlanClick(odLowest)}
               />
             )}
           </motion.div>
@@ -1973,6 +1857,121 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
         </svg>
         I need help choosing
       </button>
+
+      {/* ZD vs Standard Comprehensive Bottom Sheet — Step 2 per skill file */}
+      <AnimatePresence>
+        {showZdVsStandard && (() => {
+          const zdStarting = zeroDepLowest ? formatPrice(zeroDepLowest.totalPrice) : '';
+          const compStarting = comprehensiveLowest ? formatPrice(comprehensiveLowest.totalPrice) : '';
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVsStandard(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>Do you want Zero Depreciation cover?</h3>
+                  <p className="text-[12px] mb-5" style={{ color: 'var(--motor-text-subtle)' }}>Zero Depreciation means no out-of-pocket cost on part replacements during claims.</p>
+
+                  <div className="space-y-3">
+                    {/* Zero Depreciation — recommended */}
+                    {zeroDepLowest && (
+                      <button
+                        onClick={() => handleZdVsStandardChoice('zd')}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Zero Depreciation</h4>
+                            <div className="mt-1"><GradientBadge>Recommended</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold" style={{ color: 'var(--motor-text)' }}>Starting {zdStarting}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Pays the full cost of parts replaced during a claim — no depreciation deducted</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Minimises your out-of-pocket expenses during claims</span>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Standard Comprehensive */}
+                    {comprehensiveLowest && (
+                      <button
+                        onClick={() => handleZdVsStandardChoice('standard')}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Standard Comprehensive</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold" style={{ color: 'var(--motor-text)' }}>Starting {compStarting}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Pays the cost of replaced parts after deducting depreciation</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>Your out-of-pocket expenses typically amount to 20–30% of the total claim value</span>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Compare section */}
+                  <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                    <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>See the difference with an example</p>
+                    <p className="text-[11px] mb-2" style={{ color: 'var(--motor-text-subtle)' }}>A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--motor-border)' }}>
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3" style={{ background: 'var(--motor-surface-2)', color: 'var(--motor-text-subtle)' }}>
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[['Part cost', '₹15,000', '₹15,000'], ['Depreciation', '₹0', '₹3,000–4,500'], ['You pay', '₹0', '₹3,000–4,500'], ['ACKO pays', '₹15,000', '₹10,500–12,000']].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3" style={{ borderTop: '1px solid var(--motor-border)', color: label === 'You pay' ? 'var(--motor-text)' : 'var(--motor-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--motor-text-subtle)' }}>With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.</p>
+                  </div>
+
+                  <button onClick={() => setShowZdVsStandard(false)} className="w-full mt-4 py-3 text-[14px] transition-colors" style={{ color: 'var(--motor-text-subtle)' }}>
+                    {tw.cancel}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Garage Tier Bottom Sheet for Comprehensive */}
       <AnimatePresence>
@@ -1994,77 +1993,393 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                 exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md max-h-[45vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                className="w-full max-w-md max-h-[70vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
                 style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
               >
                 <div className="p-5">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                  <h3 className="text-[18px] font-bold text-white mb-1">Choose your garage network</h3>
-                  <p className="text-[12px] text-white/50 mb-5">Comprehensive plan lets you pick where your {vType} gets repaired</p>
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>Choose the type of Comprehensive plan</h3>
+                  <p className="text-[12px] mb-5" style={{ color: 'var(--motor-text-subtle)' }}>We have two types of plans for you to choose from</p>
 
                   <div className="space-y-3">
-                    {/* Network Garages */}
+                    {/* Network Garage — preferred variant, shown first */}
                     <button
-                      onClick={() => handleGarageTierSelect('network')}
-                      className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group"
+                      onClick={() => networkPlan && handleGarageTierSelect('network')}
+                      className="w-full p-4 rounded-xl text-left transition-all group"
+                      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                            </svg>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Comprehensive · Network Garage</h4>
                           </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">Network Garages</h4>
-                            <p className="text-[11px] text-white/50">Cashless repairs at 5,400+ ACKO partner garages</p>
-                          </div>
+                          <GradientBadge>Recommended · Fully managed</GradientBadge>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
-                          <p className="text-[16px] font-bold text-white">{formatPrice(networkPlan?.totalPrice || 0)}</p>
-                          <p className="text-[10px] text-white/40">+ 18% GST</p>
+                          <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(networkPlan?.totalPrice || 0)}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 mt-3 mb-3">
+                        {[
+                          'All Comprehensive plan benefits at a lower premium',
+                          'Fully managed claims at ACKO Trusted Garages',
+                          'Free pickup & drop, real-time updates, and a 1-year warranty on repairs',
+                          'Just hand over the keys — we take care of everything',
+                        ].map((text, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>{text}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Claim condition callout */}
+                      <div className="p-2.5 rounded-lg mt-2" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-[12px] flex-shrink-0">⚡</span>
+                          <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                            Repairs outside ACKO Trusted Garages attract a ₹5,000 deductible. Not applicable if no trusted garage is available near you.
+                          </p>
                         </div>
                       </div>
                       {savings > 0 && (
-                        <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-400/20">
-                          Save ₹{savings.toLocaleString('en-IN')}
+                        <span className="inline-flex mt-2 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
+                          Save ₹{savings.toLocaleString('en-IN')} vs Standard
                         </span>
                       )}
                     </button>
 
-                    {/* All Garages */}
-                    <button
-                      onClick={() => handleGarageTierSelect('all')}
-                      className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.384 3.168 1.03-5.995L2.073 7.533l6.02-.874L11.42 1.5l3.326 5.159 6.02.874-4.993 4.81 1.03 5.995z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">All Garages</h4>
-                            <p className="text-[11px] text-white/50">Get repairs at any garage of your choice</p>
+                    {/* Standard — shown second, greyed out if unavailable */}
+                    {allPlan ? (
+                      <button
+                        onClick={() => handleGarageTierSelect('all')}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Comprehensive · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(allPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <p className="text-[16px] font-bold text-white">{formatPrice(allPlan?.totalPrice || 0)}</p>
-                          <p className="text-[10px] text-white/40">+ 18% GST</p>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Cashless repairs at any GST registered garage — repair wherever you want, no conditions</span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Comprehensive · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
                         </div>
                       </div>
-                      <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-400/20">
-                        Recommended
-                      </span>
-                    </button>
+                    )}
                   </div>
 
                   <button
                     onClick={() => setShowGarageTier(false)}
-                    className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors"
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
                   >
-                    Cancel
+                    {tw.cancel}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Zero Dep Variant Bottom Sheet (Safe Driver vs Standard) */}
+      <AnimatePresence>
+        {showZdVariant && selectedPlan && (() => {
+          const safeDriverPlan = zeroDepPlans.find((p: any) => p.variant === 'safe_driver' || p.expandedType === 'zd_comprehensive_safe');
+          const standardPlan = zeroDepPlans.find((p: any) => p.variant !== 'safe_driver' && p.expandedType !== 'zd_comprehensive_safe');
+          const [showCompare, setShowCompare] = [false, () => {}]; // placeholder for expandable
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>Choose your Zero Dep plan</h3>
+                  <p className="text-[12px] mt-1 mb-5" style={{ color: 'var(--motor-text-subtle)' }}>Both cover 100% of part replacement costs. Pick what suits you.</p>
+
+                  <div className="space-y-3">
+                    {/* Safe Driver — preferred variant, shown first */}
+                    {safeDriverPlan && (
+                      <button
+                        onClick={() => handleVariantSelect(safeDriverPlan)}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(safeDriverPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Built for responsible car owners who rarely need to claim</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits at a significantly lower premium</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                              You pay ₹5,000 when you make a claim. We cover everything else.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Standard — shown second, greyed out if unavailable */}
+                    {standardPlan ? (
+                      <button
+                        onClick={() => handleVariantSelect(standardPlan)}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(standardPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>No deductions of any kind during claims</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Higher premium, zero conditions</span>
+                          </div>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Compare section */}
+                  <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                    <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>See the difference with an example</p>
+                    <p className="text-[11px] mb-2" style={{ color: 'var(--motor-text-subtle)' }}>A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--motor-border)' }}>
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3" style={{ background: 'var(--motor-surface-2)', color: 'var(--motor-text-subtle)' }}>
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[
+                        ['Part cost', '₹15,000', '₹15,000'],
+                        ['Depreciation', '₹0', '₹3,000–4,500'],
+                        ['You pay', '₹0', '₹3,000–4,500'],
+                        ['ACKO pays', '₹15,000', '₹10,500–12,000'],
+                      ].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3" style={{ borderTop: '1px solid var(--motor-border)', color: label === 'You pay' ? 'var(--motor-text)' : 'var(--motor-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--motor-text-subtle)' }}>
+                      With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowZdVariant(false)}
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
+                  >
+                    {tw.cancel}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* OD Variant Bottom Sheet (for active TP policy with multiple OD options) */}
+      <AnimatePresence>
+        {showOdVariant && selectedPlan && (() => {
+          const zdSafe = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant === 'safe_driver');
+          const zdStd = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant !== 'safe_driver');
+          const plainOd = odPlans.find((p: any) => p.type === 'od' && !p.hasZeroDep);
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowOdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>Choose your OD plan</h3>
+                  <p className="text-[12px] mt-1 mb-5" style={{ color: 'var(--motor-text-subtle)' }}>Your third-party is already active. Pick the right own-damage cover.</p>
+
+                  <div className="space-y-3">
+                    {/* OD ZD Safe Driver — preferred */}
+                    {zdSafe && (
+                      <button
+                        onClick={() => handleVariantSelect(zdSafe)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>OD Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(zdSafe.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits at a much lower premium</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>No depreciation charges on part replacements</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                              You pay ₹5,000 when you make a claim. We cover everything else.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* OD ZD Standard — greyed out if unavailable */}
+                    {zdStd ? (
+                      <button
+                        onClick={() => handleVariantSelect(zdStd)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>OD Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(zdStd.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits, no deductions during claims</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Higher premium, zero conditions</span>
+                          </div>
+                        </div>
+                      </button>
+                    ) : zdSafe && (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>OD Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Plain OD (no ZD) — if available */}
+                    {plainOd && (
+                      <button
+                        onClick={() => handleVariantSelect(plainOd)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Standard OD</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(plainOd.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Standard OD cover — depreciation applies on part replacements</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setShowOdVariant(false)}
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
+                  >
+                    {tw.cancel}
                   </button>
                 </div>
               </motion.div>
@@ -2117,9 +2432,12 @@ function PlanCard({
   title,
   subtitle,
   badge,
+  badgeVariant = 'default',
   price,
   strikePrice,
   description,
+  bulletPoints,
+  claimCondition,
   onSelect,
   recommended,
 }: {
@@ -2127,9 +2445,12 @@ function PlanCard({
   title: string;
   subtitle?: string;
   badge?: string;
+  badgeVariant?: 'default' | 'amber';
   price: string;
   strikePrice?: number;
   description: string;
+  bulletPoints?: { text: string; icon: 'check' | 'cross' | 'info' }[];
+  claimCondition?: string;
   onSelect: () => void;
   recommended?: boolean;
 }) {
@@ -2142,8 +2463,27 @@ function PlanCard({
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
-  // Extract quick features (first 3, only the title part before —)
-  const quickFeatures = plan.features.slice(0, 3).map((f: string) => f.split(' — ')[0]);
+  const quickFeatures = bulletPoints
+    ? bulletPoints.slice(0, 5)
+    : plan.features.slice(0, 3).map((f: string) => ({ text: f.split(' — ')[0], icon: 'check' as const }));
+
+  const BulletIcon = ({ icon }: { icon: 'check' | 'cross' | 'info' }) => {
+    if (icon === 'cross') return (
+      <svg className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+    if (icon === 'info') return (
+      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+      </svg>
+    );
+    return (
+      <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    );
+  };
 
   return (
     <>
@@ -2158,22 +2498,27 @@ function PlanCard({
           <div className="mb-3">
             <div className="flex items-start justify-between mb-1">
               <div>
-                <h3 className="text-[15px] font-semibold text-white">{title}</h3>
-                {subtitle && <p className="text-[11px] text-white/40 mt-0.5">{subtitle}</p>}
+                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--motor-text)' }}>{title}</h3>
+                {subtitle && <p className="text-[11px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-purple-500/30 text-violet-700 px-2 py-0.5 rounded-full border border-purple-400/30 whitespace-nowrap">
-                  {badge}
-                </span>
+                badgeVariant === 'amber' ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full whitespace-nowrap text-[10px] font-medium leading-[12px]"
+                    style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                    {badge}
+                  </span>
+                ) : (
+                  <GradientBadge>{badge}</GradientBadge>
+                )
               )}
             </div>
             <div className="flex items-center gap-2">
               {strikePrice && (
-                <p className="text-[14px] font-semibold text-white/40 line-through">{formatPrice(strikePrice)}</p>
+                <p className="text-[14px] font-semibold line-through" style={{ color: 'var(--motor-text-subtle)' }}>{formatPrice(strikePrice)}</p>
               )}
-              <p className="text-[18px] font-bold text-white">{price}</p>
+              <p className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{price}</p>
             </div>
-            <p className="text-[12px] text-white/50 leading-relaxed mt-1">
+            <p className="text-[12px] leading-relaxed mt-1" style={{ color: 'var(--motor-text-subtle)' }}>
               {description}{' '}
               <button
                 onClick={() => setExpanded(!expanded)}
@@ -2187,22 +2532,23 @@ function PlanCard({
           {/* Quick features (always visible when collapsed) */}
           {!expanded && (
             <div className="space-y-1.5 mb-4">
-              {quickFeatures.map((feature: string, i: number) => {
-                const isGarageFeature = feature.includes('Cashless claims');
+              {quickFeatures.map((item: any, i: number) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const icon = typeof item === 'string' ? 'check' : item.icon;
+                const isGarageFeature = text.includes('Cashless');
                 return (
                   <div key={i} className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
+                    <BulletIcon icon={icon} />
                     {isGarageFeature ? (
                       <button
                         onClick={() => setShowGarageExplorer(true)}
-                        className="text-[12px] text-white/70 hover:text-purple-300 transition-colors text-left underline decoration-white/30 hover:decoration-purple-300"
+                        className="text-[12px] hover:text-purple-300 transition-colors text-left underline decoration-white/30 hover:decoration-purple-300"
+                        style={{ color: 'var(--motor-text-muted)' }}
                       >
-                        {feature}
+                        {text}
                       </button>
                     ) : (
-                      <span className="text-[12px] text-white/70">{feature}</span>
+                      <span className="text-[12px]" style={{ color: icon === 'cross' ? 'var(--motor-text-subtle)' : 'var(--motor-text-muted)' }}>{text}</span>
                     )}
                   </div>
                 );
@@ -2210,19 +2556,29 @@ function PlanCard({
             </div>
           )}
 
+          {/* Claim condition callout */}
+          {!expanded && claimCondition && (
+            <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-[13px] flex-shrink-0">⚡</span>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>{claimCondition}</p>
+              </div>
+            </div>
+          )}
+
           {/* CTA - when collapsed */}
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98]"
               style={{
-                background: 'var(--motor-bg)',
-                color: 'var(--motor-text)',
-                border: '1px solid var(--motor-border-strong)',
-                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+                background: 'var(--btn-secondary-bg)',
+                color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--btn-secondary-border)',
+                boxShadow: 'var(--btn-secondary-shadow)',
               }}
             >
-              {isComprehensive ? 'Explore plan' : 'Select this plan'}
+              Explore plan
             </button>
           )}
         </div>
@@ -2429,6 +2785,7 @@ function PlanCard({
 function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('all');
+  const tw = useT().motorWidgets;
 
   // Mock garage data
   const garages = [
@@ -2496,7 +2853,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div>
-            <h2 className="text-[18px] font-bold text-white">Cashless Network Garages</h2>
+            <h2 className="text-[18px] font-bold text-white">{tw.cashlessNetworkGarages}</h2>
             <p className="text-[12px] text-white/50 mt-0.5">5,400+ garages across India</p>
           </div>
           <button
@@ -2523,7 +2880,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
             </svg>
             <input
               type="text"
-              placeholder="Search by garage name or area..."
+              placeholder={tw.searchGarage}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-[13px] text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400/50"
@@ -2584,8 +2941,8 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
-              <p className="text-[14px] text-white/50">No garages found</p>
-              <p className="text-[12px] text-white/30 mt-1">Try adjusting your search or filters</p>
+              <p className="text-[14px] text-white/50">{tw.noGaragesFound}</p>
+              <p className="text-[12px] text-white/30 mt-1">{tw.noGaragesFoundSub}</p>
             </div>
           )}
         </div>
@@ -2608,6 +2965,7 @@ function GarageNetworkExplorer({ visible, onClose }: { visible: boolean; onClose
 export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => void }) {
   const { availablePlans, recommendedPlanType, vehicleEntryType } = useMotorStore();
   const isBrandNew = vehicleEntryType === 'brand_new';
+  const tw = useT().motorWidgets;
 
   const planType = recommendedPlanType || 'comprehensive';
   const planLabel = planType === 'zero_dep' ? 'Zero Depreciation' : planType === 'comprehensive' ? 'Comprehensive' : 'Third-party';
@@ -2629,12 +2987,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm space-y-3">
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
         <div className="px-4 py-3" style={{ background: 'var(--motor-plan-rec-header-bg)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--motor-plan-rec-badge)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>Recommended for you</span>
-          </div>
+          <GradientBadge className="mb-1">{tw.planRecommended}</GradientBadge>
           <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{planLabel} Plan</h3>
           {matchedPlan && (
             <p className="text-[22px] font-bold mt-1" style={{ color: 'var(--motor-text)' }}>
@@ -2681,8 +3034,10 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
   const { updateState, selectedAddOns = [], selectedPlan } = useMotorStore();
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
+  const tw = useT().motorWidgets;
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'out_of_pocket');
+  const state = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns('car', state).filter((a: any) => a.category === 'out_of_pocket');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2737,8 +3092,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
         <div className="mb-4">
-          <h3 className="text-[16px] font-bold text-white mb-1">Cut down your out-of-pocket expenses</h3>
-          <p className="text-[12px] text-white/50">Recommended for you</p>
+          <h3 className="text-[16px] font-bold text-white mb-1">{tw.cutDownOOP}</h3>
+          <p className="text-[12px] text-white/50">{tw.planRecommended}</p>
         </div>
 
         {addons.map((addon: any, index: number) => {
@@ -2778,7 +3133,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       />
                     )}
                     <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">Recommended</span>}
+                    {addon.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
                     {selected && (
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
@@ -2823,15 +3178,15 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
           className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10"
         >
           <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between text-white/70"><span>Base Premium</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
-            {totals.addonTotal > 0 && (<><div className="flex justify-between text-white/70"><span>Add-ons</span><span>₹{totals.addonTotal.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>GST (18%)</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
-            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>Total</span><span>₹{totals.total.toLocaleString()}</span></div>
+            <div className="flex justify-between text-white/70"><span>{tw.basePremium}</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
+            {totals.addonTotal > 0 && (<><div className="flex justify-between text-white/70"><span>{tw.addOns}</span><span>₹{totals.addonTotal.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>{tw.gst18}</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
+            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>{tw.total}</span><span>₹{totals.total.toLocaleString()}</span></div>
           </div>
         </motion.div>
 
         <div className="flex gap-3 mt-4">
-          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
+          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">{tw.continueWithoutAddons}</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>{tw.continueBtn}</button>
         </div>
         <p className="text-[11px] text-white/40 text-center mt-2">Next: Additional covers to reduce medical expenses</p>
       </motion.div>
@@ -2850,8 +3205,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
                       </div>
@@ -2863,7 +3218,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -2879,8 +3234,10 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
+  const tw = useT().motorWidgets;
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'protect_everyone');
+  const currentState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns(vType as 'car' | 'bike', currentState).filter((a: any) => a.category === 'protect_everyone');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2970,7 +3327,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                 />
               )}
               <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
-              {addon.mandatory && <span className="text-[10px] text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full">Mandatory by law</span>}
+              {addon.mandatory && <span className="text-[10px] text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full">{tw.mandatoryByLaw}</span>}
               {selected && (
                 <motion.span
                   initial={{ scale: 0, opacity: 0 }}
@@ -3015,17 +3372,17 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For you</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forYou}</p>
           {addons.filter((a: any) => a.id === 'personal_accident').map((a, i) => renderAddonCard(a, i))}
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For your loved ones</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forLovedOnes}</p>
           {addons.filter((a: any) => a.id === 'passenger_protection').map((a, i) => renderAddonCard(a, i))}
         </div>
 
         <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">For your driver</p>
+          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forDriver}</p>
           {addons.filter((a: any) => a.id === 'paid_driver').map((a, i) => renderAddonCard(a, i))}
         </div>
 
@@ -3037,15 +3394,15 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
           className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10"
         >
           <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between text-white/70"><span>Base Premium</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
-            {totals.totalAddons > 0 && (<><div className="flex justify-between text-white/70"><span>Add-ons</span><span>₹{totals.totalAddons.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>GST (18%)</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
-            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>Total</span><span>₹{totals.total.toLocaleString()}</span></div>
+            <div className="flex justify-between text-white/70"><span>{tw.basePremium}</span><span>₹{totals.basePremium.toLocaleString()}</span></div>
+            {totals.totalAddons > 0 && (<><div className="flex justify-between text-white/70"><span>{tw.addOns}</span><span>₹{totals.totalAddons.toLocaleString()}</span></div><div className="flex justify-between text-white/70"><span>{tw.gst18}</span><span>₹{totals.gst.toLocaleString()}</span></div></>)}
+            <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-[15px]"><span>{tw.total}</span><span>₹{totals.total.toLocaleString()}</span></div>
           </div>
         </motion.div>
 
         <div className="flex gap-3 mt-4">
-          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">Continue without add-ons</button>
-          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>Continue</button>
+          <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">{tw.continueWithoutAddons}</button>
+          <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>{tw.continueBtn}</button>
         </div>
       </motion.div>
 
@@ -3055,16 +3412,16 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
             <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md max-h-[45vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl" style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}>
               <div className="p-5">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                <h3 className="text-[18px] font-bold text-white mb-1">Select Personal Accident coverage amount</h3>
-                <p className="text-[12px] text-white/50 mb-5">Accidents can result in death or permanent disability. A Personal Accident Cover protects the owner-driver in such situations.</p>
+                <h3 className="text-[18px] font-bold text-white mb-1">{tw.selectPATitle}</h3>
+                <p className="text-[12px] text-white/50 mb-5">{tw.selectPADesc}</p>
                 <div className="space-y-3">
                   {showVariantModal.addon.variants?.map((variant: any) => (
                     <button key={variant.id} onClick={() => selectVariant(showVariantModal.addon, variant)} className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>{tw.recommended}</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
                       </div>
@@ -3076,7 +3433,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+                <button onClick={() => setShowVariantModal({ addon: null, show: false })} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -3108,6 +3465,7 @@ const DOC_SOURCE_OPTIONS: { id: DocSource; label: string; iconFile: string; acce
 export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocUploadResult) => void }) {
   const state = useMotorStore() as MotorJourneyState;
   const hasAutoRC = !!(state.registrationNumber && state.vehicleData?.make);
+  const tw = useT().motorWidgets;
 
   const [rcUploaded, setRcUploaded] = useState(hasAutoRC);
   const [dlUploaded, setDlUploaded] = useState(false);
@@ -3185,7 +3543,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
         animate={{ opacity: 1, y: 0 }}
         className="space-y-3 w-full max-w-sm"
       >
-        <p className="text-[13px] font-semibold text-white/50 uppercase tracking-wide px-1 mb-1">Upload important documents</p>
+        <p className="text-[13px] font-semibold text-white/50 uppercase tracking-wide px-1 mb-1">{tw.uploadDocTitle}</p>
 
         {/* RC Card */}
         <div className={`rounded-2xl border transition-all overflow-hidden ${rcUploaded ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/5'}`}>
@@ -3215,15 +3573,15 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             {hasAutoRC && rcUploaded && (
               <div className="bg-white/5 rounded-xl px-3 py-2.5 mb-3 space-y-1.5">
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Registration holder</span>
+                  <span className="text-white/50">{tw.regHolder}</span>
                   <span className="text-white font-medium">{ownerName}</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Vehicle number</span>
+                  <span className="text-white/50">{tw.vehicleNumber}</span>
                   <span className="text-white font-medium">{regNo}</span>
                 </div>
                 <div className="flex justify-between text-[12px]">
-                  <span className="text-white/50">Chassis no.</span>
+                  <span className="text-white/50">{tw.chassisNo}</span>
                   <span className="text-white font-medium">{chassisNo}</span>
                 </div>
               </div>
@@ -3232,7 +3590,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             {uploadingFor === 'rc' ? (
               <div className="flex items-center gap-2 py-1">
                 <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-[13px] text-white/60">Uploading...</span>
+                <span className="text-[13px] text-white/60">{tw.uploading}</span>
               </div>
             ) : (
               <button
@@ -3296,9 +3654,9 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
                   {prevPolicyUploaded && (
                     <span className="text-[10px] font-semibold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Uploaded ✓</span>
                   )}
-                  <span className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded-full">Optional</span>
+                  <span className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded-full">{tw.optional}</span>
                 </div>
-                <p className="text-[12px] text-white/50">Helps speed up claim processing</p>
+                <p className="text-[12px] text-white/50">{tw.optionalHelp}</p>
               </div>
             </div>
 
@@ -3321,7 +3679,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
         {/* Incorrect details link */}
         <p className="text-[12px] text-center text-white/40 py-1">
           Incorrect details?{' '}
-          <button className="text-purple-400 underline underline-offset-2">Update here</button>
+          <button className="text-purple-400 underline underline-offset-2">{tw.updateHere}</button>
         </p>
 
         {/* Proceed CTA */}
@@ -3364,7 +3722,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
             >
               <div className="p-5">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                <p className="text-[16px] font-semibold text-white mb-1">Select a source</p>
+                <p className="text-[16px] font-semibold text-white mb-1">{tw.selectSource}</p>
                 <p className="text-[12px] text-white/50 mb-5">in PNG, JPEG, or PDF format (Max 10 MB)</p>
               <div className="space-y-2">
                 {DOC_SOURCE_OPTIONS.map((opt) => (
@@ -3389,7 +3747,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
                   </button>
                 ))}
               </div>
-              <button onClick={() => setSourceSheet(null)} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">Cancel</button>
+              <button onClick={() => setSourceSheet(null)} className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors">{tw.cancel}</button>
               </div>
             </motion.div>
           </motion.div>
@@ -3407,6 +3765,7 @@ export function DocumentUploadWidget({ onContinue }: { onContinue: (result: DocU
 const SURVEYOR = { name: 'Rajesh Nair', id: 'SRV-4821', eta: '~90 mins', phone: '98XX XXXX 34', rating: 4.8 };
 
 export function SurveyorDetailsCard({ onContinue }: { onContinue: () => void }) {
+  const tw = useT().motorWidgets;
   useEffect(() => {
     const timer = setTimeout(() => onContinue(), 2500);
     return () => clearTimeout(timer);
@@ -3433,17 +3792,17 @@ export function SurveyorDetailsCard({ onContinue }: { onContinue: () => void }) 
           </div>
           <div className="text-right">
             <div className="w-2 h-2 rounded-full bg-green-400 ml-auto mb-1 animate-pulse" />
-            <p className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">On duty</p>
+            <p className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">{tw.onDuty}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2, var(--motor-surface))' }}>
-            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>Expected visit</p>
+            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>{tw.expectedVisit}</p>
             <p className="text-[13px] font-bold" style={{ color: 'var(--motor-text)' }}>{SURVEYOR.eta}</p>
           </div>
           <div className="rounded-xl p-3" style={{ background: 'var(--motor-surface-2, var(--motor-surface))' }}>
-            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>Contact</p>
+            <p className="text-[11px] mb-0.5" style={{ color: 'var(--motor-text-muted)' }}>{tw.contact}</p>
             <div className="flex items-center gap-1.5">
               <p className="text-[13px] font-bold" style={{ color: 'var(--motor-text)' }}>{SURVEYOR.phone}</p>
               <svg className="w-3.5 h-3.5 text-[#A855F7] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -3472,6 +3831,7 @@ function daysLeft(iso: string): number {
 }
 
 export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) => void }) {
+  const tw = useT().motorWidgets;
   const policies = useMotorStore((s) => s.dashboardPolicies);
   const vehicleType = useMotorStore((s) => s.vehicleType);
   const [selected, setSelected] = useState<string | null>(null);
@@ -3518,7 +3878,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                     {isExpired ? (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
-                        Expired
+                        {tw.statusExpired}
                       </span>
                     ) : isUrgent ? (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full animate-pulse"
@@ -3528,7 +3888,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                     ) : (
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>
-                        Active
+                        {tw.statusActive}
                       </span>
                     )}
                     <svg className="w-4 h-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -3550,7 +3910,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                 {!isExpired && (
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Expires</p>
+                      <p className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>{tw.expires}</p>
                       <p className="text-[11px] font-semibold" style={{ color: isUrgent ? '#EA580C' : 'var(--motor-text-muted)' }}>
                         {new Date(policy.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
@@ -3709,7 +4069,7 @@ export function PolicyCardsWidget({ onSelect }: { onSelect: (response: string) =
                   className="w-full mt-4 py-3 text-[13px] transition-colors"
                   style={{ color: 'var(--motor-text-muted)' }}
                 >
-                  Cancel
+                  {tw.cancel}
                 </button>
               </div>
             </motion.div>

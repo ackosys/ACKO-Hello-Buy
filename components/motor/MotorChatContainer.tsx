@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotorStore } from '../../lib/motor/store';
 import { getMotorStep } from '../../lib/motor/scripts';
 import { MotorJourneyState } from '../../lib/motor/types';
-import { saveSnapshot, MOTOR_SAVE_STEPS } from '../../lib/journeyPersist';
+import { saveSnapshot, clearSnapshotById, MOTOR_SAVE_STEPS } from '../../lib/journeyPersist';
 import { saveRecentVehicle, getBrandLogoUrl } from '../../lib/motorRecentVehicles';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../../lib/mockUsers';
 import { writeSessionCookie } from '../../lib/sessionCookie';
+import { useT } from '../../lib/translations';
 import ChatMessage, { TypingIndicator } from '../ChatMessage';
 import { ChatMessage as ChatMessageType } from '@/lib/types';
 import {
@@ -38,7 +39,8 @@ import { PremiumBreakdown, PaymentGateway, MotorCelebration, PolicyTracker, NpsF
 /* ── Inline phone+OTP gate shown before quotes are revealed ── */
 const VALID_OTP = '0000';
 
-function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
+function MotorLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => void; onSkip?: () => void }) {
+  const t = useT();
   const [gateStep, setGateStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState(['', '', '', '']);
@@ -81,49 +83,48 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.215, 0.61, 0.355, 1] }}
-      className="mt-2 mb-4 rounded-2xl overflow-hidden"
-      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
-    >
+    <div className="max-w-sm">
       {gateStep === 'phone' ? (
-        <div className="p-4 flex flex-col gap-3">
+        <>
           <div
-            className="w-full h-[52px] rounded-xl flex items-center overflow-hidden"
-            style={{ border: '1.5px solid var(--motor-border-strong)', background: 'var(--motor-bg)' }}
+            className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm"
           >
-            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0" style={{ color: 'var(--motor-text-muted)' }}>+91</span>
-            <div className="w-px h-5 shrink-0" style={{ background: 'var(--motor-border-strong)' }} />
+            <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
+            <div className="w-px h-5 shrink-0 bg-white/20" />
             <input
               autoFocus
               type="tel"
               inputMode="numeric"
-              placeholder="Enter your mobile number"
+              placeholder={t.chat.loginPhonePlaceholder}
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
-              className="flex-1 h-full px-3 text-[15px] outline-none bg-transparent"
-              style={{ color: 'var(--motor-text)' }}
+              className="flex-1 px-3 py-3.5 text-body-md text-white placeholder:text-white/30 outline-none bg-transparent"
             />
           </div>
-          <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
-            We&apos;ll save your progress so you can continue from where you left off
+          <p className="text-caption text-white/40 mt-1.5 text-center">
+            {t.chat.loginSaveProgress}
           </p>
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
-            className="w-full h-[48px] rounded-xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
-            style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
+            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
           >
-            Send OTP
+            {t.chat.loginSendOtp}
           </button>
-        </div>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              className="mt-2 w-full py-2 text-white/40 hover:text-white/60 text-caption font-medium transition-colors"
+            >
+              {t.chat.loginSkipForNow}
+            </button>
+          )}
+        </>
       ) : (
-        <div className="p-4 flex flex-col gap-3">
-          <p className="text-[13px] text-center" style={{ color: 'var(--motor-text-muted)' }}>
-            OTP sent to +91 {phone}
+        <>
+          <p className="text-caption text-white/40 text-center mb-3">
+            {t.chat.loginOtpSentTo(phone)}
           </p>
           <motion.div
             className="flex gap-2 justify-center"
@@ -140,23 +141,23 @@ function MotorLoginGate({ onSuccess }: { onSuccess: (phone: string) => void }) {
                 value={d}
                 onChange={e => handleOtpChange(i, e.target.value)}
                 onKeyDown={e => handleOtpKeyDown(i, e)}
-                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all"
+                className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
                 style={{
-                  background: 'var(--motor-bg)',
-                  border: otpError ? '2px solid #ef4444' : d ? '2px solid var(--motor-cta-bg, #6D28D9)' : '1.5px solid var(--motor-border-strong)',
-                  color: 'var(--motor-text)',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  color: 'white',
                 }}
               />
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-[12px] text-center" style={{ color: '#ef4444' }}>Incorrect OTP. Try <strong>0000</strong>.</p>
+            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
           ) : (
-            <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted)' }}>Enter <strong>0000</strong> to verify</p>
+            <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
           )}
-        </div>
+        </>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -171,17 +172,25 @@ export default function MotorChatContainer() {
   } = useMotorStore();
 
   const { isLoggedIn, setProfile, addPolicy } = useUserProfileStore();
+  const t = useT();
+  const tWidgets = t.widgets;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const processedRef = useRef<Set<string>>(new Set());
   const [showWidget, setShowWidget] = useState(false);
   const [editModal, setEditModal] = useState<{ stepId: string; visible: boolean }>({ stepId: '', visible: false });
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   // Save drop-off snapshot at key steps
   useEffect(() => {
     if (!MOTOR_SAVE_STEPS.has(currentStepId)) return;
     const s = useMotorStore.getState();
+    // Purchase complete — clear PWILO instead of saving a "policy active" card
+    if ((currentStepId === 'payment.success' || currentStepId === 'completion.dashboard') && s.paymentComplete) {
+      if (s.journeyId) clearSnapshotById(s.journeyId);
+      return;
+    }
     const id = saveSnapshot({
       journeyId: s.journeyId || undefined,
       product: s.vehicleType ?? 'car',
@@ -299,25 +308,101 @@ export default function MotorChatContainer() {
     addBotMessage();
   }, [currentStepId]);
 
-  // Login gate: called after user verifies OTP inside the motor journey
+  // Login gate success: context-aware routing
   const handleLoginGateSuccess = useCallback((phone: string) => {
-    const state = detectPostLoginState(phone);
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
     const firstName = useUserProfileStore.getState().firstName || '';
     setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
-    buildPoliciesForState(state).forEach(p => addPolicy(p));
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
     writeSessionCookie({ firstName });
 
-    addMessage({ type: 'user', content: 'Phone verified ✓', stepId: 'login.phone_gate', module: 'login' });
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
     setShowWidget(false);
 
-    // Advance to quote.calculating
     setTimeout(() => {
-      updateState({
-        currentStepId: 'quote.calculating',
-        currentModule: 'quote',
-      } as Partial<MotorJourneyState>);
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
     }, 300);
-  }, [setProfile, addPolicy, addMessage, updateState]);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
+
+  const handleLoginGateSkip = useCallback(() => {
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+
+    addMessage({ type: 'user', content: t.chat.skippedForNow, stepId: currentStep, module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, freshState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          currentStepId: 'owner_details.email',
+          currentModule: 'owner_details',
+        } as Partial<MotorJourneyState>);
+      }
+    }, 300);
+  }, [addMessage, updateState, t]);
+
+  // Mandatory login gate: phone is required to proceed
+  const handleLoginGateMandatorySuccess = useCallback((phone: string) => {
+    const stateNow = useMotorStore.getState() as MotorJourneyState;
+    const currentStep = stateNow.currentStepId;
+    const loginState = detectPostLoginState(phone);
+    const firstName = useUserProfileStore.getState().firstName || '';
+    setProfile({ firstName, phone: `+91${phone}`, isLoggedIn: true, policies: [] });
+    buildPoliciesForState(loginState).forEach(p => addPolicy(p));
+    addMessage({ type: 'user', content: t.chat.phoneVerified, stepId: currentStep, module: 'login' });
+    setShowWidget(false);
+
+    setTimeout(() => {
+      const step = getMotorStep(currentStep);
+      if (step) {
+        const freshState = useMotorStore.getState() as MotorJourneyState;
+        const nextStepId = step.getNextStep(null, { ...freshState, phone } as MotorJourneyState);
+        const nextStep = getMotorStep(nextStepId);
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: nextStepId,
+          currentModule: nextStep?.module || freshState.currentModule,
+        } as Partial<MotorJourneyState>);
+      } else {
+        updateState({
+          phone,
+          ownerMobile: phone,
+          currentStepId: 'review.premium_breakdown',
+          currentModule: 'review',
+        } as Partial<MotorJourneyState>);
+      }
+    }, 300);
+  }, [setProfile, addPolicy, addMessage, updateState, t]);
 
   // Handle edit
   const handleEditRequest = (stepId: string) => {
@@ -386,6 +471,10 @@ export default function MotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleEditResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleEditResponse} />;
@@ -394,13 +483,14 @@ export default function MotorChatContainer() {
         return (
           <MotorTextInput
             placeholder={script.placeholder}
+            defaultValue={script.defaultValue}
             inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
             onSubmit={handleEditResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -497,6 +587,10 @@ export default function MotorChatContainer() {
       userLabel = response.score ? `${emojis[response.score] || ''} Rated ${response.score}/5` : '';
     } else if (step.widgetType === 'app_download_cta') {
       userLabel = '';
+    } else if (step.widgetType === 'guided_plan_step' || step.widgetType === 'plan_variant_selector') {
+      const options = step.getScript(useMotorStore.getState() as MotorJourneyState).options || [];
+      const selected = options.find((o: any) => o.id === response);
+      userLabel = selected ? selected.label : String(response);
     }
 
     // Add user message (skip for loading states)
@@ -548,6 +642,10 @@ export default function MotorChatContainer() {
 
     switch (step.widgetType) {
       case 'selection_cards':
+      case 'guided_plan_step':
+      case 'plan_variant_selector':
+      case 'preliminary_check':
+      case 'addon_questions':
         return <MotorSelectionCards options={script.options || []} onSelect={handleResponse} />;
       case 'vehicle_reg_input':
         return <VehicleRegInput placeholder={script.placeholder} onSubmit={handleResponse} />;
@@ -556,13 +654,14 @@ export default function MotorChatContainer() {
         return (
           <MotorTextInput
             placeholder={script.placeholder}
+            defaultValue={script.defaultValue}
             inputType={script.inputType as 'text' | 'number' | 'tel' || 'text'}
             onSubmit={handleResponse}
             maxLength={isPincode ? 6 : undefined}
             validate={isPincode ? (v: string) => {
-              if (!/^\d{6}$/.test(v)) return 'Please enter a valid 6-digit pincode';
+              if (!/^\d{6}$/.test(v)) return tWidgets.validPincode;
               const first = parseInt(v[0]);
-              if (first < 1 || first > 9) return 'Invalid pincode — first digit must be 1-9';
+              if (first < 1 || first > 9) return tWidgets.invalidPincodeFirstDigit;
               return null;
             } : undefined}
           />
@@ -649,6 +748,10 @@ export default function MotorChatContainer() {
         return <AppDownloadCta onComplete={() => handleResponse({})} />;
       case 'login_gate':
         return <MotorLoginGate onSuccess={handleLoginGateSuccess} />;
+      case 'login_gate_skippable':
+        return <MotorLoginGate onSuccess={handleLoginGateSuccess} onSkip={handleLoginGateSkip} />;
+      case 'login_gate_mandatory':
+        return <MotorLoginGate onSuccess={handleLoginGateMandatorySuccess} />;
       default:
         return null;
     }
@@ -681,6 +784,7 @@ export default function MotorChatContainer() {
                   key={msg.id}
                   message={msg as ChatMessageType}
                   onEdit={handleEditRequest}
+                  onPlanInfo={() => setShowPlanDetails(true)}
                   animate={isLatestBot}
                 />
               );
@@ -782,6 +886,101 @@ export default function MotorChatContainer() {
             </motion.div>
           </>
         )}
+      </AnimatePresence>
+
+      {/* Plan Details Bottom Sheet — shown when user clicks their plan selection */}
+      <AnimatePresence>
+        {showPlanDetails && (() => {
+          const st = useMotorStore.getState() as MotorJourneyState;
+          const plan = st.selectedPlan;
+          if (!plan) return null;
+          const formatPrice = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black z-50"
+                onClick={() => setShowPlanDetails(false)}
+              />
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-x-0 bottom-0 max-w-md mx-auto max-h-[70vh] overflow-y-auto rounded-t-3xl shadow-2xl z-50"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)', borderBottom: 'none' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'var(--motor-border-strong)' }} />
+
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{plan.name}</h3>
+                      {plan.tagline && <p className="text-[12px] mt-1" style={{ color: 'var(--motor-text-subtle)' }}>{plan.tagline}</p>}
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="text-[20px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(plan.totalPrice)}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                    </div>
+                  </div>
+
+                  {plan.description && (
+                    <p className="text-[13px] mb-5 leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>{plan.description}</p>
+                  )}
+
+                  {plan.features && plan.features.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>What&apos;s covered</h4>
+                      <div className="space-y-2">
+                        {plan.features.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {plan.notCovered && plan.notCovered.length > 0 && (
+                    <div className="mb-5">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Not covered</h4>
+                      <div className="space-y-2">
+                        {plan.notCovered.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {plan.deductibleDescription && (
+                    <div className="p-3 rounded-xl mb-5" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                      <p className="text-[12px] font-medium" style={{ color: 'var(--motor-text-subtle)' }}>Deductible</p>
+                      <p className="text-[13px] mt-0.5" style={{ color: 'var(--motor-text)' }}>{plan.deductibleDescription}</p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setShowPlanDetails(false)}
+                    className="w-full py-3 rounded-xl text-[14px] font-medium transition-colors"
+                    style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)', color: 'var(--motor-text-muted)' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Edit Widget Bottom Sheet / Full Overlay */}

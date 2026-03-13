@@ -11,7 +11,7 @@ import { useUserProfileStore } from '../../lib/userProfileStore';
 import MotorHelloEntry from '../../components/motor/MotorHelloEntry';
 import MotorHeader from '../../components/motor/MotorHeader';
 import MotorChatContainer from '../../components/motor/MotorChatContainer';
-import { MotorExpertPanel, MotorAIChatPanel } from '../../components/motor/MotorPanels';
+import { MotorHelpPanel } from '../../components/motor/MotorPanels';
 import { VehicleType, MotorJourneyState, MotorIntent } from '../../lib/motor/types';
 import LoginChatFlow from '../../components/LoginChatFlow';
 // LoginIntent type is used implicitly via the onSuccess callback
@@ -188,10 +188,11 @@ function seedDemoPolicy(vehicleType: VehicleType) {
 
 function MotorJourneyInner() {
   const store = useMotorStore();
-  const { updateState, resetJourney, setLanguage } = store;
+  const { updateState, resetJourney, setLanguage, addMessage } = store;
   const userName = store.userName;
   const theme = useThemeStore((s) => s.theme);
   const globalLanguage = useLanguageStore((s) => s.language);
+  const journeyLanguage = store.language;
   const searchParams = useSearchParams();
   const { isLoggedIn } = useUserProfileStore();
 
@@ -201,7 +202,9 @@ function MotorJourneyInner() {
   const [hydrated, setHydrated] = useState(false);
 
   // Keep motor store language in sync with the global language selection
-  useEffect(() => { setLanguage(globalLanguage); }, [globalLanguage, setLanguage]);
+  useEffect(() => {
+    if (journeyLanguage !== globalLanguage) setLanguage(globalLanguage);
+  }, [journeyLanguage, globalLanguage, setLanguage]);
 
   useEffect(() => {
     const product = vehicleParam ?? 'car';
@@ -212,6 +215,10 @@ function MotorJourneyInner() {
     const screenParam = searchParams.get('screen');
 
     resetJourney();
+
+    // Sync language immediately after reset — read from localStorage as authoritative source
+    const savedLang = localStorage.getItem('acko_language');
+    if (savedLang) setLanguage(savedLang as import('../../lib/types').Language);
 
     // Set vehicleType from URL param immediately so MotorHeader shows the badge
     updateState({ vehicleType: product as VehicleType } as Partial<MotorJourneyState>);
@@ -249,6 +256,7 @@ function MotorJourneyInner() {
       } as Partial<MotorJourneyState>);
       setScreen('chat');
     } else {
+      let handled = false;
       // Check if this is Kiran's multi-policy scenario
       try {
         const raw = typeof window !== 'undefined'
@@ -265,20 +273,21 @@ function MotorJourneyInner() {
               currentModule: 'dashboard',
             } as Partial<MotorJourneyState>);
             setScreen('chat');
+            handled = true;
           }
         }
-      } catch { /* noop — stay on explore */ }
+      } catch { /* noop */ }
+
+      // Default: go straight to motor chat at the renew/insure fork (skip LoginChatFlow)
+      if (!handled) {
+        const vt: VehicleType = vehicleParam ?? 'car';
+        seedDemoState(vt);
+        updateState({ vehicleType: vt, currentStepId: 'registration.has_number', currentModule: 'registration' } as Partial<MotorJourneyState>);
+        setScreen('chat');
+      }
     }
 
     setHydrated(true);
-
-    // Already logged in with no specific journey state → jump to registration chat
-    if (isLoggedIn && screen === 'login') {
-      const vt: VehicleType = vehicleParam ?? 'car';
-      seedDemoState(vt);
-      updateState({ vehicleType: vt, currentStepId: 'registration.has_number', currentModule: 'registration' } as Partial<MotorJourneyState>);
-      setScreen('chat');
-    }
   }, []);
 
   /* COMMENTED OUT: handleVehicleSelect — was used by MotorEntryScreen
@@ -351,8 +360,7 @@ function MotorJourneyInner() {
 
   return (
     <>
-      <MotorExpertPanel />
-      <MotorAIChatPanel />
+      <MotorHelpPanel />
 
       {/* COMMENTED OUT: WelcomeOverlay, MotorPrototypeIntro, MotorEntryScreen
       <AnimatePresence>
@@ -378,12 +386,28 @@ function MotorJourneyInner() {
               <LoginChatFlow
                 onSuccess={(intent) => {
                   const vt: VehicleType = vehicleParam === 'bike' ? 'bike' : 'car';
+                  const profileName = useUserProfileStore.getState().firstName || '';
+                  const vLabel = vt === 'bike' ? 'bike' : 'car';
+
                   if (intent === 'insure_new') {
                     handleJumpTo('manual_entry.congratulations', vt);
+                    updateState({ vehicleEntryType: 'brand_new' } as Partial<MotorJourneyState>);
                   } else if (intent === 'continue_quote') {
                     handleJumpTo('quote.plan_selection', vt);
                   } else {
-                    handleJumpTo('registration.has_number', vt);
+                    handleJumpTo('registration.enter_number', vt);
+                    updateState({ vehicleEntryType: 'existing' } as Partial<MotorJourneyState>);
+                  }
+
+                  // Seed the motor chat with LoginChatFlow messages for a seamless single-thread experience
+                  const greeting = profileName ? `Nice to meet you, ${profileName}!` : 'Nice to meet you!';
+                  addMessage({ type: 'bot', content: `Hello! What would you like us to call you?`, stepId: 'login.name', module: 'registration' });
+                  addMessage({ type: 'user', content: profileName || 'User', stepId: 'login.name', module: 'registration' });
+                  addMessage({ type: 'bot', content: `${greeting} What would you like to do today?`, stepId: 'login.intent', module: 'registration' });
+                  if (intent === 'insure_new') {
+                    addMessage({ type: 'user', content: `Insure a new ${vLabel}`, stepId: 'login.intent', module: 'registration' });
+                  } else if (intent !== 'continue_quote') {
+                    addMessage({ type: 'user', content: 'Renew my insurance', stepId: 'login.intent', module: 'registration' });
                   }
                 }}
                 onBack={() => window.history.back()}

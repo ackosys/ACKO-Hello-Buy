@@ -72,7 +72,7 @@ function loadAll(): JourneySnapshot[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed)) return parsed.filter((s): s is JourneySnapshot => s != null && typeof s?.product === 'string');
     // Migrate from old Record<ProductKey, JourneySnapshot> format
     const migrated = (Object.values(parsed) as JourneySnapshot[])
       .filter(Boolean)

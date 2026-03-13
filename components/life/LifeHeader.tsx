@@ -26,8 +26,8 @@ const THEME_ICONS: Record<string, React.ReactNode> = {
 };
 const THEME_LABELS: Record<string, string> = { midnight: 'Midnight', dark: 'Dark', light: 'Light' };
 
-const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലయாളം' };
+const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'];
+const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലయாളം', te: 'తెలుగు' };
 
 export default function LifeHeader() {
   const t = useT();
@@ -96,6 +96,44 @@ export default function LifeHeader() {
     router.push('/');
   }, [router]);
 
+  const handleJumpToSummary = useCallback(() => {
+    setShowMenu(false);
+    updateState({
+      currentStepId: 'life_review',
+      currentModule: 'review' as LifeModule,
+      name: 'Rahul Sharma',
+      age: 30,
+      gender: 'male',
+      phone: '9876543210',
+      pinCode: '560001',
+      smokingStatus: 'never',
+      annualIncome: 1500000,
+      occupation: 'Software Engineer',
+      recommendedCoverage: 100000000,
+      selectedCoverage: 100000000,
+      selectedTerm: 30,
+      selectedRiders: [
+        { id: 'accidental_death', name: 'Accidental Death Benefit', premium: 1200 },
+        { id: 'critical_illness', name: 'Critical Illness Cover', premium: 3500 },
+      ],
+      quote: {
+        yearlyPremium: 96390,
+        monthlyPremium: 8033,
+        totalPremium: 96390,
+        basePremium: 91690,
+        riderPremium: 4700,
+        gst: 0,
+      },
+      paymentComplete: false,
+      ekycComplete: false,
+      financialComplete: false,
+      medicalComplete: false,
+      journeyComplete: false,
+      conversationHistory: [],
+      stepHistory: ['life_review'],
+    } as any);
+  }, [updateState]);
+
   const hasExistingPolicy = useUserProfileStore((s) => s.hasActivePolicyInLob('life'));
 
   const handleViewPolicy = useCallback(() => {
@@ -126,7 +164,7 @@ export default function LifeHeader() {
             </button>
           )}
           <Link href="/">
-            <AckoLogo variant={isLight ? 'color' : theme === 'dark' ? 'white' : 'full-white'} className="h-5" />
+            <AckoLogo variant={isLight ? 'color' : 'white'} className="h-5" />
           </Link>
         </div>
 
@@ -187,6 +225,18 @@ export default function LifeHeader() {
                       <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
                     </svg>
                     Start over
+                  </button>
+                  <button
+                    onClick={handleJumpToSummary}
+                    className="w-full px-4 py-3 text-left text-sm flex items-center gap-2 transition-colors hover:opacity-80"
+                    style={{ color: isLight ? '#7C3AED' : '#C4B5FD', borderBottom: '1px solid var(--app-border)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                      <rect x="9" y="3" width="6" height="4" rx="1" />
+                      <path d="M9 12h6M9 16h4" />
+                    </svg>
+                    Jump to summary
                   </button>
                   {hasExistingPolicy && (
                     <button

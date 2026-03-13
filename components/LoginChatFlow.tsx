@@ -8,6 +8,7 @@ import { useUserProfileStore } from '../lib/userProfileStore';
 import { detectPostLoginState, buildPoliciesForState } from '../lib/mockUsers';
 import type { PostLoginState } from '../lib/mockUsers';
 import { readSessionCookie, writeSessionCookie, clearSessionCookie } from '../lib/sessionCookie';
+import { useT } from '../lib/translations';
 
 const VALID_OTP = '0000';
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -271,6 +272,7 @@ function PolicyCard({
   onFileClaim: () => void;
   onDownload: () => void;
 }) {
+  const t = useT().login;
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -292,7 +294,7 @@ function PolicyCard({
         </p>
         <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>{policy.regNumber}</p>
         <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>{policy.planType}</p>
-        <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>Valid till {policy.validTill}</p>
+        <p className="text-[12px] leading-[16px]" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>{t.chatValidTill(policy.validTill)}</p>
       </div>
       <div className="absolute top-0 right-0 w-[105px] h-[105px] pointer-events-none">
         <Image src={policy.imageUrl} alt={`${policy.make} ${policy.model}`} width={105} height={105} className="object-contain w-full h-full" />
@@ -414,6 +416,7 @@ const NewCarIcon = () => (
 
 /* ── "Insure another car" section ── */
 function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () => void }) {
+  const t = useT().login;
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -421,13 +424,13 @@ function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () =
       transition={{ delay, duration: 0.3 }}
       className="mt-1 mb-2 flex flex-col gap-3"
     >
-      <BotBubble>Or need insurance for another car?</BotBubble>
+      <BotBubble>{t.chatAnotherCar}</BotBubble>
       <button
         onClick={onClick}
         className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-all active:scale-[0.97]"
         style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
       >
-        Insure another car
+        {t.chatInsureAnother}
       </button>
     </motion.div>
   );
@@ -435,20 +438,23 @@ function InsureAnotherSection({ delay, onClick }: { delay: number; onClick: () =
 
 /* ── Main component ── */
 export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginChatFlowProps) {
+  const t = useT().login;
   const router = useRouter();
   const { setProfile, addPolicy } = useUserProfileStore();
 
-  // 'returning' — cookie found, show recognition prompt
-  // 'q1'        — collect name (new user)
-  // 'journey'   — show vehicle type chips after name
-  // 'q2'        — collect phone (gated before plans)
-  // 'q3'        — collect OTP
-  // 'post_login'— show results
+  // 'returning'     — cookie found, show recognition prompt
+  // 'q1'            — collect name (new user)
+  // 'journey'       — show vehicle type chips after name
+  // 'q2'            — collect phone (gated before plans)
+  // 'q3'            — collect OTP
+  // 'post_login'    — show results
   const [step, setStep] = useState<'returning' | 'q1' | 'journey' | 'q2' | 'q3' | 'post_login'>('q1');
   const [showTyping, setShowTyping] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [otpError, setOtpError] = useState(false);
+  // true when we pre-populated the name from profile (skip the "What should we call you?" message)
+  const [nameFromProfile, setNameFromProfile] = useState(false);
   const [nameEchoed, setNameEchoed] = useState(false);
   const [phoneEchoed, setPhoneEchoed] = useState(false);
   const [otpEchoed, setOtpEchoed] = useState(false);
@@ -461,13 +467,22 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Check for session cookie on mount
+  // Check for session cookie on mount; fall back to profile name if known
   useEffect(() => {
     const session = readSessionCookie();
     if (session) {
       setReturningUser(session);
       setName(session.firstName);
       setStep('returning');
+    } else {
+      const profileName = useUserProfileStore.getState().firstName;
+      if (profileName && !useUserProfileStore.getState().isLoggedIn) {
+        // Name already collected earlier in this session — skip the name question
+        setName(profileName);
+        setNameEchoed(true);
+        setNameFromProfile(true);
+        setStep('journey');
+      }
     }
   }, []);
 
@@ -566,17 +581,17 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
   const isNewUser = postLoginState === 'new_user' || postLoginState?.startsWith('new_user_pwilo');
   const welcomeMsg = isNewUser
-    ? `Welcome to ACKO, ${name}! Great to have you here.`
-    : `Welcome back, ${name}!`;
+    ? t.chatWelcomeNew(name.split(' ')[0])
+    : t.chatWelcomeReturning(name.split(' ')[0]);
 
   const contextMsg = (() => {
-    if (!postLoginState) return 'What are you looking to insure today?';
-    if (postLoginState === 'new_user') return 'What are you looking to insure today?';
-    if (postLoginState.startsWith('new_user_pwilo')) return 'I found an insurance quote you started earlier.';
-    if (postLoginState === 'one_policy') return 'I found a policy linked to your account. What would you like to do?';
-    if (postLoginState === 'two_policies_health_vehicle' || postLoginState === 'two_policies_vehicles') return 'I found 2 policies linked to your account. What would you like to do?';
-    if (postLoginState.startsWith('one_policy_pwilo')) return 'I found a policy linked to your account, and a quote you started earlier.';
-    return 'What are you looking to insure today?';
+    if (!postLoginState) return t.chatInsureToday;
+    if (postLoginState === 'new_user') return t.chatInsureToday;
+    if (postLoginState.startsWith('new_user_pwilo')) return t.chatFoundQuote;
+    if (postLoginState === 'one_policy') return t.chatFoundPolicy;
+    if (postLoginState === 'two_policies_health_vehicle' || postLoginState === 'two_policies_vehicles') return t.chatFound2Policies;
+    if (postLoginState.startsWith('one_policy_pwilo')) return t.chatFoundPolicyAndQuote;
+    return t.chatInsureToday;
   })();
 
   const phoneCanSubmit = phone.replace(/\D/g, '').length === 10;
@@ -609,16 +624,16 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         {returningUser ? (
           <>
             <BotBubble>
-              Welcome back, {returningUser.firstName}! 👋 Looks like you&apos;ve been here before.
+              {t.chatReturningGreet(returningUser.firstName.split(' ')[0])}
             </BotBubble>
             <BotBubble>
-              Shall we continue as <strong>{returningUser.firstName}</strong>?
+              {t.chatReturningConfirm(returningUser.firstName.split(' ')[0])}
             </BotBubble>
 
             <AnimatePresence>
               {(step === 'q2' || step === 'q3' || step === 'post_login') && (
                 <BotBubble>
-                  To verify it&apos;s you, please enter your mobile number.
+                  {t.chatVerifyMobile}
                 </BotBubble>
               )}
             </AnimatePresence>
@@ -630,7 +645,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
             <AnimatePresence>
               {(step === 'q3' || step === 'post_login') && (
                 <BotBubble>
-                  We&apos;ve sent an OTP to +91 {phone}. Please enter it below.
+                  {t.chatOtpSent(phone)}
                 </BotBubble>
               )}
             </AnimatePresence>
@@ -638,17 +653,22 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         ) : (
           <>
             {/* ── New user path ── */}
-            <BotBubble>Hello! What would you like us to call you?</BotBubble>
-
-            <AnimatePresence>
-              {nameEchoed && <UserBubble>{name}</UserBubble>}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
-                <BotBubble>Nice to meet you, {name}! What would you like to do today?</BotBubble>
-              )}
-            </AnimatePresence>
+            {nameFromProfile ? (
+              // Name already known — greet without asking again
+              <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
+            ) : (
+              <>
+                <BotBubble>{t.chatGreet}</BotBubble>
+                <AnimatePresence>
+                  {nameEchoed && <UserBubble>{name}</UserBubble>}
+                </AnimatePresence>
+                <AnimatePresence>
+                  {(step === 'journey' || step === 'q2' || step === 'q3' || step === 'post_login') && (
+                    <BotBubble>{t.chatNiceToMeet(name.split(' ')[0])}</BotBubble>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             <AnimatePresence>
               {phoneEchoed && <UserBubble>+91 {phone}</UserBubble>}
@@ -656,7 +676,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
 
             <AnimatePresence>
               {(step === 'q3' || step === 'post_login') && (
-                <BotBubble>We&apos;ve sent an OTP to +91 {phone}. Please enter it below.</BotBubble>
+                <BotBubble>{t.chatOtpSent(phone)}</BotBubble>
               )}
             </AnimatePresence>
           </>
@@ -673,11 +693,11 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
               <OtpInput onComplete={handleOtp} error={otpError} />
               {otpError ? (
                 <p className="text-[12px] text-center" style={{ color: '#ef4444' }}>
-                  Incorrect OTP. Try <strong>0000</strong>.
+                  {t.chatOtpIncorrect('0000')}
                 </p>
               ) : (
                 <p className="text-[12px] text-center" style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}>
-                  Enter <strong>0000</strong> to verify
+                  {t.chatEnterCode('0000')}
                 </p>
               )}
             </motion.div>
@@ -685,7 +705,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
         </AnimatePresence>
 
         <AnimatePresence>
-          {otpEchoed && <UserBubble>OTP Verified ✓</UserBubble>}
+          {otpEchoed && <UserBubble>{t.chatOtpVerified}</UserBubble>}
         </AnimatePresence>
 
         {/* ── Post-login cascade ── */}
@@ -754,14 +774,14 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
               className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97]"
               style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
             >
-              Continue as {returningUser.firstName}
+              {t.continueAs(returningUser.firstName.split(' ')[0])}
             </button>
             <button
               onClick={handleNotMe}
               className="w-full h-[44px] rounded-2xl text-[14px] font-medium transition-colors active:scale-[0.97]"
               style={{ color: 'var(--motor-text-muted, var(--app-text-muted))' }}
             >
-              Not me
+              {t.notMe}
             </button>
           </motion.div>
         )}
@@ -779,7 +799,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
             <input
               autoFocus
               type="text"
-              placeholder="Enter your name"
+              placeholder={t.chatNamePlaceholder}
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && nameCanSubmit && handleNameSubmit()}
@@ -813,15 +833,15 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           >
             <div className="grid grid-cols-2 gap-3">
               <VehicleCard
-                label="Renew my insurance"
-                sub="I already have a car"
+                label={t.chatRenewLabel}
+                sub={t.chatRenewSub}
                 icon={<RenewIcon />}
                 delay={0.05}
                 onClick={() => handleChipSelect('insure_existing')}
               />
               <VehicleCard
-                label="Insure a new car"
-                sub="Just bought a new car"
+                label={t.chatInsureNewLabel}
+                sub={t.chatInsureNewSub}
                 icon={<NewCarIcon />}
                 delay={0.12}
                 onClick={() => handleChipSelect('insure_new')}
@@ -853,7 +873,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
                 autoFocus
                 type="tel"
                 inputMode="numeric"
-                placeholder="Enter your mobile number"
+                placeholder={t.chatMobilePlaceholder}
                 value={phone}
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 onKeyDown={e => e.key === 'Enter' && phoneCanSubmit && handlePhoneSubmit()}
@@ -867,7 +887,7 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
               className="w-full h-[52px] rounded-2xl text-[15px] font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
               style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
             >
-              Send OTP
+              {t.chatSendOtp}
             </button>
           </motion.div>
         )}
@@ -884,15 +904,15 @@ export default function LoginChatFlow({ onSuccess, onBack, hideHeader }: LoginCh
           >
             <div className="grid grid-cols-2 gap-3">
               <VehicleCard
-                label="Renew my insurance"
-                sub="I already have a car"
+                label={t.chatRenewLabel}
+                sub={t.chatRenewSub}
                 icon={<RenewIcon />}
                 delay={0.05}
                 onClick={() => onSuccess('insure_existing')}
               />
               <VehicleCard
-                label="Insure a new car"
-                sub="Just bought a new car"
+                label={t.chatInsureNewLabel}
+                sub={t.chatInsureNewSub}
                 icon={<NewCarIcon />}
                 delay={0.12}
                 onClick={() => onSuccess('insure_new')}

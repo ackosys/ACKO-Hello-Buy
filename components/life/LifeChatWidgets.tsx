@@ -6,6 +6,11 @@ import type { Option, LifeRider, LifeJourneyState } from '../../lib/life/types';
 import { useLifeJourneyStore } from '../../lib/life/store';
 import { calculateBasePremium } from '../../lib/life/scripts';
 import { useUserProfileStore } from '../../lib/userProfileStore';
+import { useT } from '../../lib/translations';
+import BaseSelectionCards from '../ds/SelectionCards';
+import BaseMultiSelect from '../ds/MultiSelect';
+import BaseNumberInput from '../ds/NumberInput';
+import BaseTextInput from '../ds/TextInput';
 
 /* ═══════════════════════════════════════════════════════
    SVG Icon System — Life-specific icons
@@ -48,164 +53,52 @@ function LifeIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: s
 }
 
 /* ═══════════════════════════════════════════════════════
-   Selection Cards — Reusable grid/list selection
+   Selection Cards — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
-export function LifeSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-                : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-              }
-            `}
-          >
-            {opt.icon && (
-              <div className="mb-2">
-                {typeof opt.icon === 'string' && LIFE_ICON_PATHS[opt.icon]
-                  ? <LifeIcon icon={opt.icon} className="w-8 h-8" />
-                  : <span className="text-3xl">{opt.icon}</span>}
-              </div>
-            )}
-            <span className={`text-label-md font-medium ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>
-              {opt.label}
-            </span>
-            {opt.description && (
-              <span className="text-caption text-white/50 mt-1">{opt.description}</span>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
+function lifeRenderIcon(icon: string, className?: string) {
+  if (typeof icon === 'string' && LIFE_ICON_PATHS[icon]) {
+    return <LifeIcon icon={icon} className={className || 'w-6 h-6'} />;
   }
+  return <span className="text-2xl">{icon}</span>;
+}
 
+export function LifeSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => (
-        <motion.button
-          key={opt.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.04 }}
-          onClick={() => handleSelect(opt.id)}
-          className={`
-            flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-200 active:scale-[0.97]
-            ${selected === opt.id
-              ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-              : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-            }
-          `}
-        >
-          {opt.icon && (
-            <div className="flex-shrink-0">
-              {typeof opt.icon === 'string' && LIFE_ICON_PATHS[opt.icon]
-                ? <LifeIcon icon={opt.icon} className="w-6 h-6" />
-                : <span className="text-xl">{opt.icon}</span>}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <span className={`text-label-md font-medium block ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>
-              {opt.label}
-            </span>
-            {opt.description && (
-              <span className="text-caption text-white/40 block mt-0.5">{opt.description}</span>
-            )}
-          </div>
-          {selected === opt.id && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            </motion.div>
-          )}
-        </motion.button>
-      ))}
-    </div>
+    <BaseSelectionCards
+      options={options}
+      onSelect={onSelect}
+      renderIcon={lifeRenderIcon}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Multi Select — Grid with multi-selection and confirm
+   Multi Select — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
 export function LifeMultiSelect({ options, onSelect }: { options: Option[]; onSelect: (response: string) => void }) {
-  const [selected, setSelected] = useState<string[]>([]);
-
-  const toggle = (id: string) => {
-    if (id === 'none') {
-      setSelected(prev => prev.includes('none') ? [] : ['none']);
-      return;
-    }
-    setSelected(prev => {
-      const without = prev.filter(s => s !== 'none');
-      return without.includes(id) ? without.filter(s => s !== id) : [...without, id];
-    });
-  };
-
   return (
-    <div className="max-w-md">
-      <div className="grid grid-cols-2 gap-2.5">
-        {options.map((opt, i) => {
-          const isSelected = selected.includes(opt.id);
-          return (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              onClick={() => toggle(opt.id)}
-              className={`
-                flex items-center justify-center text-center px-4 py-3.5 rounded-xl border transition-all duration-150 active:scale-[0.97]
-                ${isSelected
-                  ? 'border-purple-400 bg-white/15'
-                  : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-                }
-              `}
-            >
-              <span className="text-label-md text-white/90 font-medium">{opt.label}</span>
-              {isSelected && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-2 w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-      <button
-        onClick={() => selected.length > 0 && onSelect(selected.join(','))}
-        disabled={selected.length === 0}
-        className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-      >
-        Continue
-      </button>
-    </div>
+    <BaseMultiSelect
+      options={options}
+      onSelect={onSelect}
+      renderIcon={lifeRenderIcon}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Number Input — For age, income, coverage amounts
+   Number Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
+
+function lifeCurrencyFormat(v: string) {
+  const num = parseInt(v);
+  if (isNaN(num)) return '';
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
+  if (num >= 1000) return `₹${(num / 1000).toFixed(1)} K`;
+  return `₹${num.toLocaleString('en-IN')}`;
+}
 
 export function LifeNumberInput({ 
   placeholder, 
@@ -222,72 +115,21 @@ export function LifeNumberInput({
   max?: number; 
   onSubmit: (val: string) => void 
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
-
-  const handleSubmit = () => {
-    const num = parseFloat(value);
-    if (!value.trim()) { setError('Please enter a value'); return; }
-    if (min !== undefined && num < min) { setError(`Minimum value is ${min.toLocaleString('en-IN')}`); return; }
-    if (max !== undefined && num > max) { setError(`Maximum value is ${max.toLocaleString('en-IN')}`); return; }
-    setError('');
-    onSubmit(value);
-  };
-
-  const formatDisplay = (v: string) => {
-    const num = parseInt(v);
-    if (isNaN(num)) return '';
-    if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
-    if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
-    if (num >= 1000) return `₹${(num / 1000).toFixed(1)} K`;
-    return `₹${num.toLocaleString('en-IN')}`;
-  };
-
   return (
-    <div className="max-w-sm">
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="number"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => { setValue(e.target.value); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder={placeholder}
-          className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
-        />
-        {value && inputType !== 'tel' && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-body-sm text-purple-300/70">
-            {formatDisplay(value)}
-          </div>
-        )}
-      </div>
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
-          {error}
-        </motion.p>
-      )}
-      {subText && <p className="text-white/40 text-caption mt-1.5">{subText}</p>}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        Continue
-      </motion.button>
-    </div>
+    <BaseNumberInput
+      placeholder={placeholder}
+      subText={subText}
+      inputType={(inputType as 'text' | 'number' | 'tel') || 'number'}
+      min={min}
+      max={max}
+      onSubmit={onSubmit}
+      formatDisplay={inputType !== 'tel' ? lifeCurrencyFormat : undefined}
+    />
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   Text Input — For name, phone, pincode
+   Text Input — delegates to DS base
    ═══════════════════════════════════════════════════════ */
 
 export function LifeTextInput({
@@ -301,49 +143,13 @@ export function LifeTextInput({
   maxLength?: number;
   onSubmit: (val: string) => void;
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) { setError('Please enter a value'); return; }
-    if (inputType === 'tel' && value.length !== 10) { setError('Please enter a valid 10-digit number'); return; }
-    setError('');
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
-        autoFocus
-      />
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
-          {error}
-        </motion.p>
-      )}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        Continue
-      </motion.button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder}
+      inputType={inputType as 'text' | 'number' | 'tel'}
+      maxLength={maxLength}
+      onSubmit={onSubmit}
+    />
   );
 }
 
@@ -358,6 +164,7 @@ export function LifeDatePicker({
   placeholder?: string;
   onSubmit: (val: string) => void;
 }) {
+  const lw = useT().lifeWidgets;
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -374,9 +181,9 @@ export function LifeDatePicker({
     const d = parseInt(day);
     const m = parseInt(month);
     const y = parseInt(year);
-    if (!d || !m || !y) { setError('Please enter a complete date'); return; }
-    if (d < 1 || d > 31) { setError('Invalid day'); return; }
-    if (m < 1 || m > 12) { setError('Invalid month'); return; }
+    if (!d || !m || !y) { setError(lw.dobErrorIncomplete); return; }
+    if (d < 1 || d > 31) { setError(lw.dobErrorDay); return; }
+    if (m < 1 || m > 12) { setError(lw.dobErrorMonth); return; }
     if (y < 1940 || y > 2010) { setError('Year should be between 1940 and 2010'); return; }
     
     const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -392,7 +199,7 @@ export function LifeDatePicker({
           ref={dayRef}
           type="number"
           inputMode="numeric"
-          placeholder="DD"
+          placeholder={lw.dobDayPlaceholder}
           value={day}
           onChange={(e) => {
             setDay(e.target.value);
@@ -405,7 +212,7 @@ export function LifeDatePicker({
           ref={monthRef}
           type="number"
           inputMode="numeric"
-          placeholder="MM"
+          placeholder={lw.dobMonthPlaceholder}
           value={month}
           onChange={(e) => {
             setMonth(e.target.value);
@@ -418,7 +225,7 @@ export function LifeDatePicker({
           ref={yearRef}
           type="number"
           inputMode="numeric"
-          placeholder="YYYY"
+          placeholder={lw.dobYearPlaceholder}
           value={year}
           onChange={(e) => setYear(e.target.value)}
           maxLength={4}
@@ -605,7 +412,7 @@ export function LifeCoverageCard({ coverageAmount, policyTerm, coversTillAge, br
         onClick={onContinue}
         className="mt-4 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-all active:scale-[0.97]"
       >
-        Continue
+        Customise my plan
       </button>
     </motion.div>
   );
@@ -616,6 +423,7 @@ export function LifeCoverageCard({ coverageAmount, policyTerm, coversTillAge, br
    ═══════════════════════════════════════════════════════ */
 
 export function LifePremiumSummary({ onContinue }: { onContinue: () => void }) {
+  const lw = useT().lifeWidgets;
   const state = useLifeJourneyStore.getState() as LifeJourneyState;
   const { age, recommendedCoverage, annualIncome } = state;
 
@@ -780,8 +588,8 @@ export function LifePremiumSummary({ onContinue }: { onContinue: () => void }) {
                   <p className="text-caption font-semibold text-white/80 mb-2">Why Flexi matters:</p>
                   <ul className="space-y-1.5">
                     {[
-                      'Your income grows over time',
-                      'Your loans change',
+                      lw.incomeGrowsOverTime,
+                      lw.loansChange,
                       'Your family size changes'
                     ].map((item, i) => (
                       <li key={i} className="flex items-start gap-2 text-caption text-white/60">
@@ -815,21 +623,22 @@ export function LifePremiumSummary({ onContinue }: { onContinue: () => void }) {
    ═══════════════════════════════════════════════════════ */
 
 export function LifeReviewSummary({ onConfirm, onEdit }: { onConfirm: () => void; onEdit?: (stepId: string) => void }) {
+  const lw = useT().lifeWidgets;
   const state = useLifeJourneyStore.getState() as LifeJourneyState;
   const { name, age, gender, phone, pinCode, smokingStatus, annualIncome, occupation, recommendedCoverage, selectedRiders, quote } = state;
 
   const rows = [
-    { label: 'Name', value: name, stepId: 'life_basic_name' },
-    { label: 'Age', value: `${age} years`, stepId: 'life_basic_dob' },
-    { label: 'Gender', value: gender === 'male' ? 'Male' : 'Female', stepId: 'life_basic_gender' },
-    { label: 'Phone', value: phone, stepId: 'life_basic_phone' },
-    { label: 'Pin Code', value: pinCode, stepId: 'life_basic_pincode' },
-    { label: 'Smoker', value: smokingStatus === 'current' ? 'Yes' : 'No', stepId: 'life_basic_habits' },
-    { label: 'Annual Income', value: `₹${(annualIncome / 100000).toFixed(1)}L`, stepId: 'life_basic_income' },
+    { label: lw.summaryNameLabel, value: name, stepId: 'life_basic_name' },
+    { label: lw.summaryAgeLabel, value: lw.summaryAge(age), stepId: 'life_basic_dob' },
+    { label: lw.summaryGenderLabel, value: gender === 'male' ? lw.summaryGenderMale : lw.summaryGenderFemale, stepId: 'life_basic_gender' },
+    { label: lw.summaryPhoneLabel, value: phone, stepId: 'life_basic_phone' },
+    { label: lw.summaryPinLabel, value: pinCode, stepId: 'life_basic_pincode' },
+    { label: lw.summarySmokerLabel, value: smokingStatus === 'current' ? lw.summaryGenderMale : lw.summaryGenderFemale, stepId: 'life_basic_habits' },
+    { label: lw.summaryIncomeLabel, value: `₹${(annualIncome / 100000).toFixed(1)}L`, stepId: 'life_basic_income' },
     { label: 'Occupation', value: occupation, stepId: 'life_lifestyle_occupation' },
-    { label: 'Coverage', value: `₹${((recommendedCoverage || 10000000) / 10000000).toFixed(1)} Cr`, stepId: 'life_quote_display' },
-    { label: 'Riders', value: selectedRiders.length > 0 ? selectedRiders.map(r => r.name).join(', ') : 'None', stepId: 'life_addons_accidental_death' },
-    { label: 'Premium', value: `₹${(quote?.yearlyPremium || 0).toLocaleString('en-IN')}/year`, stepId: 'life_quote_display' },
+    { label: lw.summaryCoverageLabel, value: `₹${((recommendedCoverage || 10000000) / 10000000).toFixed(1)} Cr`, stepId: 'life_quote_display' },
+    { label: lw.summaryRidersLabel, value: selectedRiders.length > 0 ? selectedRiders.map(r => r.name).join(', ') : lw.summaryRidersNone, stepId: 'life_addons_accidental_death' },
+    { label: lw.summaryPremiumLabel, value: `₹${(quote?.yearlyPremium || 0).toLocaleString('en-IN')}/year`, stepId: 'life_quote_display' },
   ];
 
   return (
@@ -886,12 +695,13 @@ export function LifeReviewSummary({ onConfirm, onEdit }: { onConfirm: () => void
    ═══════════════════════════════════════════════════════ */
 
 export function LifePostPaymentTimeline({ onContinue }: { onContinue: () => void }) {
+  const lw = useT().lifeWidgets;
   const steps = [
-    { icon: '📞', title: 'Tele-Medical Call', desc: 'A quick call to understand your health better', time: 'Within 24 hrs' },
+    { icon: '📞', title: lw.teleMedTitle, desc: lw.teleMedDesc, time: lw.teleMedTime },
     { icon: '🏥', title: 'Medical Tests (if needed)', desc: 'Basic health tests for coverage above ₹1 Cr', time: '2-3 days' },
-    { icon: '📄', title: 'Income Verification', desc: 'Submit income proof documents', time: 'Upload anytime' },
-    { icon: '🔍', title: 'Underwriting Review', desc: 'Our team reviews everything', time: '2-3 business days' },
-    { icon: '✅', title: 'Final Approval', desc: 'Your policy becomes active!', time: 'Same day as approval' },
+    { icon: '📄', title: lw.incomeVerifyTitle, desc: lw.incomeVerifyDesc, time: lw.incomeVerifyTime },
+    { icon: '🔍', title: lw.uwReviewTitle, desc: lw.uwReviewDesc, time: lw.uwReviewTime },
+    { icon: '✅', title: lw.finalApprovalTitle, desc: lw.finalApprovalDesc, time: lw.finalApprovalTime },
   ];
 
   return (
@@ -1369,6 +1179,7 @@ export function LifePaymentScreen({ onContinue }: { onContinue: () => void }) {
    ═══════════════════════════════════════════════════════ */
 
 export function LifeEkycRedirection({ onComplete, onSkip }: { onComplete: () => void; onSkip?: () => void }) {
+  const lw = useT().lifeWidgets;
   const [stage, setStage] = useState<'start' | 'loading' | 'completed'>('start');
 
   const handleStart = () => {
@@ -1466,9 +1277,9 @@ export function LifeEkycRedirection({ onComplete, onSkip }: { onComplete: () => 
                 className="space-y-3 mb-5"
               >
                 {[
-                  { title: 'Verify your identity', sub: 'Upload PAN card or Aadhaar' },
-                  { title: 'Take a quick selfie', sub: 'Face match for security' },
-                  { title: 'Instant confirmation', sub: 'Approved in most cases' },
+                  { title: lw.kycStep1Title, sub: lw.kycStep1Sub },
+                  { title: lw.kycStep2Title, sub: lw.kycStep2Sub },
+                  { title: lw.kycStep3Title, sub: lw.kycStep3Sub },
                 ].map((step, i) => (
                   <div
                     key={i}
@@ -1513,7 +1324,7 @@ export function LifeEkycRedirection({ onComplete, onSkip }: { onComplete: () => 
             className="w-full py-3.5 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-transform shadow-lg shadow-purple-600/30"
             style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}
           >
-            {stage === 'start' ? 'Start KYC Verification' : "I've Completed"}
+            {stage === 'start' ? lw.startKyc : lw.completedKyc}
           </button>
 
           {stage === 'start' && onSkip && (
@@ -1560,6 +1371,7 @@ function getUpcomingDates(count: number) {
 const VMER_TIME_SLOTS = ['9:00 AM', '11:00 AM', '2:00 PM', '4:00 PM', '6:00 PM'];
 
 export function LifeVmerRedirection({ onComplete }: { onComplete: () => void }) {
+  const lw = useT().lifeWidgets;
   const [stage, setStage] = useState<VmerStage>('start');
   const [selectedLang, setSelectedLang] = useState('English');
   const [selectedDate, setSelectedDate] = useState('');
@@ -1809,8 +1621,8 @@ export function LifeVmerRedirection({ onComplete }: { onComplete: () => void }) 
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
                       </svg>
                     ),
-                    title: 'Instant video call',
-                    sub: 'Jump on a call with an available doctor now',
+                    title: lw.vmerInstantTitle,
+                    sub: lw.vmerInstantSub,
                   },
                   {
                     icon: (
@@ -1818,8 +1630,8 @@ export function LifeVmerRedirection({ onComplete }: { onComplete: () => void }) 
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                       </svg>
                     ),
-                    title: 'Schedule for later',
-                    sub: 'Pick a convenient date and time slot',
+                    title: lw.vmerScheduleOptionTitle,
+                    sub: lw.vmerScheduleOptionSub,
                   },
                 ].map((opt, i) => (
                   <div
@@ -1994,6 +1806,7 @@ function EkycTimer({
   seconds: number;
   onExpire: () => void;
 }) {
+  const lw = useT().lifeWidgets;
   const [remaining, setRemaining] = useState(seconds);
 
   useEffect(() => {
@@ -2031,7 +1844,7 @@ function EkycTimer({
         </span>
       </div>
       <span className="text-caption text-gray-500">
-        {remaining > 0 ? `OTP expires in ${remaining}s` : 'OTP expired'}
+        {remaining > 0 ? lw.otpExpires(remaining) : lw.otpExpired}
       </span>
     </div>
   );
@@ -2103,6 +1916,7 @@ export function EkycAadhaarInput({ onSubmit }: { onSubmit: (aadhaar: string) => 
 }
 
 export function EkycOtpInput({ maskedMobile, onSubmit, onResend }: { maskedMobile: string; onSubmit: (otp: string) => void; onResend: () => void }) {
+  const lw = useT().lifeWidgets;
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [timer, setTimer] = useState(60);
@@ -2189,7 +2003,7 @@ export function EkycOtpInput({ maskedMobile, onSubmit, onResend }: { maskedMobil
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span>OTP sent to {maskedMobile}</span>
+        <span>{lw.otpSentTo(maskedMobile)}</span>
         {timer > 0 && <span className="text-purple-300">· {timer}s</span>}
       </div>
 
@@ -2216,23 +2030,24 @@ export function EkycOtpInput({ maskedMobile, onSubmit, onResend }: { maskedMobil
 }
 
 export function EkycAlternativeOptions({ onSelect }: { onSelect: (method: string) => void }) {
+  const lw = useT().lifeWidgets;
   const options = [
     {
       id: 'digilocker',
       icon: '🔐',
-      label: 'DigiLocker',
-      desc: 'Link your DigiLocker account',
+      label: lw.digilockerLabel,
+      desc: lw.digilockerDesc,
     },
     {
       id: 'video_kyc',
       icon: '📹',
-      label: 'Video KYC',
+      label: lw.videoKycLabel,
       desc: '5-min video call with our team',
     },
     {
       id: 'upload',
       icon: '📄',
-      label: 'Upload Documents',
+      label: lw.uploadDocsLabel,
       desc: 'PAN + Aadhaar + selfie',
     },
   ];
@@ -3071,6 +2886,7 @@ function MedYesNo({ question, onAnswer }: { question: string; onAnswer: (yes: bo
 }
 
 export function LifeMedicalScreen({ onContinue }: { onContinue: () => void }) {
+  const lw = useT().lifeWidgets;
   const [stage, setStage] = useState<MedStage>('intro');
   const [joinCountdown, setJoinCountdown] = useState(300); // 5 mins in seconds
   const [bookedSlot, setBookedSlot] = useState<SlotSelection | null>(null);
@@ -3129,26 +2945,26 @@ export function LifeMedicalScreen({ onContinue }: { onContinue: () => void }) {
   const allDocsUploaded = flaggedConditions.length === 0 || flaggedConditions.every(c => uploadedDocs[c]);
 
   const HEADER_LABELS: Record<MedStage, { title: string; sub: string }> = {
-    intro: { title: 'Medical Evaluation', sub: 'VMER — Video Medical Evaluation' },
-    availability_now: { title: 'Doctor Available', sub: 'Join in ~5 minutes' },
-    availability_none: { title: 'No Doctor Available', sub: 'Schedule for later' },
-    slot_picker: { title: 'Schedule Your Call', sub: 'Pick a date & time' },
-    slot_conflict: { title: 'Slot Taken', sub: 'Please pick another time' },
+    intro: { title: lw.vmerHeaderIntro, sub: lw.vmerHeaderIntroSub },
+    availability_now: { title: lw.vmerHeaderAvailable, sub: lw.vmerHeaderAvailableSub },
+    availability_none: { title: lw.vmerHeaderNone, sub: lw.vmerHeaderNoneSub },
+    slot_picker: { title: lw.vmerHeaderSlotPicker, sub: lw.vmerHeaderSlotPickerSub },
+    slot_conflict: { title: lw.vmerHeaderSlotConflict, sub: lw.vmerHeaderSlotConflictSub },
     scheduled: { title: 'Call Scheduled', sub: bookedSlot ? `${bookedSlot.dateLabel}, ${bookedSlot.time}` : '' },
-    call_active: { title: 'Video Call', sub: 'In progress with doctor' },
+    call_active: { title: lw.vmerHeaderCallActive, sub: lw.vmerHeaderCallActiveSub },
     post_call_review: { title: 'Review Your Answers', sub: `${reviewSection === 'health' ? 'Health' : reviewSection === 'lifestyle' ? 'Lifestyle' : 'Miscellaneous'} information` },
-    review_submitting: { title: 'Submitting', sub: 'Saving your responses…' },
-    under_review: { title: 'Under Review', sub: 'Medical info submitted' },
-    ppmc_intro: { title: 'Additional Tests', sub: 'Home health test required' },
-    ppmc_address: { title: 'Test Location', sub: 'Choose address for home test' },
-    ppmc_address_new: { title: 'New Address', sub: 'Where should we come?' },
-    ppmc_slot: { title: 'Schedule Home Test', sub: 'Pick a date & time' },
+    review_submitting: { title: lw.vmerHeaderSubmitting, sub: lw.vmerHeaderSubmittingSub },
+    under_review: { title: lw.vmerHeaderUnderReview, sub: lw.vmerHeaderUnderReviewSub },
+    ppmc_intro: { title: lw.vmerHeaderPpmcIntro, sub: lw.vmerHeaderPpmcIntroSub },
+    ppmc_address: { title: lw.vmerHeaderPpmcAddress, sub: lw.vmerHeaderPpmcAddressSub },
+    ppmc_address_new: { title: lw.vmerHeaderPpmcAddressNew, sub: lw.vmerHeaderPpmcAddressNewSub },
+    ppmc_slot: { title: lw.vmerHeaderPpmcSlot, sub: lw.vmerHeaderPpmcSlotSub },
     ppmc_confirmed: { title: 'Test Booked', sub: ppBookedSlot ? `${ppBookedSlot.dateLabel}, ${ppBookedSlot.time}` : '' },
-    ppmc_offline: { title: 'We\'ll Reach Out', sub: 'Manual scheduling' },
-    docs_required: { title: 'Upload Documents', sub: `${flaggedConditions.length} condition${flaggedConditions.length !== 1 ? 's' : ''} flagged` },
-    docs_confirm: { title: 'Confirm Upload', sub: 'Double-check before submitting' },
-    docs_submitted: { title: 'Documents Uploaded', sub: 'Under review' },
-    complete: { title: 'Evaluation Complete', sub: 'All done!' },
+    ppmc_offline: { title: lw.vmerHeaderPpmcOffline, sub: lw.vmerHeaderPpmcOfflineSub },
+    docs_required: { title: lw.vmerHeaderDocsRequired, sub: `${flaggedConditions.length} condition${flaggedConditions.length !== 1 ? 's' : ''} flagged` },
+    docs_confirm: { title: lw.vmerHeaderDocsConfirm, sub: lw.vmerHeaderDocsConfirmSub },
+    docs_submitted: { title: lw.vmerHeaderDocsSubmitted, sub: lw.vmerHeaderDocsSubmittedSub },
+    complete: { title: lw.vmerHeaderComplete, sub: lw.vmerHeaderCompleteSub },
   };
 
   const { title: hTitle, sub: hSub } = HEADER_LABELS[stage] || { title: 'Medical', sub: '' };
@@ -5253,6 +5069,7 @@ const DEPENDENT_LABELS: Record<string, string> = {
 };
 
 export function LifePrePaymentSummary({ defaultCollapsed = true }: { defaultCollapsed?: boolean }) {
+  const lw = useT().lifeWidgets;
   const state = useLifeJourneyStore.getState() as LifeJourneyState;
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -5263,20 +5080,20 @@ export function LifePrePaymentSummary({ defaultCollapsed = true }: { defaultColl
   };
 
   const rows: { label: string; value: string }[] = [];
-  if (state.name) rows.push({ label: 'Name', value: state.name });
-  if (state.gender) rows.push({ label: 'Gender', value: state.gender === 'male' ? 'Male' : 'Female' });
+  if (state.name) rows.push({ label: lw.summaryNameLabel, value: state.name });
+  if (state.gender) rows.push({ label: lw.summaryGenderLabel, value: state.gender === 'male' ? lw.summaryGenderMale : lw.summaryGenderFemale });
   if (state.dateOfBirth) rows.push({ label: 'Date of Birth', value: state.dateOfBirth });
-  if (state.age) rows.push({ label: 'Age', value: `${state.age} years` });
+  if (state.age) rows.push({ label: lw.summaryAgeLabel, value: lw.summaryAge(state.age) });
   if (state.maritalStatus) rows.push({ label: 'Marital Status', value: MARITAL_LABELS[state.maritalStatus] || state.maritalStatus });
   if (state.dependentTypes?.length > 0) {
-    rows.push({ label: 'Dependents', value: state.dependentTypes.map(d => DEPENDENT_LABELS[d] || d).join(', ') });
+    rows.push({ label: lw.dependentsLabel, value: state.dependentTypes.map(d => DEPENDENT_LABELS[d] || d).join(', ') });
   }
-  if (state.annualIncome) rows.push({ label: 'Annual Income', value: formatAmt(state.annualIncome) });
-  if (state.selectedCoverage) rows.push({ label: 'Coverage', value: formatAmt(state.selectedCoverage) });
+  if (state.annualIncome) rows.push({ label: lw.summaryIncomeLabel, value: formatAmt(state.annualIncome) });
+  if (state.selectedCoverage) rows.push({ label: lw.summaryCoverageLabel, value: formatAmt(state.selectedCoverage) });
   if (state.selectedTerm) rows.push({ label: 'Term', value: `${state.selectedTerm} years (till age ${state.age + state.selectedTerm})` });
-  if (state.quote?.yearlyPremium) rows.push({ label: 'Premium', value: `₹${state.quote.yearlyPremium.toLocaleString('en-IN')}/year` });
+  if (state.quote?.yearlyPremium) rows.push({ label: lw.summaryPremiumLabel, value: `₹${state.quote.yearlyPremium.toLocaleString('en-IN')}/year` });
   if (state.selectedRiders?.length > 0) {
-    rows.push({ label: 'Riders', value: state.selectedRiders.map(r => r.name).join(', ') });
+    rows.push({ label: lw.summaryRidersLabel, value: state.selectedRiders.map(r => r.name).join(', ') });
   }
 
   return (

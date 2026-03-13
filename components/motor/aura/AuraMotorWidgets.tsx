@@ -10,6 +10,10 @@ import { useMotorStore } from '../../../lib/motor/store';
 import { MotorJourneyState, NcbPercentage } from '../../../lib/motor/types';
 import { getMotorAddOns } from '../../../lib/motor/plans';
 import Image from 'next/image';
+import BaseSelectionCards, { type SelectionTheme } from '../../ds/SelectionCards';
+import GradientBadge from '../../ds/GradientBadge';
+import BaseTextInput from '../../ds/TextInput';
+import type { InputTheme } from '../../ds/NumberInput';
 
 const ADDON_ICONS: Record<string, string> = {
   engine_protection:     'Engine_protect.svg',
@@ -127,161 +131,36 @@ function MotorIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: 
 }
 
 /* ═══════════════════════════════════════════════
-   Selection Cards (Motor version)
+   Selection Cards (Aura version) — DS base
    ═══════════════════════════════════════════════ */
 
+const AURA_THEME: SelectionTheme = {
+  surface: 'var(--aura-surface)',
+  surfaceSelected: 'var(--aura-surface-2)',
+  surface2: 'var(--aura-surface-2)',
+  border: 'var(--aura-border)',
+  borderSelected: '#A855F7',
+  text: 'var(--aura-text)',
+  textMuted: 'var(--aura-text-subtle)',
+};
+
+function auraRenderIcon(icon: string, className?: string) {
+  return <MotorIcon icon={icon} className={`${className || 'w-6 h-6'} text-[#C084FC]`} />;
+}
+
+function auraRenderLogo(logoUrl: string, label: string, className?: string) {
+  return <img src={assetPath(logoUrl)} alt={label} className={className || 'w-7 h-7 object-contain'} />;
+}
+
 export function MotorSelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
-  const useLogoGrid = options.filter(o => o.logoUrl).length >= 3;
-
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-              ${selected === opt.id
-                ? 'border-[#A855F7] bg-[var(--aura-surface-2)] shadow-lg shadow-black/20'
-                : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] hover:border-[var(--aura-border-strong)]'
-              }
-            `}
-          >
-            {opt.badge && (
-              <span className="absolute -top-2 -right-2 text-[11px] bg-pink-500 text-[var(--aura-text)] px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                {opt.badge}
-              </span>
-            )}
-            <div className="mb-2 w-10 h-10 rounded-xl bg-[var(--aura-surface-2)] flex items-center justify-center overflow-hidden">
-              {opt.logoUrl ? (
-                <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-7 h-7 object-contain" />
-              ) : (
-                <MotorIcon icon={opt.icon!} className="w-6 h-6 text-[#C084FC]" />
-              )}
-            </div>
-            <span className="text-[15px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-            {opt.description && (
-              <p className="text-[12px] text-[var(--aura-text-subtle)] mt-1">{opt.description}</p>
-            )}
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
-  if (useLogoGrid) {
-    const logoOptions = options.filter(o => o.logoUrl);
-    const otherOptions = options.filter(o => !o.logoUrl);
-    return (
-      <div>
-        <div className="grid grid-cols-3 gap-2">
-          {logoOptions.map((opt, i) => (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.025 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95]
-                ${selected === opt.id
-                  ? 'border-[#A855F7] bg-[#A855F7]/10 ring-1 ring-[#A855F7]/30'
-                  : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)]'
-                }
-              `}
-            >
-              <div className="w-10 h-10 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center overflow-hidden">
-                <img src={assetPath(opt.logoUrl!)} alt={opt.label} className="w-7 h-7 object-contain" />
-              </div>
-              <span className="text-[11px] font-medium text-[var(--aura-text)] text-center leading-tight">{opt.label}</span>
-              {opt.description && (
-                <span className="text-[9px] text-[var(--aura-text-subtle)] text-center leading-tight">{opt.description}</span>
-              )}
-              {selected === opt.id && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#A855F7] flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-[var(--aura-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.button>
-          ))}
-        </div>
-        {otherOptions.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (logoOptions.length + i) * 0.025 }}
-            onClick={() => handleSelect(opt.id)}
-            className={`
-              w-full mt-2 text-left px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-[#A855F7] bg-[var(--aura-surface-2)]'
-                : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)]'
-              }
-            `}
-          >
-            <div className="flex items-center gap-3">
-              {opt.icon && (
-                <div className="w-8 h-8 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center flex-shrink-0">
-                  <MotorIcon icon={opt.icon} className="w-4 h-4 text-[#C084FC]" />
-                </div>
-              )}
-              <span className="text-[13px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => (
-        <motion.button
-          key={opt.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.04 }}
-          onClick={() => handleSelect(opt.id)}
-          className={`
-            text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-            ${selected === opt.id
-              ? 'border-[#A855F7] bg-[var(--aura-surface-2)] shadow-md shadow-black/20'
-              : 'border-[var(--aura-border)] bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] hover:border-[var(--aura-border-strong)]'
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            {(opt.logoUrl || opt.icon) && (
-              <div className="w-9 h-9 rounded-lg bg-[var(--aura-surface-2)] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {opt.logoUrl ? (
-                  <img src={assetPath(opt.logoUrl)} alt={opt.label} className="w-6 h-6 object-contain" />
-                ) : (
-                  <MotorIcon icon={opt.icon!} className="w-4.5 h-4.5 text-[#C084FC]" />
-                )}
-              </div>
-            )}
-            <div className="flex-1">
-              <span className="text-[15px] font-medium text-[var(--aura-text)]">{opt.label}</span>
-              {opt.description && <p className="text-[12px] text-[var(--aura-text-subtle)] mt-0.5">{opt.description}</p>}
-            </div>
-          </div>
-        </motion.button>
-      ))}
-    </div>
+    <BaseSelectionCards
+      options={options}
+      onSelect={onSelect}
+      renderIcon={auraRenderIcon}
+      renderLogo={auraRenderLogo}
+      theme={AURA_THEME}
+    />
   );
 }
 
@@ -353,8 +232,18 @@ export function VehicleRegInput({ placeholder, onSubmit }: { placeholder?: strin
 }
 
 /* ═══════════════════════════════════════════════
-   Generic Text / Number Input
+   Generic Text / Number Input — DS base
    ═══════════════════════════════════════════════ */
+
+const AURA_INPUT_THEME: InputTheme = {
+  inputBg: 'var(--aura-surface-2)',
+  inputBorder: 'var(--aura-border)',
+  inputBorderFocus: '#A855F7',
+  inputText: 'var(--aura-text)',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+  buttonShadow: 'var(--btn-primary-shadow)',
+};
 
 export function MotorTextInput({
   placeholder,
@@ -369,48 +258,15 @@ export function MotorTextInput({
   validate?: (value: string) => string | null;
   maxLength?: number;
 }) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError('Please enter a value');
-      return;
-    }
-    if (validate) {
-      const err = validate(value.trim());
-      if (err) { setError(err); return; }
-    }
-    onSubmit(value.trim());
-  };
-
   return (
-    <div className="max-w-sm">
-      <input
-        ref={inputRef}
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder || 'Type here...'}
-        className="w-full px-4 py-4 bg-[var(--aura-surface-2)] border border-[var(--aura-border)] rounded-xl text-[16px] text-[var(--aura-text)] placeholder:text-[var(--aura-text-subtle)] focus:outline-none focus:border-[#A855F7] focus:bg-[var(--aura-surface-2)] transition-colors"
-        autoComplete="off"
-        maxLength={maxLength}
-      />
-      {error && <p className="text-[12px] text-red-400 mt-1.5">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}
-        className="mt-3 w-full py-3.5 rounded-xl text-[15px] font-semibold hover:opacity-90 transition-colors active:scale-[0.97]"
-      >
-        Continue
-      </button>
-    </div>
+    <BaseTextInput
+      placeholder={placeholder || 'Type here...'}
+      inputType={inputType}
+      onSubmit={onSubmit}
+      validate={validate}
+      maxLength={maxLength}
+      theme={AURA_INPUT_THEME}
+    />
   );
 }
 
@@ -1382,25 +1238,20 @@ export function PlanCalculator({ onComplete }: { onComplete: (result: any) => vo
       // Generate plans (import inline to avoid issues)
       setTimeout(async () => {
         try {
-          const { getMotorPlanDetails, calculateIDV } = await import('../../../lib/motor/plans');
+          const { getPlansForCombination, determinePlanCombination, calculateIDV } = await import('../../../lib/motor/plans');
           const state = useMotorStore.getState() as MotorJourneyState;
           
-          // Calculate IDV
-          const makePrice = 800000; // Mock: ₹8L
+          const makePrice = 800000;
           const vehicleAge = vehicleData.registrationYear 
             ? new Date().getFullYear() - vehicleData.registrationYear 
             : 3;
           const idvData = calculateIDV(makePrice, vehicleAge);
           
-          // Generate all plan variations
-          // Note: Only Comprehensive has garage tier options
-          const comprehensiveAll = getMotorPlanDetails(state, 'comprehensive', 'all');
-          const comprehensiveNetwork = getMotorPlanDetails(state, 'comprehensive', 'network');
-          const zeroDep = getMotorPlanDetails(state, 'zero_dep');
-          const thirdParty = getMotorPlanDetails(state, 'third_party');
+          const combo = determinePlanCombination(state);
+          const plans = getPlansForCombination(state, combo);
           
           onComplete({
-            plans: [comprehensiveAll, comprehensiveNetwork, zeroDep, thirdParty],
+            plans,
             idv: idvData.recommended,
             idvMin: idvData.min,
             idvMax: idvData.max,
@@ -1500,24 +1351,55 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [showZdVsStandard, setShowZdVsStandard] = useState(false);
   const [showGarageTier, setShowGarageTier] = useState(false);
+  const [showZdVariant, setShowZdVariant] = useState(false);
+  const [showOdVariant, setShowOdVariant] = useState(false);
 
   // Group plans by type
   const comprehensivePlans = availablePlans.filter((p: any) => p.type === 'comprehensive');
   const zeroDepPlans = availablePlans.filter((p: any) => p.type === 'zero_dep');
   const thirdPartyPlan = availablePlans.find((p: any) => p.type === 'third_party');
+  const odPlans = availablePlans.filter((p: any) => p.type === 'od' || p.type === 'od_zd');
 
   const comprehensiveLowest = comprehensivePlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
   const zeroDepLowest = zeroDepPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
+  const odLowest = odPlans.length > 0 ? odPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0] : null;
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
   const handlePlanClick = (plan: any) => {
     if (plan.type === 'comprehensive') {
       setSelectedPlan(plan);
-      setShowGarageTier(true);
+      if (zeroDepPlans.length > 0) {
+        setShowZdVsStandard(true);
+      } else if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: plan.type, garageTier: null, plan });
+      }
+    } else if ((plan.type === 'od' || plan.type === 'od_zd') && odPlans.length > 1) {
+      setSelectedPlan(plan);
+      setShowOdVariant(true);
     } else {
       onSelect({ planType: plan.type, garageTier: null, plan });
+    }
+  };
+
+  const handleZdVsStandardChoice = (choice: 'zd' | 'standard') => {
+    setShowZdVsStandard(false);
+    if (choice === 'zd') {
+      if (zeroDepPlans.length > 1) {
+        setShowZdVariant(true);
+      } else {
+        onSelect({ planType: 'zero_dep', garageTier: null, plan: zeroDepPlans[0] });
+      }
+    } else {
+      if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: 'comprehensive', garageTier: null, plan: comprehensivePlans[0] });
+      }
     }
   };
 
@@ -1528,6 +1410,12 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
     );
     setShowGarageTier(false);
     onSelect({ planType: selectedPlan.type, garageTier: tier, plan: finalPlan });
+  };
+
+  const handleVariantSelect = (plan: any) => {
+    setShowZdVariant(false);
+    setShowOdVariant(false);
+    onSelect({ planType: plan.type, garageTier: null, plan });
   };
 
   return (
@@ -1544,56 +1432,62 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
         </p>
       </div>
 
-      {/* Zero Depreciation Plan — shown first for brand new, second otherwise */}
-      {isBrandNew && zeroDepLowest && (
-        <PlanCard
-          plan={zeroDepLowest}
-          title="Zero Depreciation Plan (Bumper to Bumper)"
-          badge={`Recommended for your ${vType}`}
-          price={formatPrice(zeroDepLowest.totalPrice)}
-          description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property. Covers full cost of ${vType} parts if they are replaced during repairs.`}
-          onSelect={() => handlePlanClick(zeroDepLowest)}
-          recommended
-        />
-      )}
-
-      {/* Comprehensive Plan */}
+      {/* Comprehensive Plan — ZD is a sub-type, shown in bottom sheet */}
       {comprehensiveLowest && (
         <PlanCard
           plan={comprehensiveLowest}
-          title={isBrandNew ? 'Comprehensive' : 'Comprehensive Plans'}
-          subtitle={isBrandNew ? undefined : '2 options starting from'}
-          badge={isBrandNew ? undefined : `Recommended for your ${vType}`}
-          price={formatPrice(comprehensiveLowest.totalPrice)}
-          strikePrice={isBrandNew ? undefined : comprehensiveLowest.totalPrice + 1000}
-          description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property.`}
+          title="Comprehensive"
+          subtitle={zeroDepLowest ? 'Includes Zero Depreciation option' : undefined}
+          badge={`Recommended for your ${vType}`}
+          price={formatPrice(zeroDepLowest ? Math.min(comprehensiveLowest.totalPrice, zeroDepLowest.totalPrice) : comprehensiveLowest.totalPrice)}
+          description={`Complete coverage for your ${vType} and third-party liabilities.`}
+          bulletPoints={[
+            { text: 'Covers theft, damage from fire, accidents, and natural disasters', icon: 'check' },
+            { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+            { text: 'Cashless repairs at any GST registered garage', icon: 'check' },
+            { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+            { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+          ]}
           onSelect={() => handlePlanClick(comprehensiveLowest)}
-        />
-      )}
-
-      {/* Zero Depreciation Plan — shown second for existing cars */}
-      {!isBrandNew && zeroDepLowest && (
-        <PlanCard
-          plan={zeroDepLowest}
-          title="Zero Depreciation Plans"
-          subtitle="2 options starting from"
-          badge="Best value"
-          price={formatPrice(zeroDepLowest.totalPrice)}
-          description="This plan includes fire, theft, accident, and third party liability cover and covers 100% cost of replaced parts during repairs."
-          onSelect={() => handlePlanClick(zeroDepLowest)}
           recommended
         />
       )}
 
-      {/* Third Party Plan — only for existing cars, not brand new */}
+      {/* Third Party Plan */}
       {!isBrandNew && thirdPartyPlan && (
         <PlanCard
           plan={thirdPartyPlan}
-          title="Third-party Plan"
-          subtitle="Minimum coverage required by law"
-          price={`${formatPrice(thirdPartyPlan.totalPrice)} (Same across all insurers)`}
-          description={`It covers damage caused by your ${vType} to others and their property, but does not cover any damage caused to your ${vType}.`}
+          title="Third Party"
+          badge="Minimum cover required by law"
+          badgeVariant="amber"
+          price={`${formatPrice(thirdPartyPlan.totalPrice)}`}
+          subtitle="Same price across all insurers"
+          description="The minimum coverage required by law to drive on Indian roads."
+          bulletPoints={[
+            { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+            { text: `Does not cover any damage caused to your own ${vType}`, icon: 'cross' },
+            { text: 'No cashless repair benefit', icon: 'cross' },
+          ]}
           onSelect={() => handlePlanClick(thirdPartyPlan)}
+        />
+      )}
+
+      {/* OD Plans — only when user has active TP policy */}
+      {odLowest && (
+        <PlanCard
+          plan={odLowest}
+          title="Own Damage"
+          subtitle={odPlans.length > 1 ? `${odPlans.length} options starting from` : undefined}
+          badge="For cars with active TP"
+          badgeVariant="amber"
+          price={formatPrice(odLowest.totalPrice)}
+          description={`Your Third Party policy is already active. You only need to renew your Own Damage cover.`}
+          bulletPoints={[
+            { text: `Covers damage to your own ${vType} — accident, fire, theft, and natural calamities`, icon: 'check' },
+            { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+            { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+          ]}
+          onSelect={() => handlePlanClick(odLowest)}
         />
       )}
 
@@ -1608,6 +1502,105 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
         </svg>
         I need help choosing
       </button>
+
+      {/* ZD vs Standard Comprehensive Bottom Sheet */}
+      <AnimatePresence>
+        {showZdVsStandard && (() => {
+          const zdStarting = zeroDepLowest ? formatPrice(zeroDepLowest.totalPrice) : '';
+          const compStarting = comprehensiveLowest ? formatPrice(comprehensiveLowest.totalPrice) : '';
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVsStandard(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--aura-border)' }} />
+                  <h3 className="text-[18px] font-bold text-[var(--aura-text)] mb-1">Do you want Zero Depreciation cover?</h3>
+                  <p className="text-[12px] text-[var(--aura-text-muted)] mb-5">Zero Depreciation means no out-of-pocket cost on part replacements during claims.</p>
+
+                  <div className="space-y-3">
+                    {zeroDepLowest && (
+                      <button onClick={() => handleZdVsStandardChoice('zd')} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Zero Depreciation</h4>
+                            <div className="mt-1"><GradientBadge>Recommended</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold text-[var(--aura-text)]">Starting {zdStarting}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3">
+                          {['Pays the full cost of parts replaced during a claim — no depreciation deducted', 'Minimises your out-of-pocket expenses during claims'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    )}
+
+                    {comprehensiveLowest && (
+                      <button onClick={() => handleZdVsStandardChoice('standard')} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Standard Comprehensive</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold text-[var(--aura-text)]">Starting {compStarting}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px] text-[var(--aura-text-muted)]">Pays the cost of replaced parts after deducting depreciation</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                            <span className="text-[11px] text-[var(--aura-text-subtle)]">Your out-of-pocket expenses typically amount to 20–30% of the total claim value</span>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-4 p-4 rounded-xl bg-[var(--aura-surface)] border border-[var(--aura-border)]">
+                    <p className="text-[12px] font-semibold text-[var(--aura-text)] mb-3">See the difference with an example</p>
+                    <p className="text-[11px] text-[var(--aura-text-muted)] mb-2">A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden border border-[var(--aura-border)]">
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3 bg-[var(--aura-surface-2)] text-[var(--aura-text-subtle)]">
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[['Part cost', '₹15,000', '₹15,000'], ['Depreciation', '₹0', '₹3,000–4,500'], ['You pay', '₹0', '₹3,000–4,500'], ['ACKO pays', '₹15,000', '₹10,500–12,000']].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3 border-t border-[var(--aura-border)]" style={{ color: label === 'You pay' ? 'var(--aura-text)' : 'var(--aura-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed text-[var(--aura-text-subtle)]">With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.</p>
+                  </div>
+
+                  <button onClick={() => setShowZdVsStandard(false)} className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] transition-colors">Cancel</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Garage Tier Bottom Sheet for Comprehensive */}
       <AnimatePresence>
@@ -1629,77 +1622,302 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                 exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md max-h-[45vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                className="w-full max-w-md max-h-[70vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               >
                 <div className="p-5">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                  <h3 className="text-[18px] font-bold text-[var(--aura-text)] mb-1">Choose your garage network</h3>
-                  <p className="text-[12px] text-[var(--aura-text-muted)] mb-5">Comprehensive plan lets you pick where your {vType} gets repaired</p>
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--aura-border)' }} />
+                  <h3 className="text-[18px] font-bold text-[var(--aura-text)] mb-1">Choose the type of Comprehensive plan</h3>
+                  <p className="text-[12px] text-[var(--aura-text-muted)] mb-5">We have two types of plans for you to choose from</p>
 
                   <div className="space-y-3">
-                    {/* Network Garages */}
+                    {/* Network Garage — preferred variant */}
                     <button
-                      onClick={() => handleGarageTierSelect('network')}
-                      className="w-full p-4 bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] border border-[var(--aura-border)] hover:border-[#A855F7]/30 rounded-xl text-left transition-all group"
+                      onClick={() => networkPlan && handleGarageTierSelect('network')}
+                      className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#A855F7]/15 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-[#C084FC]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)] group-hover:text-[#C084FC] transition-colors">Network Garages</h4>
-                            <p className="text-[11px] text-[var(--aura-text-muted)]">Cashless repairs at 5,400+ ACKO partner garages</p>
-                          </div>
+                        <div>
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Comprehensive · Network Garage</h4>
+                          <div className="mt-1"><GradientBadge>Recommended · Fully managed</GradientBadge></div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
                           <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(networkPlan?.totalPrice || 0)}</p>
                           <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
                         </div>
                       </div>
+                      <div className="space-y-1.5 mt-3 mb-3">
+                        {['All Comprehensive plan benefits at a lower premium', 'Fully managed claims at ACKO Trusted Garages', 'Free pickup & drop, real-time updates, and a 1-year warranty on repairs', 'Just hand over the keys — we take care of everything'].map((text, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px] text-[var(--aura-text-muted)]">{text}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="p-2.5 rounded-lg mt-2" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-[12px] flex-shrink-0">⚡</span>
+                          <p className="text-[10px] leading-relaxed text-[var(--aura-text-muted)]">Repairs outside ACKO Trusted Garages attract a ₹5,000 deductible. Not applicable if no trusted garage is available near you.</p>
+                        </div>
+                      </div>
                       {savings > 0 && (
-                        <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-400/20">
-                          Save ₹{savings.toLocaleString('en-IN')}
+                        <span className="inline-flex mt-2 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
+                          Save ₹{savings.toLocaleString('en-IN')} vs Standard
                         </span>
                       )}
                     </button>
 
-                    {/* All Garages */}
-                    <button
-                      onClick={() => handleGarageTierSelect('all')}
-                      className="w-full p-4 bg-[var(--aura-surface)] hover:bg-[var(--aura-surface-2)] border border-[var(--aura-border)] hover:border-[#A855F7]/30 rounded-xl text-left transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#A855F7]/15 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-[#C084FC]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.384 3.168 1.03-5.995L2.073 7.533l6.02-.874L11.42 1.5l3.326 5.159 6.02.874-4.993 4.81 1.03 5.995z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)] group-hover:text-[#C084FC] transition-colors">All Garages</h4>
-                            <p className="text-[11px] text-[var(--aura-text-muted)]">Get repairs at any garage of your choice</p>
+                    {/* Standard — greyed out if unavailable */}
+                    {allPlan ? (
+                      <button
+                        onClick={() => handleGarageTierSelect('all')}
+                        className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Comprehensive · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(allPlan.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(allPlan?.totalPrice || 0)}</p>
-                          <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          <span className="text-[11px] text-[var(--aura-text-muted)]">Cashless repairs at any GST registered garage — repair wherever you want, no conditions</span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl opacity-50">
+                        <h4 className="text-[14px] font-semibold text-[var(--aura-text-subtle)] mb-2">Comprehensive · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                          <span className="text-[11px] text-[var(--aura-text-subtle)]">We&apos;re unable to offer this plan for your vehicle at this time.</span>
                         </div>
                       </div>
-                      <span className="text-[10px] bg-[#A855F7]/15 text-[#C084FC] px-2 py-0.5 rounded-full border border-[#A855F7]/15">
-                        Recommended
-                      </span>
-                    </button>
+                    )}
                   </div>
 
-                  <button
-                    onClick={() => setShowGarageTier(false)}
-                    className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] hover:text-[var(--aura-text-muted)] transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={() => setShowGarageTier(false)} className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] transition-colors">Cancel</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Zero Dep Variant Bottom Sheet */}
+      <AnimatePresence>
+        {showZdVariant && selectedPlan && (() => {
+          const safeDriverPlan = zeroDepPlans.find((p: any) => p.variant === 'safe_driver' || p.expandedType === 'zd_comprehensive_safe');
+          const standardPlan = zeroDepPlans.find((p: any) => p.variant !== 'safe_driver' && p.expandedType !== 'zd_comprehensive_safe');
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--aura-border)' }} />
+                  <h3 className="text-[18px] font-bold text-[var(--aura-text)]">Choose your Zero Dep plan</h3>
+                  <p className="text-[12px] mt-1 mb-5 text-[var(--aura-text-muted)]">Both cover 100% of part replacement costs. Pick what suits you.</p>
+
+                  <div className="space-y-3">
+                    {safeDriverPlan && (
+                      <button onClick={() => handleVariantSelect(safeDriverPlan)} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(safeDriverPlan.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          {['Built for responsible car owners who rarely need to claim', 'All Zero Depreciation benefits at a significantly lower premium'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed text-[var(--aura-text-muted)]">You pay ₹5,000 when you make a claim. We cover everything else.</p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {standardPlan ? (
+                      <button onClick={() => handleVariantSelect(standardPlan)} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(standardPlan.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          {['All Zero Depreciation benefits', 'No deductions of any kind during claims', 'Higher premium, zero conditions'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl opacity-50">
+                        <h4 className="text-[14px] font-semibold text-[var(--aura-text-subtle)] mb-2">Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                          <span className="text-[11px] text-[var(--aura-text-subtle)]">We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Compare section */}
+                  <div className="mt-4 p-4 rounded-xl bg-[var(--aura-surface)] border border-[var(--aura-border)]">
+                    <p className="text-[12px] font-semibold text-[var(--aura-text)] mb-3">See the difference with an example</p>
+                    <p className="text-[11px] text-[var(--aura-text-muted)] mb-2">A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden border border-[var(--aura-border)]">
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3 bg-[var(--aura-surface-2)] text-[var(--aura-text-subtle)]">
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[['Part cost', '₹15,000', '₹15,000'], ['Depreciation', '₹0', '₹3,000–4,500'], ['You pay', '₹0', '₹3,000–4,500'], ['ACKO pays', '₹15,000', '₹10,500–12,000']].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3 border-t border-[var(--aura-border)]" style={{ color: label === 'You pay' ? 'var(--aura-text)' : 'var(--aura-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed text-[var(--aura-text-subtle)]">With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.</p>
+                  </div>
+
+                  <button onClick={() => setShowZdVariant(false)} className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] transition-colors">Cancel</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* OD Variant Bottom Sheet */}
+      <AnimatePresence>
+        {showOdVariant && selectedPlan && (() => {
+          const zdSafe = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant === 'safe_driver');
+          const zdStd = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant !== 'safe_driver');
+          const plainOd = odPlans.find((p: any) => p.type === 'od' && !p.hasZeroDep);
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowOdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--aura-border)' }} />
+                  <h3 className="text-[18px] font-bold text-[var(--aura-text)]">Choose your OD plan</h3>
+                  <p className="text-[12px] mt-1 mb-5 text-[var(--aura-text-muted)]">Your third-party is already active. Pick the right own-damage cover.</p>
+
+                  <div className="space-y-3">
+                    {zdSafe && (
+                      <button onClick={() => handleVariantSelect(zdSafe)} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">OD Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(zdSafe.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          {['All Zero Depreciation benefits at a much lower premium', 'No depreciation charges on part replacements'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed text-[var(--aura-text-muted)]">You pay ₹5,000 when you make a claim. We cover everything else.</p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {zdStd ? (
+                      <button onClick={() => handleVariantSelect(zdStd)} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">OD Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(zdStd.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          {['All Zero Depreciation benefits, no deductions during claims', 'Higher premium, zero conditions'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    ) : zdSafe && (
+                      <div className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl opacity-50">
+                        <h4 className="text-[14px] font-semibold text-[var(--aura-text-subtle)] mb-2">OD Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                          <span className="text-[11px] text-[var(--aura-text-subtle)]">We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {plainOd && (
+                      <button onClick={() => handleVariantSelect(plainOd)} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Standard OD</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold text-[var(--aura-text)]">{formatPrice(plainOd.totalPrice)}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          <span className="text-[11px] text-[var(--aura-text-muted)]">Standard OD cover — depreciation applies on part replacements</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  <button onClick={() => setShowOdVariant(false)} className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] transition-colors">Cancel</button>
                 </div>
               </motion.div>
             </motion.div>
@@ -1715,9 +1933,12 @@ function PlanCard({
   title,
   subtitle,
   badge,
+  badgeVariant = 'default',
   price,
   strikePrice,
   description,
+  bulletPoints,
+  claimCondition,
   onSelect,
   recommended,
 }: {
@@ -1725,9 +1946,12 @@ function PlanCard({
   title: string;
   subtitle?: string;
   badge?: string;
+  badgeVariant?: 'default' | 'amber';
   price: string;
   strikePrice?: number;
   description: string;
+  bulletPoints?: { text: string; icon: 'check' | 'cross' | 'info' }[];
+  claimCondition?: string;
   onSelect: () => void;
   recommended?: boolean;
 }) {
@@ -1740,8 +1964,27 @@ function PlanCard({
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
-  // Extract quick features (first 3, only the title part before —)
-  const quickFeatures = plan.features.slice(0, 3).map((f: string) => f.split(' — ')[0]);
+  const quickFeatures = bulletPoints
+    ? bulletPoints.slice(0, 5)
+    : plan.features.slice(0, 3).map((f: string) => ({ text: f.split(' — ')[0], icon: 'check' as const }));
+
+  const BulletIcon = ({ icon }: { icon: 'check' | 'cross' | 'info' }) => {
+    if (icon === 'cross') return (
+      <svg className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+    if (icon === 'info') return (
+      <svg className="w-4 h-4 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+      </svg>
+    );
+    return (
+      <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    );
+  };
 
   return (
     <>
@@ -1762,9 +2005,14 @@ function PlanCard({
                 {subtitle && <p className="text-[11px] text-[var(--aura-text-subtle)] mt-0.5">{subtitle}</p>}
               </div>
               {badge && (
-                <span className="text-[10px] bg-[#A855F7]/20 text-[#C084FC] px-2 py-0.5 rounded-full border border-[#A855F7]/20 whitespace-nowrap">
-                  {badge}
-                </span>
+                badgeVariant === 'amber' ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full whitespace-nowrap text-[10px] font-medium leading-[12px]"
+                    style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                    {badge}
+                  </span>
+                ) : (
+                  <GradientBadge>{badge}</GradientBadge>
+                )
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -1787,22 +2035,22 @@ function PlanCard({
           {/* Quick features (always visible when collapsed) */}
           {!expanded && (
             <div className="space-y-1.5 mb-4">
-              {quickFeatures.map((feature: string, i: number) => {
-                const isGarageFeature = feature.includes('Cashless claims');
+              {quickFeatures.map((item: any, i: number) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const icon = typeof item === 'string' ? 'check' : item.icon;
+                const isGarageFeature = text.includes('Cashless');
                 return (
                   <div key={i} className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
+                    <BulletIcon icon={icon} />
                     {isGarageFeature ? (
                       <button
                         onClick={() => setShowGarageExplorer(true)}
                         className="text-[12px] text-[var(--aura-text-muted)] hover:text-[#C084FC] transition-colors text-left underline decoration-white/30 hover:decoration-[#C084FC]"
                       >
-                        {feature}
+                        {text}
                       </button>
                     ) : (
-                      <span className="text-[12px] text-[var(--aura-text-muted)]">{feature}</span>
+                      <span className="text-[12px]" style={{ color: icon === 'cross' ? 'var(--aura-text-subtle)' : 'var(--aura-text-muted)' }}>{text}</span>
                     )}
                   </div>
                 );
@@ -1810,19 +2058,29 @@ function PlanCard({
             </div>
           )}
 
+          {/* Claim condition callout */}
+          {!expanded && claimCondition && (
+            <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-[13px] flex-shrink-0">⚡</span>
+                <p className="text-[11px] leading-relaxed text-[var(--aura-text-muted)]">{claimCondition}</p>
+              </div>
+            </div>
+          )}
+
           {/* CTA - when collapsed */}
           {!expanded && (
             <button
               onClick={onSelect}
-              className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]"
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.98]"
               style={{
-                background: 'var(--motor-bg)',
-                color: 'var(--motor-text)',
-                border: '1px solid var(--motor-border-strong)',
-                boxShadow: 'inset 0px 2px 4px rgba(255,255,255,0.04)',
+                background: 'var(--btn-secondary-bg)',
+                color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--btn-secondary-border)',
+                boxShadow: 'var(--btn-secondary-shadow)',
               }}
             >
-              {isComprehensive ? 'Explore plan' : 'Select this plan'}
+              Explore plan
             </button>
           )}
         </div>
@@ -2229,12 +2487,7 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm space-y-3">
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}>
         <div className="px-4 py-3" style={{ background: 'var(--motor-plan-rec-header-bg)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--motor-plan-rec-badge)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--motor-plan-rec-badge)' }}>Recommended for you</span>
-          </div>
+          <GradientBadge className="mb-1">Recommended for you</GradientBadge>
           <h3 className="text-[18px] font-bold" style={{ color: 'var(--aura-text)' }}>{planLabel} Plan</h3>
           {matchedPlan && (
             <p className="text-[22px] font-bold mt-1" style={{ color: 'var(--aura-text)' }}>
@@ -2282,7 +2535,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'out_of_pocket');
+  const auraState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns('car', auraState).filter((a: any) => a.category === 'out_of_pocket');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2374,7 +2628,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       />
                     )}
                     <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">{addon.name}</h4>
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">Recommended</span>}
+                    {addon.recommended && <GradientBadge>Recommended</GradientBadge>}
                     {selected && (
                       <motion.span
                         initial={{ scale: 0, opacity: 0 }}
@@ -2446,8 +2700,8 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-[var(--aura-text)]">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-[#C084FC] bg-[#A855F7]/20 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>Recommended</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-[var(--aura-text)]">₹{variant.price}</span>
                       </div>
@@ -2476,7 +2730,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
 
-  const addons = getMotorAddOns().filter((a: any) => a.category === 'protect_everyone');
+  const auraState = useMotorStore.getState() as MotorJourneyState;
+  const addons = getMotorAddOns(vType as 'car' | 'bike', auraState).filter((a: any) => a.category === 'protect_everyone');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -2655,8 +2910,8 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-[var(--aura-text)]">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-[#C084FC] bg-[#A855F7]/20 px-2 py-0.5 rounded-full">Recommended</span>}
-                          {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
+                          {variant.recommended && <GradientBadge>Recommended</GradientBadge>}
+                          {variant.badge && <GradientBadge>{variant.badge}</GradientBadge>}
                         </div>
                         <span className="text-[16px] font-bold text-[var(--aura-text)]">₹{variant.price}</span>
                       </div>

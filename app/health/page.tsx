@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJourneyStore } from '../../lib/store';
 import { useThemeStore } from '../../lib/themeStore';
+import { useLanguageStore } from '../../lib/languageStore';
 import { loadSnapshot, clearSnapshot } from '../../lib/journeyPersist';
 import { useUserProfileStore } from '../../lib/userProfileStore';
 import EntryScreen from '../../components/EntryScreen';
@@ -80,13 +81,19 @@ function WelcomeOverlay({ onDone }: { onDone: () => void }) {
 }
 
 function HealthJourneyInner() {
-  const { updateState, resetJourney } = useJourneyStore();
+  const { updateState, resetJourney, setLanguage } = useJourneyStore();
   const paymentComplete = useJourneyStore(s => s.paymentComplete);
   const isExistingUser = useJourneyStore(s => s.isExistingAckoUser);
-  const [screen, setScreen] = useState<Screen>('entry');
+  const globalLanguage = useLanguageStore((s) => s.language);
+  const journeyLanguage = useJourneyStore((s) => s.language);
+  const [screen, setScreen] = useState<Screen>('chat');
   const [showWelcome, setShowWelcome] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (journeyLanguage !== globalLanguage) setLanguage(globalLanguage);
+  }, [journeyLanguage, globalLanguage, setLanguage]);
 
   const seedDemoState = () => {
     updateState({
@@ -124,6 +131,11 @@ function HealthJourneyInner() {
     const snap = resume ? loadSnapshot('health') : null;
 
     resetJourney();
+
+    // Sync language immediately after reset — global store may not be hydrated yet,
+    // so read from localStorage as the authoritative persisted source.
+    const savedLang = localStorage.getItem('acko_language');
+    if (savedLang) setLanguage(savedLang as import('../../lib/types').Language);
 
     const screenParam = searchParams.get('screen');
 
@@ -173,6 +185,9 @@ function HealthJourneyInner() {
         setScreen('chat');
       }
       setShowWelcome(false);
+    } else {
+      updateState({ isExistingAckoUser: false, currentStepId: 'entry.welcome', currentModule: 'entry' });
+      setScreen('chat');
     }
 
     // Skip EntryScreen — go directly to chat for new sessions
@@ -196,8 +211,6 @@ function HealthJourneyInner() {
     setScreen('chat');
   };
 
-  const handleDashboard = () => setScreen('dashboard');
-
   const openExpertPanel = (module?: string) => {
     if (module) updateState({ currentModule: module as never });
     updateState({ showExpertPanel: true });
@@ -208,6 +221,7 @@ function HealthJourneyInner() {
   const handleJumpToCall = () => { seedDemoState(); setPostPaymentInitialPhase('voice_call'); setScreen('post_payment'); };
   const handleJumpToPostCallScenarios = () => { seedDemoState(); setPostPaymentInitialPhase('scenario_select'); setScreen('post_payment'); };
   const handleJumpToPostPayment = () => { seedDemoState(); setPostPaymentInitialPhase(undefined); setScreen('post_payment'); };
+  const handleDashboard = () => setScreen('dashboard');
   const dismissWelcome = useCallback(() => setShowWelcome(false), []);
 
   if (!hydrated) {
@@ -238,8 +252,10 @@ function HealthJourneyInner() {
           </motion.div>
         )}
         {screen === 'chat' && (
-          <div key="chat" className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--app-chat-gradient)' }}>
-            <Header /><ChatContainer />
+          <div key="chat" className="h-screen flex items-stretch overflow-hidden" style={{ background: 'var(--app-chat-gradient)' }}>
+            <div className="max-w-[430px] w-full mx-auto flex flex-col overflow-hidden">
+              <Header /><ChatContainer />
+            </div>
           </div>
         )}
       </AnimatePresence>

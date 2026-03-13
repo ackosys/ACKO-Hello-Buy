@@ -54,10 +54,18 @@ function LifeJourneyInner() {
   const [hydrated, setHydrated] = useState(false);
   const searchParams = useSearchParams();
 
+  const journeyLanguage = (store as unknown as { language: string }).language;
+
   // Keep life store language in sync with the global language selection
-  useEffect(() => { store.setLanguage(globalLanguage); }, [globalLanguage]);
+  useEffect(() => {
+    if (journeyLanguage !== globalLanguage) store.setLanguage(globalLanguage);
+  }, [journeyLanguage, globalLanguage]);
 
   useEffect(() => {
+    // Sync language from localStorage (global store may not be hydrated yet)
+    const savedLang = localStorage.getItem('acko_language');
+    if (savedLang) store.setLanguage(savedLang as import('../../lib/types').Language);
+
     const resume = searchParams.get('resume') === '1';
     const snap = resume ? loadSnapshot('life') : null;
 

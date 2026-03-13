@@ -21,8 +21,8 @@ const THEME_ICONS: Record<string, React.ReactNode> = {
 };
 const THEME_LABELS: Record<string, string> = { dark: 'Dark', light: 'Light' };
 
-const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn'];
-const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം' };
+const LANG_ORDER: Language[] = ['en', 'hi', 'hinglish', 'kn', 'ta', 'ml', 'te'];
+const LANG_LABELS: Record<Language, string> = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish', kn: 'ಕನ್ನಡ', ta: 'தமிழ்', ml: 'മലയാളം', te: 'తెలుగు' };
 
 export default function MotorHeader() {
   const { currentModule, vehicleType, updateState, resetJourney } = useMotorStore();
@@ -80,25 +80,16 @@ export default function MotorHeader() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => updateState({ showAIChat: true } as Partial<MotorJourneyState>)}
-            className="group relative w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 overflow-hidden"
-            style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
-            title="AI Assistant"
-          >
-            <img src={assetPath('/ai-assistant.png')} alt="AI" className="w-9 h-9 object-cover" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full" style={{ border: 'var(--motor-progress-border)' }} />
-          </button>
-
-          <button
-            onClick={() => updateState({ showExpertPanel: true } as Partial<MotorJourneyState>)}
-            className="group relative flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full transition-all active:scale-95"
+            onClick={() => updateState({ showHelpPanel: true, helpPanelTab: 'chat' } as Partial<MotorJourneyState>)}
+            className="relative flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full transition-all active:scale-95"
             style={{ background: 'var(--motor-overlay-bg)', border: '1px solid var(--motor-border)' }}
-            title="Talk to Expert"
+            title="Expert Help"
           >
-            <div className="w-7 h-7 rounded-full overflow-hidden">
-              <img src={assetPath('/motor-expert.png')} alt="Expert" className="w-7 h-7 object-cover" />
+            <div className="relative w-7 h-7 flex-shrink-0">
+              <img src={assetPath('/motor-expert.png')} alt="Expert" className="w-7 h-7 rounded-full object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[var(--motor-bg)]" />
             </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--motor-text)', opacity: 0.9 }}>Expert</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--motor-text)', opacity: 0.9 }}>Expert Help</span>
           </button>
 
           {/* More menu */}
