@@ -11,6 +11,7 @@ import BaseSelectionCards from './ds/SelectionCards';
 import BaseMultiSelect from './ds/MultiSelect';
 import BaseNumberInput from './ds/NumberInput';
 import BasePincodeInput from './ds/PincodeInput';
+import BaseTextInput from './ds/TextInput';
 
 /* ═══════════════════════════════════════════════════════
    SVG Icon System — replaces emojis with clean icons
@@ -136,7 +137,7 @@ export function SelectionCards({ options, onSelect }: { options: Option[]; onSel
     );
   }
 
-export function SelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
+  // List layout for more options
   return (
     <div className="grid grid-cols-1 gap-2.5 max-w-md">
       {options.map((opt, i) => {
@@ -158,7 +159,7 @@ export function SelectionCards({ options, onSelect }: { options: Option[]; onSel
               ${opt.disabled ? 'opacity-40' : ''}
             `}
           >
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
               {diseaseIcon ? (
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-purple-300">{diseaseIcon}</div>
               ) : opt.icon ? (
@@ -285,32 +286,7 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
 export function NumberInput({ placeholder, subText, inputType = 'number', min, max, onSubmit }: {
   placeholder: string; subText?: string; inputType?: 'text' | 'number' | 'tel'; min?: number; max?: number; onSubmit: (value: string) => void;
 }) {
-  const t = useT();
-  return (
-    <div className="max-w-sm">
-      <input
-        type={inputType === 'tel' ? 'tel' : inputType === 'number' ? 'tel' : 'text'}
-        inputMode={inputType === 'number' || inputType === 'tel' ? 'numeric' : 'text'}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder}
-        className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
-        autoFocus
-      />
-      {subText && <p className="text-caption text-white/40 mt-1.5">{subText}</p>}
-      {error && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-caption text-red-400 mt-1.5">{error}</motion.p>}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        {t.common.continue}
-      </motion.button>
-    </div>
-  );
+  return <BaseNumberInput placeholder={placeholder} subText={subText} inputType={inputType} min={min} max={max} onSubmit={onSubmit} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -328,45 +304,7 @@ export function TextInput({
   maxLength?: number;
   onSubmit: (val: string) => void;
 }) {
-  const t = useT();
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = () => {
-    if (!value.trim()) { setError(t.widgets.required); return; }
-    if (inputType === 'tel' && value.length !== 10) { setError('Please enter a valid 10-digit number'); return; }
-    setError('');
-    onSubmit(value.trim());
-  };
-
-  return (
-    <div className="max-w-sm">
-      <input
-        type={inputType}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setError(''); }}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
-        autoFocus
-      />
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
-          {error}
-        </motion.p>
-      )}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        onClick={handleSubmit}
-        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
-      >
-        {t.common.continue}
-      </motion.button>
-    </div>
-  );
+  return <BaseTextInput placeholder={placeholder} inputType={inputType as 'text' | 'number' | 'tel'} maxLength={maxLength} onSubmit={onSubmit} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -374,30 +312,7 @@ export function TextInput({
    ═══════════════════════════════════════════════════════ */
 
 export function PincodeInput({ placeholder, onSubmit }: { placeholder: string; onSubmit: (value: string) => void }) {
-  const t = useT();
-  return (
-    <div className="max-w-sm">
-      <div className="relative">
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-        </svg>
-        <input
-          type="tel" inputMode="numeric" maxLength={6} value={value}
-          onChange={(e) => { setValue(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder={placeholder}
-          className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
-          autoFocus
-        />
-      </div>
-      {error && <p className="text-caption text-red-400 mt-1.5">{error}</p>}
-      <button onClick={handleSubmit} disabled={value.length !== 6}
-        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
-        {t.widgets.findHospitals}
-      </button>
-    </div>
-  );
+  return <BasePincodeInput placeholder={placeholder} onSubmit={onSubmit} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2088,6 +2003,11 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
       </div>
     </motion.div>
   );
+}
+
+// Alias used by ChatContainer — bridges onComplete/onSkip props to onSuccess
+export function HealthPaymentSheet({ onComplete, onSkip }: { onComplete: () => void; onSkip?: () => void }) {
+  return <PaymentWidget onSuccess={onComplete ?? onSkip ?? (() => {})} />;
 }
 
 /* ═══════════════════════════════════════════════════════

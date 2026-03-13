@@ -1655,8 +1655,8 @@ export const en = {
     otpTitle: (phone: string) => `Enter the OTP sent\nto +91 ${phone}`,
     otpError: 'Incorrect OTP. Please try again.',
     otpHint: 'Enter 0000 to verify',
-    nameTitle: 'Almost there!\nWhat should we call you?',
-    namePlaceholder: 'Enter your name',
+    nameTitle: 'Hi — what should I call you?',
+    namePlaceholder: 'Your first name',
     welcomeBack: (name: string) => `Welcome back,\n${name}! 👋`,
     welcomeBackSub: 'Looks like you\'ve been here before.',
     continueAs: (name: string) => `Continue as ${name}`,
@@ -1665,8 +1665,8 @@ export const en = {
     continueBtn: 'Continue',
 
     // LoginChatFlow conversational messages
-    chatGreet: 'Hello! What would you like us to call you?',
-    chatNamePlaceholder: 'Enter your name',
+    chatGreet: 'Hi — what should I call you?',
+    chatNamePlaceholder: 'Your first name',
     chatNiceToMeet: (name: string) => `Nice to meet you, ${name}! What would you like to do today?`,
     chatReturningGreet: (name: string) => `Welcome back, ${name}! 👋 Looks like you've been here before.`,
     chatReturningConfirm: (name: string) => `Shall we continue as ${name}?`,
