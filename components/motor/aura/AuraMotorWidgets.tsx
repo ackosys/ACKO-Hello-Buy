@@ -1351,6 +1351,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const vType = vehicleType === 'bike' ? 'bike' : 'car';
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [showZdVsStandard, setShowZdVsStandard] = useState(false);
   const [showGarageTier, setShowGarageTier] = useState(false);
   const [showZdVariant, setShowZdVariant] = useState(false);
   const [showOdVariant, setShowOdVariant] = useState(false);
@@ -1370,15 +1371,35 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const handlePlanClick = (plan: any) => {
     if (plan.type === 'comprehensive') {
       setSelectedPlan(plan);
-      setShowGarageTier(true);
-    } else if (plan.type === 'zero_dep' && zeroDepPlans.length > 1) {
-      setSelectedPlan(plan);
-      setShowZdVariant(true);
+      if (zeroDepPlans.length > 0) {
+        setShowZdVsStandard(true);
+      } else if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: plan.type, garageTier: null, plan });
+      }
     } else if ((plan.type === 'od' || plan.type === 'od_zd') && odPlans.length > 1) {
       setSelectedPlan(plan);
       setShowOdVariant(true);
     } else {
       onSelect({ planType: plan.type, garageTier: null, plan });
+    }
+  };
+
+  const handleZdVsStandardChoice = (choice: 'zd' | 'standard') => {
+    setShowZdVsStandard(false);
+    if (choice === 'zd') {
+      if (zeroDepPlans.length > 1) {
+        setShowZdVariant(true);
+      } else {
+        onSelect({ planType: 'zero_dep', garageTier: null, plan: zeroDepPlans[0] });
+      }
+    } else {
+      if (comprehensivePlans.length > 1) {
+        setShowGarageTier(true);
+      } else {
+        onSelect({ planType: 'comprehensive', garageTier: null, plan: comprehensivePlans[0] });
+      }
     }
   };
 
@@ -1411,35 +1432,14 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
         </p>
       </div>
 
-      {/* Zero Depreciation Plan — shown first for brand new */}
-      {isBrandNew && zeroDepLowest && (
-        <PlanCard
-          plan={zeroDepLowest}
-          title="Zero Depreciation"
-          badge="Recommended"
-          price={formatPrice(zeroDepLowest.totalPrice)}
-          description="Full bumper-to-bumper coverage with no depreciation charges on part replacements during claims."
-          bulletPoints={[
-            { text: 'Pays the full cost of parts replaced during a claim — no depreciation deducted', icon: 'check' },
-            { text: 'Minimises your out-of-pocket expenses during claims', icon: 'check' },
-            { text: 'Covers theft, fire, accidents, and natural disasters', icon: 'check' },
-            { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
-            { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
-          ]}
-          onSelect={() => handlePlanClick(zeroDepLowest)}
-          recommended
-        />
-      )}
-
-      {/* Comprehensive Plan */}
+      {/* Comprehensive Plan — ZD is a sub-type, shown in bottom sheet */}
       {comprehensiveLowest && (
         <PlanCard
           plan={comprehensiveLowest}
           title="Comprehensive"
-          subtitle={isBrandNew ? undefined : `${comprehensivePlans.length > 1 ? comprehensivePlans.length + ' options starting from' : 'Starting from'}`}
+          subtitle={zeroDepLowest ? 'Includes Zero Depreciation option' : undefined}
           badge={`Recommended for your ${vType}`}
-          price={formatPrice(comprehensiveLowest.totalPrice)}
-          strikePrice={isBrandNew ? undefined : comprehensiveLowest.totalPrice + 1000}
+          price={formatPrice(zeroDepLowest ? Math.min(comprehensiveLowest.totalPrice, zeroDepLowest.totalPrice) : comprehensiveLowest.totalPrice)}
           description={`Complete coverage for your ${vType} and third-party liabilities.`}
           bulletPoints={[
             { text: 'Covers theft, damage from fire, accidents, and natural disasters', icon: 'check' },
@@ -1449,25 +1449,6 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
           ]}
           onSelect={() => handlePlanClick(comprehensiveLowest)}
-          recommended={!isBrandNew || !zeroDepLowest}
-        />
-      )}
-
-      {/* Zero Depreciation Plan — shown second for existing cars */}
-      {!isBrandNew && zeroDepLowest && (
-        <PlanCard
-          plan={zeroDepLowest}
-          title="Zero Depreciation"
-          subtitle={`${zeroDepPlans.length > 1 ? zeroDepPlans.length + ' options starting from' : 'Starting from'}`}
-          badge="Recommended"
-          price={formatPrice(zeroDepLowest.totalPrice)}
-          description="No depreciation charges on part replacements — full claim payout with no out-of-pocket cost."
-          bulletPoints={[
-            { text: 'Pays the full cost of parts replaced during a claim — no depreciation deducted', icon: 'check' },
-            { text: 'Minimises your out-of-pocket expenses during claims', icon: 'check' },
-            { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
-          ]}
-          onSelect={() => handlePlanClick(zeroDepLowest)}
           recommended
         />
       )}
@@ -1521,6 +1502,105 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
         </svg>
         I need help choosing
       </button>
+
+      {/* ZD vs Standard Comprehensive Bottom Sheet */}
+      <AnimatePresence>
+        {showZdVsStandard && (() => {
+          const zdStarting = zeroDepLowest ? formatPrice(zeroDepLowest.totalPrice) : '';
+          const compStarting = comprehensiveLowest ? formatPrice(comprehensiveLowest.totalPrice) : '';
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVsStandard(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto bg-[var(--aura-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--aura-border)' }} />
+                  <h3 className="text-[18px] font-bold text-[var(--aura-text)] mb-1">Do you want Zero Depreciation cover?</h3>
+                  <p className="text-[12px] text-[var(--aura-text-muted)] mb-5">Zero Depreciation means no out-of-pocket cost on part replacements during claims.</p>
+
+                  <div className="space-y-3">
+                    {zeroDepLowest && (
+                      <button onClick={() => handleZdVsStandardChoice('zd')} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Zero Depreciation</h4>
+                            <div className="mt-1"><GradientBadge>Recommended</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold text-[var(--aura-text)]">Starting {zdStarting}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3">
+                          {['Pays the full cost of parts replaced during a claim — no depreciation deducted', 'Minimises your out-of-pocket expenses during claims'].map((t, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              <span className="text-[11px] text-[var(--aura-text-muted)]">{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    )}
+
+                    {comprehensiveLowest && (
+                      <button onClick={() => handleZdVsStandardChoice('standard')} className="w-full p-4 bg-[var(--aura-surface)] border border-[var(--aura-border)] rounded-xl text-left transition-all">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold text-[var(--aura-text)]">Standard Comprehensive</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[14px] font-bold text-[var(--aura-text)]">Starting {compStarting}</p>
+                            <p className="text-[10px] text-[var(--aura-text-subtle)]">+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px] text-[var(--aura-text-muted)]">Pays the cost of replaced parts after deducting depreciation</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-[var(--aura-text-subtle)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" /></svg>
+                            <span className="text-[11px] text-[var(--aura-text-subtle)]">Your out-of-pocket expenses typically amount to 20–30% of the total claim value</span>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-4 p-4 rounded-xl bg-[var(--aura-surface)] border border-[var(--aura-border)]">
+                    <p className="text-[12px] font-semibold text-[var(--aura-text)] mb-3">See the difference with an example</p>
+                    <p className="text-[11px] text-[var(--aura-text-muted)] mb-2">A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden border border-[var(--aura-border)]">
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3 bg-[var(--aura-surface-2)] text-[var(--aura-text-subtle)]">
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[['Part cost', '₹15,000', '₹15,000'], ['Depreciation', '₹0', '₹3,000–4,500'], ['You pay', '₹0', '₹3,000–4,500'], ['ACKO pays', '₹15,000', '₹10,500–12,000']].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3 border-t border-[var(--aura-border)]" style={{ color: label === 'You pay' ? 'var(--aura-text)' : 'var(--aura-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed text-[var(--aura-text-subtle)]">With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.</p>
+                  </div>
+
+                  <button onClick={() => setShowZdVsStandard(false)} className="w-full mt-4 py-3 text-[14px] text-[var(--aura-text-muted)] transition-colors">Cancel</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Garage Tier Bottom Sheet for Comprehensive */}
       <AnimatePresence>
