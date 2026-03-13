@@ -80,23 +80,16 @@ export default function AuraMotorHeader() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => updateState({ showAIChat: true } as Partial<MotorJourneyState>)}
-            className="group relative w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 overflow-hidden"
-            style={{ background: 'var(--aura-surface)', border: '1px solid var(--aura-border)' }}
+            onClick={() => updateState({ showHelpPanel: true, helpPanelTab: 'chat' } as Partial<MotorJourneyState>)}
+            className="relative flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full transition-all active:scale-95"
+            style={{ background: 'var(--aura-overlay-bg)', border: '1px solid var(--aura-border)' }}
+            title="Expert Help"
           >
-            <img src={assetPath('/ai-assistant.png')} alt="AI" className="w-9 h-9 object-cover" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full" style={{ border: 'var(--aura-progress-border)' }} />
-          </button>
-
-          <button
-            onClick={() => updateState({ showExpertPanel: true } as Partial<MotorJourneyState>)}
-            className="group relative flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full transition-all active:scale-95"
-            style={{ background: 'var(--aura-overlay-bg)', border: '1px solid var(--aura-overlay-bg)' }}
-          >
-            <div className="w-7 h-7 rounded-full overflow-hidden">
-              <img src={assetPath('/motor-expert.png')} alt="Expert" className="w-7 h-7 object-cover" />
+            <div className="relative w-7 h-7 flex-shrink-0">
+              <img src={assetPath('/motor-expert.png')} alt="Expert" className="w-7 h-7 rounded-full object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-[var(--aura-bg)]" />
             </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--aura-bot-text)', opacity: 0.9 }}>Expert</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--aura-bot-text)', opacity: 0.9 }}>Expert Help</span>
           </button>
 
           {/* More menu */}

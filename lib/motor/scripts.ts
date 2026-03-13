@@ -1370,19 +1370,7 @@ const quotePlansReady: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: (_, state) => {
-    const combo = state.planCombination;
-    if (!combo) return 'quote.plan_selection';
-
-    // Case 0: OD-only (active TP policy)
-    if (combo.startsWith('OD')) return 'guided.od_tp_active';
-    // Case 3: Only one plan (A or B)
-    if (combo === 'A' || combo === 'B') return 'guided.single_plan';
-    // Case 2: No ZD (C or D) — skip ZD step
-    if (combo === 'C' || combo === 'D') return 'guided.comp_vs_tp';
-    // Case 1: Full flow (E or F)
-    return 'guided.comp_vs_tp';
-  },
+  getNextStep: () => 'quote.plan_selection',
 };
 
 /* ═══════════════════════════════════════════════

@@ -1637,6 +1637,8 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [showGarageTier, setShowGarageTier] = useState(false);
+  const [showZdVariant, setShowZdVariant] = useState(false);
+  const [showOdVariant, setShowOdVariant] = useState(false);
   const [showIDVSlider, setShowIDVSlider] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1644,9 +1646,11 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
   const comprehensivePlans = availablePlans.filter((p: any) => p.type === 'comprehensive');
   const zeroDepPlans = availablePlans.filter((p: any) => p.type === 'zero_dep');
   const thirdPartyPlan = availablePlans.find((p: any) => p.type === 'third_party');
+  const odPlans = availablePlans.filter((p: any) => p.type === 'od' || p.type === 'od_zd');
 
   const comprehensiveLowest = comprehensivePlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
   const zeroDepLowest = zeroDepPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0];
+  const odLowest = odPlans.length > 0 ? odPlans.sort((a: any, b: any) => a.totalPrice - b.totalPrice)[0] : null;
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
@@ -1674,6 +1678,12 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
     if (plan.type === 'comprehensive') {
       setSelectedPlan(plan);
       setShowGarageTier(true);
+    } else if (plan.type === 'zero_dep' && zeroDepPlans.length > 1) {
+      setSelectedPlan(plan);
+      setShowZdVariant(true);
+    } else if ((plan.type === 'od' || plan.type === 'od_zd') && odPlans.length > 1) {
+      setSelectedPlan(plan);
+      setShowOdVariant(true);
     } else {
       onSelect({ planType: plan.type, garageTier: null, plan });
     }
@@ -1686,6 +1696,12 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
     );
     setShowGarageTier(false);
     onSelect({ planType: selectedPlan.type, garageTier: tier, plan: finalPlan });
+  };
+
+  const handleVariantSelect = (plan: any) => {
+    setShowZdVariant(false);
+    setShowOdVariant(false);
+    onSelect({ planType: plan.type, garageTier: null, plan });
   };
 
   return (
@@ -1747,14 +1763,21 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             exit={{ opacity: 0 }}
             className="space-y-3"
           >
-            {/* Zero Depreciation Plan — shown first for brand new, second otherwise */}
+            {/* Zero Depreciation Plan — shown first for brand new */}
             {isBrandNew && zeroDepLowest && (
               <PlanCard
                 plan={zeroDepLowest}
-                title="Zero Depreciation Plan (Bumper to Bumper)"
-                badge={`Recommended for your ${vType}`}
+                title="Zero Depreciation"
+                badge="Recommended"
                 price={formatPrice(zeroDepLowest.totalPrice)}
-                description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property. Covers full cost of ${vType} parts if they are replaced during repairs.`}
+                description="Full bumper-to-bumper coverage with no depreciation charges on part replacements during claims."
+                bulletPoints={[
+                  { text: 'Pays the full cost of parts replaced during a claim — no depreciation deducted', icon: 'check' },
+                  { text: 'Minimises your out-of-pocket expenses during claims', icon: 'check' },
+                  { text: 'Covers theft, fire, accidents, and natural disasters', icon: 'check' },
+                  { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                ]}
                 onSelect={() => handlePlanClick(zeroDepLowest)}
                 recommended
               />
@@ -1764,13 +1787,21 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             {comprehensiveLowest && (
               <PlanCard
                 plan={comprehensiveLowest}
-                title={isBrandNew ? 'Comprehensive' : 'Comprehensive Plans'}
-                subtitle={isBrandNew ? undefined : '2 options starting from'}
-                badge={isBrandNew ? undefined : `Recommended for your ${vType}`}
+                title={isBrandNew ? 'Comprehensive' : 'Comprehensive'}
+                subtitle={isBrandNew ? undefined : `${comprehensivePlans.length > 1 ? comprehensivePlans.length + ' options starting from' : 'Starting from'}`}
+                badge={`Recommended for your ${vType}`}
                 price={formatPrice(comprehensiveLowest.totalPrice)}
                 strikePrice={isBrandNew ? undefined : comprehensiveLowest.totalPrice + 1000}
-                description={`Covers damage to your ${vType} and damage caused by your ${vType} to others and their property.`}
+                description={`Complete coverage for your ${vType} and third-party liabilities.`}
+                bulletPoints={[
+                  { text: 'Covers theft, damage from fire, accidents, and natural disasters', icon: 'check' },
+                  { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+                  { text: 'Cashless repairs at any GST registered garage', icon: 'check' },
+                  { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                ]}
                 onSelect={() => handlePlanClick(comprehensiveLowest)}
+                recommended={!isBrandNew || !zeroDepLowest}
               />
             )}
 
@@ -1778,25 +1809,56 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
             {!isBrandNew && zeroDepLowest && (
               <PlanCard
                 plan={zeroDepLowest}
-                title={tw.zeroDep}
-                subtitle="2 options starting from"
-                badge={tw.planBestValue}
+                title="Zero Depreciation"
+                subtitle={`${zeroDepPlans.length > 1 ? zeroDepPlans.length + ' options starting from' : 'Starting from'}`}
+                badge="Recommended"
                 price={formatPrice(zeroDepLowest.totalPrice)}
-                description="This plan includes fire, theft, accident, and third party liability cover and covers 100% cost of replaced parts during repairs."
+                description="No depreciation charges on part replacements — full claim payout with no out-of-pocket cost."
+                bulletPoints={[
+                  { text: 'Pays the full cost of parts replaced during a claim — no depreciation deducted', icon: 'check' },
+                  { text: 'Minimises your out-of-pocket expenses during claims', icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                ]}
                 onSelect={() => handlePlanClick(zeroDepLowest)}
                 recommended
               />
             )}
 
-            {/* Third Party Plan — only for existing cars, not brand new */}
+            {/* Third Party Plan */}
             {!isBrandNew && thirdPartyPlan && (
               <PlanCard
                 plan={thirdPartyPlan}
-                title={tw.thirdParty}
-                subtitle={tw.thirdPartySub}
-                price={`${formatPrice(thirdPartyPlan.totalPrice)} (Same across all insurers)`}
-                description={`It covers damage caused by your ${vType} to others and their property, but does not cover any damage caused to your ${vType}.`}
+                title="Third Party"
+                badge="Minimum cover required by law"
+                badgeVariant="amber"
+                price={`${formatPrice(thirdPartyPlan.totalPrice)}`}
+                subtitle="Same price across all insurers"
+                description="The minimum coverage required by law to drive on Indian roads."
+                bulletPoints={[
+                  { text: `Covers damage caused by your ${vType} to others and their property`, icon: 'check' },
+                  { text: `Does not cover any damage caused to your own ${vType}`, icon: 'cross' },
+                  { text: 'No cashless repair benefit', icon: 'cross' },
+                ]}
                 onSelect={() => handlePlanClick(thirdPartyPlan)}
+              />
+            )}
+
+            {/* OD Plans — only when user has active TP policy */}
+            {odLowest && (
+              <PlanCard
+                plan={odLowest}
+                title="Own Damage"
+                subtitle={odPlans.length > 1 ? `${odPlans.length} options starting from` : undefined}
+                badge="For cars with active TP"
+                badgeVariant="amber"
+                price={formatPrice(odLowest.totalPrice)}
+                description={`Your Third Party policy is already active. You only need to renew your Own Damage cover.`}
+                bulletPoints={[
+                  { text: `Covers damage to your own ${vType} — accident, fire, theft, and natural calamities`, icon: 'check' },
+                  { text: `Free pickup and drop of your ${vType} during a claim`, icon: 'check' },
+                  { text: 'Real-time repair updates on the ACKO app', icon: 'check' },
+                ]}
+                onSelect={() => handlePlanClick(odLowest)}
               />
             )}
           </motion.div>
@@ -1835,73 +1897,391 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                 exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md max-h-[45vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                className="w-full max-w-md max-h-[70vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
                 style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
               >
                 <div className="p-5">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
-                  <h3 className="text-[18px] font-bold text-white mb-1">{tw.chooseGarageNetwork}</h3>
-                  <p className="text-[12px] text-white/50 mb-5">Comprehensive plan lets you pick where your {vType} gets repaired</p>
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold mb-1" style={{ color: 'var(--motor-text)' }}>Choose the type of Comprehensive plan</h3>
+                  <p className="text-[12px] mb-5" style={{ color: 'var(--motor-text-subtle)' }}>We have two types of plans for you to choose from</p>
 
                   <div className="space-y-3">
-                    {/* Network Garages */}
+                    {/* Network Garage — preferred variant, shown first */}
                     <button
-                      onClick={() => handleGarageTierSelect('network')}
-                      className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group"
+                      onClick={() => networkPlan && handleGarageTierSelect('network')}
+                      className="w-full p-4 rounded-xl text-left transition-all group"
+                      style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                            </svg>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Comprehensive · Network Garage</h4>
                           </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">{tw.networkGarages}</h4>
-                            <p className="text-[11px] text-white/50">Cashless repairs at 5,400+ ACKO partner garages</p>
-                          </div>
+                          <GradientBadge>Recommended · Fully managed</GradientBadge>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
-                          <p className="text-[16px] font-bold text-white">{formatPrice(networkPlan?.totalPrice || 0)}</p>
-                          <p className="text-[10px] text-white/40">+ 18% GST</p>
+                          <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(networkPlan?.totalPrice || 0)}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 mt-3 mb-3">
+                        {[
+                          'All Comprehensive plan benefits at a lower premium',
+                          'Fully managed claims at ACKO Trusted Garages',
+                          'Free pickup & drop, real-time updates, and a 1-year warranty on repairs',
+                          'Just hand over the keys — we take care of everything',
+                        ].map((text, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>{text}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Claim condition callout */}
+                      <div className="p-2.5 rounded-lg mt-2" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-[12px] flex-shrink-0">⚡</span>
+                          <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                            Repairs outside ACKO Trusted Garages attract a ₹5,000 deductible. Not applicable if no trusted garage is available near you.
+                          </p>
                         </div>
                       </div>
                       {savings > 0 && (
-                        <span className="text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-400/20">
-                          Save ₹{savings.toLocaleString('en-IN')}
+                        <span className="inline-flex mt-2 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
+                          Save ₹{savings.toLocaleString('en-IN')} vs Standard
                         </span>
                       )}
                     </button>
 
-                    {/* All Garages */}
-                    <button
-                      onClick={() => handleGarageTierSelect('all')}
-                      className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-xl text-left transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.384 3.168 1.03-5.995L2.073 7.533l6.02-.874L11.42 1.5l3.326 5.159 6.02.874-4.993 4.81 1.03 5.995z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <h4 className="text-[14px] font-semibold text-white group-hover:text-purple-200 transition-colors">{tw.allGarages}</h4>
-                            <p className="text-[11px] text-white/50">{tw.allGaragesSub}</p>
+                    {/* Standard — shown second, greyed out if unavailable */}
+                    {allPlan ? (
+                      <button
+                        onClick={() => handleGarageTierSelect('all')}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Comprehensive · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(allPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <p className="text-[16px] font-bold text-white">{formatPrice(allPlan?.totalPrice || 0)}</p>
-                          <p className="text-[10px] text-white/40">+ 18% GST</p>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Cashless repairs at any GST registered garage — repair wherever you want, no conditions</span>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Comprehensive · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
                         </div>
                       </div>
-                      <GradientBadge>{tw.recommended}</GradientBadge>
-                    </button>
+                    )}
                   </div>
 
                   <button
                     onClick={() => setShowGarageTier(false)}
-                    className="w-full mt-4 py-3 text-[14px] text-white/50 hover:text-white/70 transition-colors"
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
+                  >
+                    {tw.cancel}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Zero Dep Variant Bottom Sheet (Safe Driver vs Standard) */}
+      <AnimatePresence>
+        {showZdVariant && selectedPlan && (() => {
+          const safeDriverPlan = zeroDepPlans.find((p: any) => p.variant === 'safe_driver' || p.expandedType === 'zd_comprehensive_safe');
+          const standardPlan = zeroDepPlans.find((p: any) => p.variant !== 'safe_driver' && p.expandedType !== 'zd_comprehensive_safe');
+          const [showCompare, setShowCompare] = [false, () => {}]; // placeholder for expandable
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowZdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>Choose your Zero Dep plan</h3>
+                  <p className="text-[12px] mt-1 mb-5" style={{ color: 'var(--motor-text-subtle)' }}>Both cover 100% of part replacement costs. Pick what suits you.</p>
+
+                  <div className="space-y-3">
+                    {/* Safe Driver — preferred variant, shown first */}
+                    {safeDriverPlan && (
+                      <button
+                        onClick={() => handleVariantSelect(safeDriverPlan)}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(safeDriverPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Built for responsible car owners who rarely need to claim</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits at a significantly lower premium</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                              You pay ₹5,000 when you make a claim. We cover everything else.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Standard — shown second, greyed out if unavailable */}
+                    {standardPlan ? (
+                      <button
+                        onClick={() => handleVariantSelect(standardPlan)}
+                        className="w-full p-4 rounded-xl text-left transition-all group"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(standardPlan.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>No deductions of any kind during claims</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Higher premium, zero conditions</span>
+                          </div>
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Compare section */}
+                  <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                    <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--motor-text)' }}>See the difference with an example</p>
+                    <p className="text-[11px] mb-2" style={{ color: 'var(--motor-text-subtle)' }}>A bumper gets damaged in an accident. Repair cost: ₹15,000</p>
+                    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--motor-border)' }}>
+                      <div className="grid grid-cols-3 text-[10px] font-medium py-2 px-3" style={{ background: 'var(--motor-surface-2)', color: 'var(--motor-text-subtle)' }}>
+                        <span></span><span className="text-center">Zero Dep</span><span className="text-center">Standard</span>
+                      </div>
+                      {[
+                        ['Part cost', '₹15,000', '₹15,000'],
+                        ['Depreciation', '₹0', '₹3,000–4,500'],
+                        ['You pay', '₹0', '₹3,000–4,500'],
+                        ['ACKO pays', '₹15,000', '₹10,500–12,000'],
+                      ].map(([label, zd, std], i) => (
+                        <div key={i} className="grid grid-cols-3 text-[10px] py-1.5 px-3" style={{ borderTop: '1px solid var(--motor-border)', color: label === 'You pay' ? 'var(--motor-text)' : 'var(--motor-text-muted)' }}>
+                          <span className="font-medium">{label}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#4ade80' : undefined }}>{zd}</span>
+                          <span className="text-center" style={{ color: label === 'You pay' ? '#f87171' : undefined }}>{std}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--motor-text-subtle)' }}>
+                      With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowZdVariant(false)}
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
+                  >
+                    {tw.cancel}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* OD Variant Bottom Sheet (for active TP policy with multiple OD options) */}
+      <AnimatePresence>
+        {showOdVariant && selectedPlan && (() => {
+          const zdSafe = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant === 'safe_driver');
+          const zdStd = odPlans.find((p: any) => (p.type === 'od_zd' || p.hasZeroDep) && p.variant !== 'safe_driver');
+          const plainOd = odPlans.find((p: any) => p.type === 'od' && !p.hasZeroDep);
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowOdVariant(false)}
+            >
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'var(--motor-border-strong)' }} />
+                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>Choose your OD plan</h3>
+                  <p className="text-[12px] mt-1 mb-5" style={{ color: 'var(--motor-text-subtle)' }}>Your third-party is already active. Pick the right own-damage cover.</p>
+
+                  <div className="space-y-3">
+                    {/* OD ZD Safe Driver — preferred */}
+                    {zdSafe && (
+                      <button
+                        onClick={() => handleVariantSelect(zdSafe)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>OD Zero Dep · Safe Driver</h4>
+                            <div className="mt-1"><GradientBadge>Recommended · Best value</GradientBadge></div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(zdSafe.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits at a much lower premium</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>No depreciation charges on part replacements</span>
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-[12px] flex-shrink-0">⚡</span>
+                            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>
+                              You pay ₹5,000 when you make a claim. We cover everything else.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* OD ZD Standard — greyed out if unavailable */}
+                    {zdStd ? (
+                      <button
+                        onClick={() => handleVariantSelect(zdStd)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>OD Zero Dep · Standard</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(zdStd.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 mt-2">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>All Zero Depreciation benefits, no deductions during claims</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Higher premium, zero conditions</span>
+                          </div>
+                        </div>
+                      </button>
+                    ) : zdSafe && (
+                      <div className="w-full p-4 rounded-xl opacity-50" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                        <h4 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--motor-text-subtle)' }}>OD Zero Dep · Standard</h4>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                          </svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-subtle)' }}>We&apos;re unable to offer this plan for your vehicle at this time.</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Plain OD (no ZD) — if available */}
+                    {plainOd && (
+                      <button
+                        onClick={() => handleVariantSelect(plainOd)}
+                        className="w-full p-4 rounded-xl text-left transition-all"
+                        style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--motor-text)' }}>Standard OD</h4>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <p className="text-[16px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(plainOd.totalPrice)}</p>
+                            <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 mt-2">
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          <span className="text-[11px]" style={{ color: 'var(--motor-text-muted)' }}>Standard OD cover — depreciation applies on part replacements</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setShowOdVariant(false)}
+                    className="w-full mt-4 py-3 text-[14px] transition-colors"
+                    style={{ color: 'var(--motor-text-subtle)' }}
                   >
                     {tw.cancel}
                   </button>
@@ -1956,9 +2336,12 @@ function PlanCard({
   title,
   subtitle,
   badge,
+  badgeVariant = 'default',
   price,
   strikePrice,
   description,
+  bulletPoints,
+  claimCondition,
   onSelect,
   recommended,
 }: {
@@ -1966,9 +2349,12 @@ function PlanCard({
   title: string;
   subtitle?: string;
   badge?: string;
+  badgeVariant?: 'default' | 'amber';
   price: string;
   strikePrice?: number;
   description: string;
+  bulletPoints?: { text: string; icon: 'check' | 'cross' | 'info' }[];
+  claimCondition?: string;
   onSelect: () => void;
   recommended?: boolean;
 }) {
@@ -1981,8 +2367,27 @@ function PlanCard({
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
-  // Extract quick features (first 3, only the title part before —)
-  const quickFeatures = plan.features.slice(0, 3).map((f: string) => f.split(' — ')[0]);
+  const quickFeatures = bulletPoints
+    ? bulletPoints.slice(0, 5)
+    : plan.features.slice(0, 3).map((f: string) => ({ text: f.split(' — ')[0], icon: 'check' as const }));
+
+  const BulletIcon = ({ icon }: { icon: 'check' | 'cross' | 'info' }) => {
+    if (icon === 'cross') return (
+      <svg className="w-4 h-4 text-red-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+    if (icon === 'info') return (
+      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--motor-text-subtle)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+      </svg>
+    );
+    return (
+      <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    );
+  };
 
   return (
     <>
@@ -1997,20 +2402,27 @@ function PlanCard({
           <div className="mb-3">
             <div className="flex items-start justify-between mb-1">
               <div>
-                <h3 className="text-[15px] font-semibold text-white">{title}</h3>
-                {subtitle && <p className="text-[11px] text-white/40 mt-0.5">{subtitle}</p>}
+                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--motor-text)' }}>{title}</h3>
+                {subtitle && <p className="text-[11px] mt-0.5" style={{ color: 'var(--motor-text-subtle)' }}>{subtitle}</p>}
               </div>
               {badge && (
-                <GradientBadge>{badge}</GradientBadge>
+                badgeVariant === 'amber' ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full whitespace-nowrap text-[10px] font-medium leading-[12px]"
+                    style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                    {badge}
+                  </span>
+                ) : (
+                  <GradientBadge>{badge}</GradientBadge>
+                )
               )}
             </div>
             <div className="flex items-center gap-2">
               {strikePrice && (
-                <p className="text-[14px] font-semibold text-white/40 line-through">{formatPrice(strikePrice)}</p>
+                <p className="text-[14px] font-semibold line-through" style={{ color: 'var(--motor-text-subtle)' }}>{formatPrice(strikePrice)}</p>
               )}
-              <p className="text-[18px] font-bold text-white">{price}</p>
+              <p className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{price}</p>
             </div>
-            <p className="text-[12px] text-white/50 leading-relaxed mt-1">
+            <p className="text-[12px] leading-relaxed mt-1" style={{ color: 'var(--motor-text-subtle)' }}>
               {description}{' '}
               <button
                 onClick={() => setExpanded(!expanded)}
@@ -2024,26 +2436,37 @@ function PlanCard({
           {/* Quick features (always visible when collapsed) */}
           {!expanded && (
             <div className="space-y-1.5 mb-4">
-              {quickFeatures.map((feature: string, i: number) => {
-                const isGarageFeature = feature.includes('Cashless claims');
+              {quickFeatures.map((item: any, i: number) => {
+                const text = typeof item === 'string' ? item : item.text;
+                const icon = typeof item === 'string' ? 'check' : item.icon;
+                const isGarageFeature = text.includes('Cashless');
                 return (
                   <div key={i} className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
+                    <BulletIcon icon={icon} />
                     {isGarageFeature ? (
                       <button
                         onClick={() => setShowGarageExplorer(true)}
-                        className="text-[12px] text-white/70 hover:text-purple-300 transition-colors text-left underline decoration-white/30 hover:decoration-purple-300"
+                        className="text-[12px] hover:text-purple-300 transition-colors text-left underline decoration-white/30 hover:decoration-purple-300"
+                        style={{ color: 'var(--motor-text-muted)' }}
                       >
-                        {feature}
+                        {text}
                       </button>
                     ) : (
-                      <span className="text-[12px] text-white/70">{feature}</span>
+                      <span className="text-[12px]" style={{ color: icon === 'cross' ? 'var(--motor-text-subtle)' : 'var(--motor-text-muted)' }}>{text}</span>
                     )}
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Claim condition callout */}
+          {!expanded && claimCondition && (
+            <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-[13px] flex-shrink-0">⚡</span>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>{claimCondition}</p>
+              </div>
             </div>
           )}
 
@@ -2059,7 +2482,7 @@ function PlanCard({
                 boxShadow: 'var(--btn-secondary-shadow)',
               }}
             >
-              {isComprehensive ? 'Explore plan' : 'Select this plan'}
+              Explore plan
             </button>
           )}
         </div>

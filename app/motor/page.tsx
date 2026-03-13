@@ -11,7 +11,7 @@ import { useUserProfileStore } from '../../lib/userProfileStore';
 import MotorHelloEntry from '../../components/motor/MotorHelloEntry';
 import MotorHeader from '../../components/motor/MotorHeader';
 import MotorChatContainer from '../../components/motor/MotorChatContainer';
-import { MotorExpertPanel, MotorAIChatPanel } from '../../components/motor/MotorPanels';
+import { MotorHelpPanel } from '../../components/motor/MotorPanels';
 import { VehicleType, MotorJourneyState, MotorIntent } from '../../lib/motor/types';
 import LoginChatFlow from '../../components/LoginChatFlow';
 // LoginIntent type is used implicitly via the onSuccess callback
@@ -256,6 +256,7 @@ function MotorJourneyInner() {
       } as Partial<MotorJourneyState>);
       setScreen('chat');
     } else {
+      let handled = false;
       // Check if this is Kiran's multi-policy scenario
       try {
         const raw = typeof window !== 'undefined'
@@ -272,20 +273,21 @@ function MotorJourneyInner() {
               currentModule: 'dashboard',
             } as Partial<MotorJourneyState>);
             setScreen('chat');
+            handled = true;
           }
         }
-      } catch { /* noop — stay on explore */ }
+      } catch { /* noop */ }
+
+      // Default: go straight to motor chat at the renew/insure fork (skip LoginChatFlow)
+      if (!handled) {
+        const vt: VehicleType = vehicleParam ?? 'car';
+        seedDemoState(vt);
+        updateState({ vehicleType: vt, currentStepId: 'registration.has_number', currentModule: 'registration' } as Partial<MotorJourneyState>);
+        setScreen('chat');
+      }
     }
 
     setHydrated(true);
-
-    // Already logged in with no specific journey state → jump to registration chat
-    if (isLoggedIn && screen === 'login') {
-      const vt: VehicleType = vehicleParam ?? 'car';
-      seedDemoState(vt);
-      updateState({ vehicleType: vt, currentStepId: 'registration.has_number', currentModule: 'registration' } as Partial<MotorJourneyState>);
-      setScreen('chat');
-    }
   }, []);
 
   /* COMMENTED OUT: handleVehicleSelect — was used by MotorEntryScreen
@@ -358,8 +360,7 @@ function MotorJourneyInner() {
 
   return (
     <>
-      <MotorExpertPanel />
-      <MotorAIChatPanel />
+      <MotorHelpPanel />
 
       {/* COMMENTED OUT: WelcomeOverlay, MotorPrototypeIntro, MotorEntryScreen
       <AnimatePresence>

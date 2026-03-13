@@ -53,14 +53,17 @@ const DEFAULT_THEME: ChatBubbleTheme = {
 export interface BaseChatMessageProps {
   message: ChatMessageData;
   onEdit?: (stepId: string) => void;
+  onPlanInfo?: (stepId: string) => void;
   animate?: boolean;
   theme?: ChatBubbleTheme;
   avatar?: ReactNode;
 }
 
-export default function ChatMessage({ message, onEdit, animate = false, theme: themeOverrides, avatar }: BaseChatMessageProps) {
+export default function ChatMessage({ message, onEdit, onPlanInfo, animate = false, theme: themeOverrides, avatar }: BaseChatMessageProps) {
   const [showEdit, setShowEdit] = useState(false);
   const t = { ...DEFAULT_THEME, ...themeOverrides };
+
+  const isPlanStep = message.stepId === 'quote.plan_selection' || message.stepId === 'help.recommendation';
 
   if (message.type === 'system') {
     return (
@@ -87,7 +90,21 @@ export default function ChatMessage({ message, onEdit, animate = false, theme: t
             className={`px-4 py-2.5 ${t.userBubbleClass || ''}`}
             style={{ background: t.userBubbleBg, color: t.userBubbleText, ...t.userBubbleStyle }}
           >
-            <p className="text-[15px] font-medium">{message.content}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[15px] font-medium flex-1">{message.content}</p>
+              {isPlanStep && onPlanInfo && message.stepId && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPlanInfo(message.stepId!); }}
+                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-opacity opacity-60 hover:opacity-100"
+                  title="View plan details"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
           {message.editable && showEdit && onEdit && message.stepId && (
             <motion.button

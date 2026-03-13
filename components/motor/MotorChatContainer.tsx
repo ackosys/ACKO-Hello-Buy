@@ -180,6 +180,7 @@ export default function MotorChatContainer() {
   const [showWidget, setShowWidget] = useState(false);
   const [editModal, setEditModal] = useState<{ stepId: string; visible: boolean }>({ stepId: '', visible: false });
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [showPlanDetails, setShowPlanDetails] = useState(false);
 
   // Save drop-off snapshot at key steps
   useEffect(() => {
@@ -783,6 +784,7 @@ export default function MotorChatContainer() {
                   key={msg.id}
                   message={msg as ChatMessageType}
                   onEdit={handleEditRequest}
+                  onPlanInfo={() => setShowPlanDetails(true)}
                   animate={isLatestBot}
                 />
               );
@@ -884,6 +886,101 @@ export default function MotorChatContainer() {
             </motion.div>
           </>
         )}
+      </AnimatePresence>
+
+      {/* Plan Details Bottom Sheet — shown when user clicks their plan selection */}
+      <AnimatePresence>
+        {showPlanDetails && (() => {
+          const st = useMotorStore.getState() as MotorJourneyState;
+          const plan = st.selectedPlan;
+          if (!plan) return null;
+          const formatPrice = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black z-50"
+                onClick={() => setShowPlanDetails(false)}
+              />
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-x-0 bottom-0 max-w-md mx-auto max-h-[70vh] overflow-y-auto rounded-t-3xl shadow-2xl z-50"
+                style={{ background: 'var(--motor-glass-bg)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid var(--motor-border-strong)', borderBottom: 'none' }}
+              >
+                <div className="p-5">
+                  <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'var(--motor-border-strong)' }} />
+
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-[18px] font-bold" style={{ color: 'var(--motor-text)' }}>{plan.name}</h3>
+                      {plan.tagline && <p className="text-[12px] mt-1" style={{ color: 'var(--motor-text-subtle)' }}>{plan.tagline}</p>}
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="text-[20px] font-bold" style={{ color: 'var(--motor-text)' }}>{formatPrice(plan.totalPrice)}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--motor-text-subtle)' }}>+ 18% GST</p>
+                    </div>
+                  </div>
+
+                  {plan.description && (
+                    <p className="text-[13px] mb-5 leading-relaxed" style={{ color: 'var(--motor-text-muted)' }}>{plan.description}</p>
+                  )}
+
+                  {plan.features && plan.features.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>What&apos;s covered</h4>
+                      <div className="space-y-2">
+                        {plan.features.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {plan.notCovered && plan.notCovered.length > 0 && (
+                    <div className="mb-5">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--motor-text-subtle)' }}>Not covered</h4>
+                      <div className="space-y-2">
+                        {plan.notCovered.map((f: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="text-[13px]" style={{ color: 'var(--motor-text-muted)' }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {plan.deductibleDescription && (
+                    <div className="p-3 rounded-xl mb-5" style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)' }}>
+                      <p className="text-[12px] font-medium" style={{ color: 'var(--motor-text-subtle)' }}>Deductible</p>
+                      <p className="text-[13px] mt-0.5" style={{ color: 'var(--motor-text)' }}>{plan.deductibleDescription}</p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setShowPlanDetails(false)}
+                    className="w-full py-3 rounded-xl text-[14px] font-medium transition-colors"
+                    style={{ background: 'var(--motor-surface)', border: '1px solid var(--motor-border)', color: 'var(--motor-text-muted)' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Edit Widget Bottom Sheet / Full Overlay */}

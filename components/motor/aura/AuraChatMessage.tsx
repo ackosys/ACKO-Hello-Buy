@@ -25,14 +25,16 @@ const AURA_CHAT_THEME: ChatBubbleTheme = {
 interface AuraChatMessageProps {
   message: ChatMessageData;
   onEdit?: (stepId: string) => void;
+  onPlanInfo?: (stepId: string) => void;
   animate?: boolean;
 }
 
-export default function AuraChatMessage({ message, onEdit, animate = false }: AuraChatMessageProps) {
+export default function AuraChatMessage({ message, onEdit, onPlanInfo, animate = false }: AuraChatMessageProps) {
   return (
     <BaseChatMessage
       message={message}
       onEdit={onEdit}
+      onPlanInfo={onPlanInfo}
       animate={animate}
       theme={AURA_CHAT_THEME}
     />
