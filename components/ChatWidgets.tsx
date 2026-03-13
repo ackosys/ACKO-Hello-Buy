@@ -88,19 +88,103 @@ function getDiseaseIcon(optionId: string): JSX.Element | null {
    Selection Cards — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
-function healthRenderIcon(icon: string, className?: string) {
-  const diseaseIcon = getDiseaseIcon(icon);
-  if (diseaseIcon) return <div className="text-purple-300">{diseaseIcon}</div>;
-  return <OptionIcon icon={icon} className={`${className || 'w-6 h-6'} !text-purple-300`} />;
-}
+export function SelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const useGrid = options.length <= 4 && options.every(o => o.icon);
+
+  const handleSelect = (id: string) => {
+    setSelected(id);
+    setTimeout(() => onSelect(id), 250);
+  };
+
+  if (useGrid) {
+    return (
+      <div className="grid grid-cols-2 gap-3 max-w-md">
+        {options.map((opt, i) => {
+          const diseaseIcon = getDiseaseIcon(opt.id);
+          return (
+            <motion.button
+              key={opt.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              onClick={() => handleSelect(opt.id)}
+              className={`
+                relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
+                ${selected === opt.id
+                  ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
+                  : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
+                }
+              `}
+            >
+              {opt.badge && (
+                <span className="absolute -top-2 -right-2 text-label-sm bg-pink-500 text-white px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
+                  {opt.badge}
+                </span>
+              )}
+              <div className="mb-2 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : <OptionIcon icon={opt.icon!} className="w-6 h-6 !text-purple-300" />}
+              </div>
+              <span className={`text-label-md font-medium ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
+              {opt.description && (
+                <p className="text-caption text-white/40 mt-1">{opt.description}</p>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+    );
+  }
 
 export function SelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
   return (
-    <BaseSelectionCards
-      options={options}
-      onSelect={onSelect}
-      renderIcon={healthRenderIcon}
-    />
+    <div className="grid grid-cols-1 gap-2.5 max-w-md">
+      {options.map((opt, i) => {
+        const diseaseIcon = getDiseaseIcon(opt.id);
+        return (
+          <motion.button
+            key={opt.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.04 }}
+            onClick={() => handleSelect(opt.id)}
+            disabled={opt.disabled}
+            className={`
+              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
+              ${selected === opt.id
+                ? 'border-purple-400 bg-white/15 shadow-md shadow-purple-900/20'
+                : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
+              }
+              ${opt.disabled ? 'opacity-40' : ''}
+            `}
+          >
+              <div className="flex items-center gap-3">
+              {diseaseIcon ? (
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-purple-300">{diseaseIcon}</div>
+              ) : opt.icon ? (
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <OptionIcon icon={opt.icon} className="w-4.5 h-4.5 !text-purple-300" />
+                </div>
+              ) : null}
+              <div className="flex-1 min-w-0">
+                <span className={`text-label-md font-medium block ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
+                {opt.description && <p className="text-caption text-white/40 mt-0.5">{opt.description}</p>}
+              </div>
+              {opt.badge && (
+                <span className="text-label-sm bg-purple-500/50 text-white px-2 py-0.5 rounded-full border border-purple-400/30">{opt.badge}</span>
+              )}
+              {selected === opt.id && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </motion.div>
+              )}
+            </div>
+          </motion.button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -203,15 +287,85 @@ export function NumberInput({ placeholder, subText, inputType = 'number', min, m
 }) {
   const t = useT();
   return (
-    <BaseNumberInput
-      placeholder={placeholder}
-      subText={subText}
-      inputType={inputType}
-      min={min}
-      max={max}
-      onSubmit={onSubmit}
-      buttonLabel={t.common.continue}
-    />
+    <div className="max-w-sm">
+      <input
+        type={inputType === 'tel' ? 'tel' : inputType === 'number' ? 'tel' : 'text'}
+        inputMode={inputType === 'number' || inputType === 'tel' ? 'numeric' : 'text'}
+        value={value}
+        onChange={(e) => { setValue(e.target.value); setError(''); }}
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+        placeholder={placeholder}
+        className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
+        autoFocus
+      />
+      {subText && <p className="text-caption text-white/40 mt-1.5">{subText}</p>}
+      {error && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-caption text-red-400 mt-1.5">{error}</motion.p>}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        onClick={handleSubmit}
+        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold active:scale-[0.97] transition-transform"
+      >
+        {t.common.continue}
+      </motion.button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Text Input — For name, short text answers
+   ═══════════════════════════════════════════════════════ */
+
+export function TextInput({
+  placeholder,
+  inputType = 'text',
+  maxLength,
+  onSubmit,
+}: {
+  placeholder: string;
+  inputType?: string;
+  maxLength?: number;
+  onSubmit: (val: string) => void;
+}) {
+  const t = useT();
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    if (!value.trim()) { setError(t.widgets.required); return; }
+    if (inputType === 'tel' && value.length !== 10) { setError('Please enter a valid 10-digit number'); return; }
+    setError('');
+    onSubmit(value.trim());
+  };
+
+  return (
+    <div className="max-w-sm">
+      <input
+        type={inputType}
+        value={value}
+        onChange={(e) => { setValue(e.target.value); setError(''); }}
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className="w-full px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 text-label-lg font-medium transition-colors"
+        autoFocus
+      />
+      {error && (
+        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-caption mt-1.5">
+          {error}
+        </motion.p>
+      )}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        onClick={handleSubmit}
+        className="w-full mt-3 py-3 rounded-xl bg-purple-700 text-white hover:bg-purple-600 text-label-lg font-semibold active:scale-[0.97] transition-transform"
+      >
+        {t.common.continue}
+      </motion.button>
+    </div>
   );
 }
 
@@ -222,11 +376,27 @@ export function NumberInput({ placeholder, subText, inputType = 'number', min, m
 export function PincodeInput({ placeholder, onSubmit }: { placeholder: string; onSubmit: (value: string) => void }) {
   const t = useT();
   return (
-    <BasePincodeInput
-      placeholder={placeholder}
-      onSubmit={onSubmit}
-      buttonLabel={t.widgets.findHospitals}
-    />
+    <div className="max-w-sm">
+      <div className="relative">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
+        <input
+          type="tel" inputMode="numeric" maxLength={6} value={value}
+          onChange={(e) => { setValue(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          placeholder={placeholder}
+          className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-label-lg font-medium text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 transition-colors backdrop-blur-sm"
+          autoFocus
+        />
+      </div>
+      {error && <p className="text-caption text-red-400 mt-1.5">{error}</p>}
+      <button onClick={handleSubmit} disabled={value.length !== 6}
+        className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
+        {t.widgets.findHospitals}
+      </button>
+    </div>
   );
 }
 
@@ -1495,30 +1665,31 @@ export function ConsentWidget({
   ];
   const resolvedLinks = links ?? defaultLinks;
 
+  // Build inline acknowledgement: replace the document label with a hyperlink inside the sentence
+  const tcLink = resolvedLinks[0];
+  const renderInlineConsent = () => {
+    if (!consentText || !tcLink) {
+      return <span className="text-body-sm text-white/70">{t.widgets.confirmInfo} <a href={tcLink?.url ?? '#'} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink?.label ?? t.widgets.termsAndConditions}</a>.</span>;
+    }
+    // Split consent text around the document label and inject the hyperlink
+    const parts = consentText.split(tcLink.label);
+    if (parts.length === 2) {
+      return (
+        <span className="text-body-sm text-white/70">
+          {parts[0]}
+          <a href={tcLink.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink.label}</a>
+          {parts[1]}
+        </span>
+      );
+    }
+    return <span className="text-body-sm text-white/70">{consentText}</span>;
+  };
+
   return (
     <div className="max-w-md space-y-3">
-      {resolvedLinks.length > 0 && (
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2">
-          <p className="text-xs text-white/50 font-medium uppercase tracking-wide">Important Documents</p>
-          {resolvedLinks.map((link, i) => (
-            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-purple-300 hover:text-white text-sm underline underline-offset-2 transition-colors">
-              <span>📄</span> {link.label}
-            </a>
-          ))}
-        </div>
-      )}
       <label className="flex items-start gap-3 cursor-pointer bg-white/5 rounded-xl p-4 border border-white/10">
         <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 accent-purple-500 flex-shrink-0" />
-        <span className="text-body-sm text-white/70">
-          {consentText ?? `${t.widgets.confirmInfo} `}
-          {!consentText && resolvedLinks.map((link, i) => (
-            <span key={i}>
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{link.label}</a>
-              {i < resolvedLinks.length - 1 ? ' and ' : '.'}
-            </span>
-          ))}
-        </span>
+        {renderInlineConsent()}
       </label>
       <button onClick={onConfirm} disabled={!agreed}
         className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
@@ -1789,22 +1960,9 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
    Payment
    ═══════════════════════════════════════════════════════ */
 
-const HEALTH_PAYMENT_METHODS = [
-  { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: (
-    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
-  )},
-  { id: 'card', label: 'Card', desc: 'Visa, Mastercard, RuPay', icon: (
-    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-  )},
-  { id: 'netbanking', label: 'Net Banking', desc: 'All major banks', icon: (
-    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
-  )},
-  { id: 'wallet', label: 'Wallet', desc: 'Paytm, Amazon Pay', icon: (
-    <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 110-6h5.25A2.25 2.25 0 0121 6v6zm0 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5" /></svg>
-  )},
-];
-
-export function HealthPaymentSheet({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) {
+// Health Payment Gateway — mirrors the Motor PaymentGateway UX pattern:
+// method selector → processing spinner → success, all inline in chat.
+export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
   const selectedPlan = useJourneyStore(s => s.selectedPlan);
   const sumInsured = useJourneyStore(s => s.sumInsured);
   const members = useJourneyStore(s => s.members);
@@ -1812,176 +1970,122 @@ export function HealthPaymentSheet({ onComplete, onSkip }: { onComplete: () => v
   const paymentFrequency = useJourneyStore(s => s.paymentFrequency);
   const language = useJourneyStore(s => s.language);
   const plan = selectedPlan ? getPlanDetails(selectedPlan.tier, sumInsured, members, hasConditions, language) : null;
-  const isMonthly = paymentFrequency === 'monthly';
-  const premium = plan ? (isMonthly ? plan.monthlyPremium : plan.yearlyPremium) : 0;
+  const premium = plan ? (paymentFrequency === 'monthly' ? plan.monthlyPremium : plan.yearlyPremium) : 0;
+  const freqLabel = paymentFrequency === 'monthly' ? '/mo' : '/yr';
 
-  const [stage, setStage] = useState<'payment_select' | 'payment_processing' | 'payment_success'>('payment_select');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [stage, setStage] = useState<'methods' | 'processing' | 'success'>('methods');
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+  const methods = [
+    { id: 'upi', label: 'UPI', desc: 'Google Pay, PhonePe, Paytm', icon: '⚡' },
+    { id: 'card', label: 'Card', desc: 'Visa, Mastercard, RuPay', icon: '💳' },
+    { id: 'netbanking', label: 'Net Banking', desc: 'All major banks', icon: '🏦' },
+    ...(paymentFrequency === 'monthly'
+      ? [{ id: 'autopay', label: 'AutoPay / Mandate', desc: 'Auto-debit every month', icon: '🔄' }]
+      : [{ id: 'wallet', label: 'Wallet', desc: 'Paytm, Amazon Pay', icon: '👝' }]),
+  ];
 
   const handlePay = () => {
-    if (!selectedPaymentMethod) return;
-    setStage('payment_processing');
+    setStage('processing');
     setTimeout(() => {
-      setStage('payment_success');
-      setTimeout(() => onComplete(), 2200);
-    }, 2000);
-  };
-
-  const handleClose = () => {
-    if (stage === 'payment_processing' || stage === 'payment_success') return;
-    onSkip();
+      setStage('success');
+      setTimeout(onSuccess, 1500);
+    }, 2500);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm"
-      onClick={handleClose}
-    >
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-3xl flex flex-col"
-        style={{ height: '95vh', background: '#1C1C1F', border: '1px solid rgba(255,255,255,0.12)', borderBottom: 'none' }}
-      >
-        <div className="px-5 pt-5 pb-3 flex-shrink-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-[13px] text-white/40 font-medium">Payment Gateway</p>
-            </div>
-            {stage === 'payment_select' && (
-              <button onClick={handleClose} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-white/10">
-                <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            )}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl overflow-hidden border border-white/10" style={{ background: '#1a1f36' }}>
+      {/* Header — mirrors Motor's Razorpay-style header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2b3a67 0%, #1a1f36 100%)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+            <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-white">ACKO Health Insurance</p>
+            <p className="text-[11px] text-white/40">{selectedPlan?.name ?? 'ACKO Platinum'}</p>
           </div>
         </div>
+        <div className="text-right">
+          <p className="text-[11px] text-white/40">Amount</p>
+          <p className="text-[18px] font-bold text-white">{formatCurrency(premium)}<span className="text-[11px] font-normal text-white/40">{freqLabel}</span></p>
+        </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-4">
-          {stage !== 'payment_success' && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
-              {/* Merchant header */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8">
-                <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white">ACKO Insurance</p>
-                  <p className="text-xs text-white/40">Health Insurance &middot; {selectedPlan?.name || 'Plan'}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-[10px] text-white/40 uppercase">Amount</p>
-                  <p className="text-lg font-bold text-white">{formatCurrency(premium)}</p>
-                </div>
-              </div>
-
-              <div className="px-5 py-4">
-                {stage === 'payment_select' && (
-                  <>
-                    <h3 className="text-lg font-bold text-white mb-1">Payment Method</h3>
-                    <p className="text-xs text-white/40 mb-4">Choose how you&apos;d like to pay</p>
-                    <div className="space-y-2.5">
-                      {HEALTH_PAYMENT_METHODS.map(method => (
-                        <button
-                          key={method.id}
-                          onClick={() => setSelectedPaymentMethod(method.id)}
-                          className="w-full flex items-center gap-3.5 px-4 py-4 rounded-xl transition-all text-left"
-                          style={{
-                            background: selectedPaymentMethod === method.id ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
-                            border: selectedPaymentMethod === method.id ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                          }}
-                        >
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                            {method.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white">{method.label}</p>
-                            <p className="text-xs text-white/40 mt-0.5">{method.desc}</p>
-                          </div>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedPaymentMethod === method.id ? 'border-purple-400 bg-purple-500' : 'border-white/20'}`}>
-                            {selectedPaymentMethod === method.id && <div className="w-2 h-2 rounded-full bg-white" />}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {stage === 'payment_processing' && (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'rgba(124,58,237,0.4)', borderTopColor: 'transparent' }} />
-                    <p className="text-sm text-white/50">Redirecting to payment gateway...</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {stage === 'payment_success' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            >
-              <div className="rounded-2xl overflow-hidden py-10 px-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)' }}>
-                <div className="flex flex-col items-center text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.15 }}
-                    className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-400/40 flex items-center justify-center mb-5"
+      <div className="p-5">
+        <AnimatePresence mode="wait">
+          {stage === 'methods' && (
+            <motion.div key="methods" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}>
+              <p className="text-[12px] font-semibold text-white/50 uppercase tracking-wider mb-3">Payment Method</p>
+              <div className="space-y-2.5">
+                {methods.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                    className="w-full flex items-center gap-3.5 p-3.5 rounded-xl transition-all text-left"
+                    style={{
+                      background: selectedMethod === m.id ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${selectedMethod === m.id ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                    }}
                   >
-                    <motion.svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <motion.path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.3 }} />
-                    </motion.svg>
-                  </motion.div>
-                  <motion.h3 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-xl font-bold text-white mb-1">
-                    Payment Successful!
-                  </motion.h3>
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="text-white/50 text-sm">
-                    {selectedPlan?.name} plan secured
-                  </motion.p>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-5 flex items-center gap-2 text-white/40 text-xs">
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" /></svg>
-                    Setting up your policy...
-                  </motion.div>
-                </div>
+                    <span className="text-[20px]">{m.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-semibold text-white">{m.label}</p>
+                      <p className="text-[11px] text-white/40">{m.desc}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedMethod === m.id ? 'border-purple-400 bg-purple-400' : 'border-white/20'}`}>
+                      {selectedMethod === m.id && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handlePay}
+                disabled={!selectedMethod}
+                className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-30"
+                style={{ background: selectedMethod ? 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' : 'rgba(167,139,250,0.4)' }}
+              >
+                Pay {formatCurrency(premium)}{freqLabel}
+              </button>
+
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <svg className="w-3.5 h-3.5 text-white/25" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm4 8H8v-1c0-1.33 2.67-2 4-2s4 .67 4 2v1z"/></svg>
+                <p className="text-[10px] text-white/25">Secured by Razorpay | PCI DSS Compliant</p>
               </div>
             </motion.div>
           )}
-        </div>
 
-        {stage === 'payment_select' && (
-          <div className="px-5 py-4 flex-shrink-0">
-            <button
-              onClick={handlePay}
-              disabled={!selectedPaymentMethod}
-              className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-600/30"
-              style={{ background: selectedPaymentMethod ? 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' : 'rgba(124,58,237,0.3)', color: '#fff' }}
-            >
-              Pay {formatCurrency(premium)}{isMonthly ? '/mo' : ''}
-            </button>
-            <p className="text-[11px] text-white/30 text-center mt-2">Secure payment &middot; 30-day free look period</p>
-          </div>
-        )}
+          {stage === 'processing' && (
+            <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-8">
+              <div className="w-14 h-14 rounded-full border-[3px] border-white/10 border-t-purple-400 animate-spin mb-5" />
+              <p className="text-[15px] font-semibold text-white mb-1">Processing Payment</p>
+              <p className="text-[12px] text-white/40">Please do not close this screen...</p>
+            </motion.div>
+          )}
 
-        {stage === 'payment_processing' && (
-          <div className="px-5 py-4 flex-shrink-0">
-            <button
-              onClick={onComplete}
-              className="w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97] shadow-lg shadow-purple-600/30"
-              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', color: '#fff' }}
-            >
-              I&apos;ve Completed
-            </button>
-          </div>
-        )}
-      </motion.div>
+          {stage === 'success' && (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center py-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4"
+              >
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </motion.div>
+              <p className="text-[16px] font-bold text-green-400 mb-1">Payment Successful!</p>
+              <p className="text-[12px] text-white/40">{formatCurrency(premium)}{freqLabel} paid via {methods.find(m => m.id === selectedMethod)?.label}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }
