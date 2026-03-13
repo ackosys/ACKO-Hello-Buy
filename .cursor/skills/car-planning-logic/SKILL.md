@@ -355,8 +355,307 @@ ACKO offers the following plan combinations depending on the user's vehicle age,
 
 ---
 
-### Case 0 — Active TP Policy, OD Renewal Only (Combinations OD-1, OD-2, OD-3)
+### Universal Plan Benefits
 
+All ACKO car insurance plans (except Third Party) come with three benefits that should be surfaced consistently across all plan cards and selection screens:
+
+| Benefit | Display copy |
+|---------|-------------|
+| Free pickup & drop | "Free pickup & drop of your car during a claim" |
+| Real-time updates | "Real-time repair updates on the ACKO app" |
+| Cashless repairs | "Cashless repairs at any GST registered garage" |
+
+---
+
+### UX Guidance — Step 1: Third Party vs Comprehensive Card UI
+
+**Screen intent:** Help the user understand the fundamental difference between TP and Comprehensive before they choose.
+
+**Layout:** Two vertically stacked or side-by-side selectable cards. Show starting-from price on each card. Highlight the recommended card with a **"Recommended"** tag.
+
+---
+
+**Third Party Card**
+
+```
+┌─────────────────────────────────────────┐
+│  TAG: "Minimum cover required by law"   │  ← amber/neutral tag
+│                                         │
+│  Third Party                            │  ← plan name
+│  Starting from ₹X,XXX/yr               │  ← price
+│                                         │
+│  ✓ Covers damage you cause to others    │
+│    and their property                   │
+│  ✗ Does not cover damage to your        │
+│    own car                              │
+│  ✗ No cashless repair benefit           │
+└─────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Covers damage caused by your car to others and their property"_
+- Point 2: _"Does not cover any damage caused to your own car"_ — display with a ✗ or muted style to signal the gap
+- Tag: **"Minimum cover required by law"** — amber pill tag at the top of the card
+
+---
+
+**Comprehensive Card**
+
+```
+┌─────────────────────────────────────────┐
+│  TAG: "Recommended" (green)             │  ← shown when recommended
+│                                         │
+│  Comprehensive                          │  ← plan name
+│  Starting from ₹X,XXX/yr               │  ← price
+│                                         │
+│  ✓ Covers theft, fire, accidents &      │
+│    natural disasters                    │
+│  ✓ Covers damage caused to others       │
+│  ✓ Cashless repairs at any GST garage   │
+│  ✓ Real-time repair updates on app      │
+│  ✓ Free pickup & drop during claims     │
+└─────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Covers theft, damage from fire, accidents, and natural disasters"_
+- Point 2: _"Covers damage caused by your car to others and their property"_
+- Point 3: _"Cashless repairs at any GST registered garage"_
+- Point 4: _"Real-time repair updates on the ACKO app"_
+- Point 5: _"Free pickup and drop of your car during a claim"_
+- Tag: **"Recommended"** — green pill tag when recommendation logic selects Comprehensive
+
+---
+
+### UX Guidance — Step 2: Zero Depreciation vs Standard Card UI
+
+**Screen intent:** Help the user understand the depreciation delta and what it means for their out-of-pocket cost at claim time.
+
+**Layout:** Two selectable cards with a **Compare** toggle or expandable section below that illustrates the difference with a worked example. Highlight the recommended card.
+
+---
+
+**Zero Depreciation Card**
+
+```
+┌─────────────────────────────────────────┐
+│  TAG: "Recommended" (green)             │
+│                                         │
+│  Zero Depreciation                      │
+│  Starting from ₹X,XXX/yr               │
+│                                         │
+│  ✓ We pay the full cost of any part     │
+│    replaced during a claim              │
+│  ✓ Zero out-of-pocket expenses on       │
+│    part replacements                    │
+└─────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Pays the full cost of parts replaced during a claim — no depreciation deducted"_
+- Point 2: _"Minimises your out-of-pocket expenses during claims"_
+
+---
+
+**Standard Comprehensive Card**
+
+```
+┌─────────────────────────────────────────┐
+│  Standard                               │
+│  Starting from ₹X,XXX/yr               │
+│                                         │
+│  ✓ Pays cost of replaced parts after    │
+│    deducting depreciation               │
+│  ℹ Depreciation is based on the age of  │
+│    your car and the type of part        │
+│  ℹ Out-of-pocket expenses typically     │
+│    amount to 20–30% of claim value      │
+└─────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Pays the cost of replaced parts after deducting depreciation"_
+- Point 2: _"Depreciation is calculated based on your car's age and the type of part replaced"_
+- Point 3: _"Your out-of-pocket expenses typically amount to 20–30% of the total claim value"_ — display with an ℹ info style, not a ✗, to avoid alarming the user unnecessarily
+
+---
+
+**Compare Section (expandable / toggle below the two cards)**
+
+Label: **"See the difference with an example →"**
+
+Show a worked example based on the user's actual car age where possible, or use a generic scenario:
+
+```
+Example: A bumper gets damaged in an accident.
+Repair cost: ₹15,000
+
+                    Zero Dep        Standard
+─────────────────────────────────────────────
+Part cost           ₹15,000         ₹15,000
+Depreciation        ₹0              ₹3,000–4,500
+                                    (20–30%)
+─────────────────────────────────────────────
+You pay             ₹0              ₹3,000–4,500
+ACKO pays           ₹15,000         ₹10,500–12,000
+```
+
+Copy below table: _"With Zero Depreciation, ACKO pays the full repair bill. With a Standard plan, you pay the depreciated portion out of pocket."_
+
+---
+
+### UX Guidance — Step 4: Variant Selection Card UI
+
+**Screen intent:** Help the user understand that the Smart/preferred variants (Safe Driver, Network Garage) offer better value than their standard counterparts, while being transparent about the conditions attached. The standard variants are shown even when unavailable, with a clear unavailability message.
+
+**Layout:** Two selectable cards per plan type — preferred variant first, standard variant second. Recommended tag on the preferred variant. If a variant is unavailable, show it greyed out with an explicit unavailability label.
+
+---
+
+#### ZD Safe Driver Card _(preferred ZD variant)_
+
+```
+┌─────────────────────────────────────────────┐
+│  TAG: "Recommended · Best value" (green)    │
+│                                             │
+│  Zero Dep · Safe Driver                     │
+│  ₹X,XXX/yr                                  │
+│                                             │
+│  ✓ Built for responsible car owners who     │
+│    rarely need to claim                     │
+│  ✓ All Zero Depreciation benefits at a      │
+│    significantly lower premium              │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │ ⚡ Claim condition                  │    │  ← highlighted clause block
+│  │ You pay ₹5,000 when you make a      │    │
+│  │ claim. We cover everything else.    │    │
+│  └─────────────────────────────────────┘    │
+└─────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Headline framing: _"For responsible car owners like you who don't usually claim"_ — makes the user feel seen and smart for choosing this
+- Point 1: _"All the benefits of Zero Depreciation at a much lower premium"_
+- Point 2: _"You only pay ₹5,000 when you make a claim — we cover everything else"_
+- Claim condition clause: surface in a visually distinct block (e.g., a highlighted callout card inside the plan card) — not buried in fine print
+- Tone: position this as the **smart, confident** choice
+
+---
+
+#### ZD Standard Card _(standard ZD variant)_
+
+```
+┌─────────────────────────────────────────────┐
+│  Zero Dep · Standard                        │
+│  ₹X,XXX/yr                                  │  ← higher price
+│                                             │
+│  ✓ All Zero Depreciation benefits           │
+│  ✓ No deductions of any kind during claims  │
+│  ✓ Higher premium, zero conditions          │
+└─────────────────────────────────────────────┘
+```
+
+**If ZD Standard is not available:**
+```
+┌─────────────────────────────────────────────┐
+│  Zero Dep · Standard                        │
+│  [GREYED OUT]                               │
+│                                             │
+│  ℹ We're unable to offer this plan for      │
+│    your vehicle at this time.               │
+└─────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Same Zero Depreciation benefits as the Safe Driver plan"_
+- Point 2: _"Higher premium, but no deductions of any kind during claims"_
+- Unavailability copy: _"We're unable to offer this plan for your vehicle at this time"_ — shown greyed out, non-interactive, never hidden
+
+---
+
+#### Comprehensive Network Garage Card _(preferred Comprehensive variant)_
+
+```
+┌─────────────────────────────────────────────┐
+│  TAG: "Recommended · Fully managed"(green)  │
+│                                             │
+│  Comprehensive · Network Garage             │
+│  ₹X,XXX/yr                                  │
+│                                             │
+│  ✓ All Comprehensive plan benefits at a     │
+│    lower premium                            │
+│  ✓ Fully managed claims at ACKO Trusted     │
+│    Garages — India's best dealerships and   │
+│    multi-brand garages                      │
+│  ✓ Free pickup & drop, real-time updates,   │
+│    and a 1-year warranty on all repairs     │
+│  ✓ Just hand over the keys — we take        │
+│    care of everything                       │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │ ⚡ Claim condition                  │    │  ← highlighted clause block
+│  │ Repairs outside ACKO Trusted        │    │
+│  │ Garages attract a ₹5,000 deductible │    │
+│  │ Not applicable if no trusted garage │    │
+│  │ is available near you.              │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  [See ACKO Trusted Garages near you →]      │  ← tappable link
+└─────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"All Comprehensive plan benefits at a lower premium"_
+- Point 2: _"A fully managed claims experience at ACKO Trusted Garages — India's best dealerships and multi-brand garages, tested for quality and speed"_
+- Point 3: _"Includes free pickup & drop, regular claim updates, and a 1-year warranty on repairs"_
+- Point 4: _"Just hand over the keys and carry on — we take care of everything"_ — this is the key emotional hook, position prominently
+- Claim condition clause: _"If you repair outside the ACKO Trusted Network, a ₹5,000 deductible applies. This deductible is waived if there are no trusted garages near you."_ — surface in a highlighted callout block, not fine print
+- CTA link: _"See ACKO Trusted Garages near you →"_
+- Tone: position as the **VIP, peace-of-mind** option — the user just hands over their keys and we manage everything
+
+---
+
+#### Comprehensive Standard Card _(standard Comprehensive variant)_
+
+```
+┌─────────────────────────────────────────────┐
+│  Comprehensive · Standard                   │
+│  ₹X,XXX/yr                                  │  ← higher price
+│                                             │
+│  ✓ Cashless repairs at any GST registered   │
+│    garage of your choice                    │
+└─────────────────────────────────────────────┘
+```
+
+**If Comprehensive Standard is not available:**
+```
+┌─────────────────────────────────────────────┐
+│  Comprehensive · Standard                   │
+│  [GREYED OUT]                               │
+│                                             │
+│  ℹ We're unable to offer this plan for      │
+│    your vehicle at this time.               │
+└─────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Cashless repairs at any GST registered garage — repair wherever you want, no conditions"_
+- Unavailability copy: _"We're unable to offer this plan for your vehicle at this time"_ — greyed out, non-interactive, never hidden
+
+---
+
+#### General Variant Selection Rules
+
+- The preferred variant (Safe Driver / Network Garage) is always shown first.
+- The standard variant is always shown second — even when unavailable.
+- Never hide an unavailable variant — show it greyed out with the unavailability message so the user understands their options and the decision feels transparent.
+- Claim conditions (₹5,000 deductibles, network restrictions) are always surfaced in a visually distinct callout block inside the card — never in small print.
+- The recommended tag on Safe Driver and Network Garage should reinforce that these are the smarter choices vs their standard counterparts, not just a default.
+
+---
+
+### Case 0 — When TP plan is active and we only need OD renewal (Combinations OD1, OD2 and OD3)
 Used when the user's car is 1–3 years old and their Third Party policy is still active. The user only needs to renew their Own Damage (OD) component.
 
 **Step 1 — Inform the user about their active TP policy**
