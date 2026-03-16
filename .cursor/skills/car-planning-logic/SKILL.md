@@ -822,14 +822,340 @@ The recommended add-on pack is assembled as follows, applied in sequence:
 
 ---
 
-## Pricing Factors
+---
 
-<!-- How pincode, make/model, and other factors affect pricing -->
+## Confirm Details Section
 
-_To be defined._
+This section follows the add-on selection screen. Its purpose is to reconfirm key details before the user proceeds to the review and payment screen. It covers three things in sequence: policy expiry date, inspection requirement, and personal details.
 
-## Edge Cases
+---
 
-<!-- Special handling for specific scenarios -->
+### Step 1 — Policy Expiry Date
 
-_To be defined._
+**Pre-filled cases:**
+- If the policy expiry date was auto-fetched during the pre-quote stage, or the user manually entered it during pre-quote — display it pre-filled and allow the user to edit if needed.
+
+**Unknown / not available:**
+- If the user selected _"I don't know"_ during pre-quote AND the date could not be auto-fetched — ask the user to enter the policy expiry date before proceeding.
+- Explain why it is needed: _"We need your previous policy's expiry date to start your new policy on time and ensure your vehicle has continued coverage without any gap."_
+- This is a mandatory field — the user cannot proceed without entering it.
+
+---
+
+### Step 2 — Inspection Requirement
+
+Once the expiry date is confirmed or entered, apply the following logic:
+
+**Case A — Policy not yet expired OR expired ≤ 10 days ago:**
+- No vehicle inspection required.
+- Fetch the new policy start date via API and display it to the user.
+- Explain the start date clearly: _"Your new policy will start on `<date>`. This ensures there is no break in your coverage."_
+
+**Case B — Policy expired between 10 and 90 days ago AND plan is Comprehensive / ZD / OD:**
+- Vehicle inspection is required before the policy can be issued.
+- Inform the user in a reassuring, low-friction way:
+  - _"Since your previous policy expired a while ago, we need to do a quick vehicle inspection before issuing your policy."_
+  - _"It's a super easy process — just pick a date and time slot, and our crew member will come to your location. The whole inspection takes less than 10 minutes."_
+- Present a date and time slot selector for the user to schedule the inspection.
+- Tone: position inspection as a simple, convenient step — not a blocker.
+
+---
+
+### Step 3 — Personal Details
+
+Ask the user to confirm the following:
+
+**Name**
+- Pre-fill with the name auto-fetched during the pre-quote stage.
+- Inform the user: _"If you're buying this policy for someone else or need to change the name, you'll have the option to do so after purchase. At this stage, we need the name of the person making the payment so we can process the KYC."_
+- User can edit the name if needed.
+
+**Email address**
+- Required field — always ask if not already available.
+- Explain why: _"We'll send your policy documents and claim updates to this email address."_
+
+**Phone number**
+- Required only if the user is not logged in.
+- Explain why: _"Your policy will be mapped to the ACKO account linked to this phone number. You'll also receive claim and policy updates here."_
+
+Once the user confirms all three fields → proceed to the **Review Screen**.
+
+---
+
+## Review Section
+
+This section follows the Confirm Details section. The user reviews everything before paying. The primary CTA on this screen is **"Pay Now"**.
+
+---
+
+### Step 1 — Coupon Application
+
+- If the user is eligible for one or more coupons, display them here before the premium summary.
+- Show each eligible coupon as a selectable card/chip with the discount value and any applicable condition.
+- Also provide a text input field so the user can manually type in a coupon code.
+- Only one coupon can be applied at a time.
+- Once a coupon is applied, recalculate and display the updated premium immediately.
+- If a typed code is invalid, show an inline error: _"This coupon code is invalid or has expired."_
+
+---
+
+### Step 2 — Review Details
+
+Display a summary of everything the user has selected, grouped into the following sections:
+
+**Car & Personal Details**
+- Car make, model, variant, registration year, fuel type
+- Policyholder name, email, phone number
+
+**Coverage Details**
+| Detail | Value |
+|--------|-------|
+| Plan | Selected plan name and variant (e.g., ZD Comprehensive · Safe Driver) |
+| Add-ons | List of all selected add-ons |
+| IDV | Insured Declared Value of the vehicle |
+| NCB | No Claim Bonus percentage applied |
+
+**Premium Breakup**
+- Base premium
+- Add-on premiums (itemised per add-on)
+- NCB discount applied (shown as a deduction)
+- Coupon discount applied (shown as a deduction, if applicable)
+- GST
+- **Total payable amount** — prominently displayed
+
+**Policy Start Date / Inspection Note**
+- If no inspection is required: display the policy start date with a brief note — _"Your policy starts on `<date>`. Your vehicle will be covered from this date."_
+- If inspection is required: display a note — _"Your policy will be issued after your vehicle inspection on `<scheduled date and time>`. We'll send you a reminder before the slot."_
+
+---
+
+### CTA
+
+- **"Pay Now"** — primary action button, always visible at the bottom of the screen.
+- Tapping Pay Now takes the user to the payment gateway.
+
+---
+
+## Test Cases — Dummy Registration Numbers
+
+Each test case below maps to a dummy registration number. Together they cover the key axes of variation: what the API fetches vs what is manually asked, which plan combination is offered, and whether inspection is required. Use these to validate the full purchase journey end-to-end.
+
+---
+
+### TC-01 · MH01AB1001 — Happy Path (Everything fetched, full plans, no inspection)
+
+**Scenario:** Best-case flow. All API data available, user is logged in, full plan combination offered, policy not yet expired.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2023 Maruti Swift VXI · Petrol |
+| Car details fetched | All ✓ |
+| Policy expiry + type | Fetched ✓ (Comprehensive, expires in 15 days) |
+| NCB | Fetched ✓ (20%) |
+| Last year claim | Fetched ✓ (No claim) |
+| User logged in | Yes |
+| Plan combination | F — TP + Comp Std + Comp Network + ZD Safe Driver + ZD Std |
+| Inspection required | No (policy not yet expired) |
+| Questions asked | Pincode only |
+| Verify card shows | Car details · Policy expiry · Policy type · NCB |
+
+**What to test:** Verify card display → Pincode input → Full plan selection flow (Steps 1–4) → Add-on recommendations (age < 3 yrs: Engine Protect + RTI + Extra Car Protect + PA + Passenger Protect) → Confirm details with pre-filled name/email → Review screen with Pay Now.
+
+---
+
+### TC-02 · MH02CD2002 — OD Renewal (Active TP, car 1–3 years old)
+
+**Scenario:** Car is 2 years old with an active TP policy. User only needs to renew OD. ZD variants available.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2022 Hyundai Creta SX · Diesel |
+| Car details fetched | All ✓ |
+| Policy expiry + type | Fetched ✓ (TP, active till 6 months from now) |
+| NCB | Fetched ✓ (0% — first policy year) |
+| Last year claim | Fetched ✓ (No claim) |
+| User logged in | Yes |
+| Plan combination | OD-3 — OD + OD ZD Safe Driver + OD ZD Std |
+| Inspection required | No |
+| Questions asked | Pincode only |
+
+**What to test:** Active TP banner informing user their TP is active till `<date>` → ZD vs Standard OD choice (recommend ZD) → Variant selection (Safe Driver recommended) → Add-ons (RTI recommended for age ≤ 3).
+
+---
+
+### TC-03 · KA03EF3003 — Inspection Required (Policy expired 30 days ago)
+
+**Scenario:** Policy expired 30 days ago. Comprehensive plan available. Inspection is mandatory before issuance.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2019 Tata Nexon XZ+ · Petrol |
+| Car details fetched | All ✓ |
+| Policy expiry + type | Fetched ✓ (Comprehensive, expired 30 days ago) |
+| NCB | Fetched ✓ (25%) |
+| Last year claim | Not fetched (ask user) |
+| User logged in | Yes |
+| Plan combination | E — TP + Comp Std + Comp Network + ZD Safe Driver |
+| Inspection required | Yes (expired 10–90 days, Comp/ZD plan) |
+| Questions asked | Pincode · Last year claim? |
+
+**What to test:** Full plan flow → Confirm details → Inspection slot picker shown → Review screen shows inspection note instead of policy start date.
+
+---
+
+### TC-04 · DL04GH4004 — Nothing Fetched, Not Logged In (Maximum manual entry)
+
+**Scenario:** API returns nothing. User is not logged in. All 12 questions are asked in sequence.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | Unknown until user inputs |
+| Car details fetched | None ✗ |
+| Policy expiry + type | Not fetched ✗ |
+| NCB | Not fetched ✗ |
+| Last year claim | Not fetched ✗ |
+| User logged in | No |
+| Plan combination | F (served after user inputs all details) |
+| Inspection required | Depends on date user enters |
+| Questions asked | All 12: Make → Model → Variant → Reg year/month → Fuel type → Commercial? → Policy type → Policy expiry → Pincode → Phone number → NCB → Last year claim? |
+
+**What to test:** Full 12-question manual input flow → No verify card shown → Full plan selection after quote fetch → Phone number collected in confirm details.
+
+---
+
+### TC-05 · TN05IJ5005 — Car Details Only, No Policy Details
+
+**Scenario:** Car details auto-fetched but policy details unavailable. User must enter policy information manually.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2018 Honda City V · Petrol |
+| Car details fetched | All ✓ |
+| Policy expiry + type | Not fetched ✗ |
+| NCB | Not fetched ✗ (policy not fetched) |
+| Last year claim | Not fetched ✗ |
+| User logged in | Yes |
+| Plan combination | E |
+| Inspection required | Depends on date user enters |
+| Questions asked | Policy type · Policy expiry date · Pincode · NCB · Last year claim? |
+| Verify card shows | Car details only |
+
+**What to test:** Verify card with car details only → Manual policy detail questions → Quote fetch with mixed data → Plan selection flow.
+
+---
+
+### TC-06 · GJ06KL6006 — Policy Details Only, No Car Details
+
+**Scenario:** Policy details auto-fetched but car details unavailable. User must enter car details manually.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | Unknown make/model (user inputs) |
+| Car details fetched | None ✗ |
+| Policy expiry + type | Fetched ✓ (Comprehensive, expires in 45 days) |
+| NCB | Fetched ✓ (35%) |
+| Last year claim | Fetched ✓ (No claim) |
+| User logged in | Yes |
+| Plan combination | C — TP + Comp Std |
+| Inspection required | No |
+| Questions asked | Make · Model · Variant · Reg year/month · Fuel type · Commercial? · Pincode |
+| Verify card shows | Policy expiry · Policy type · NCB |
+
+**What to test:** Verify card with policy details only → Manual car detail questions → Limited plan combination (C) — ZD vs Standard step skipped, goes directly to variant selection.
+
+---
+
+### TC-07 · UP07MN7007 — TP Only Plan (Older vehicle)
+
+**Scenario:** Car is 12 years old. Only Third Party plan is available (Combination A). No plan choice presented.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2012 Maruti Alto LXI · Petrol |
+| Car details fetched | All ✓ |
+| Policy expiry + type | Fetched ✓ (TP, expired 5 days ago) |
+| NCB | Fetched ✓ (50%) |
+| Last year claim | Fetched ✓ (No claim) |
+| User logged in | Yes |
+| Plan combination | A — TP only |
+| Inspection required | No (expired ≤ 10 days) |
+| Questions asked | Pincode |
+
+**What to test:** Single plan available message → Direct to add-on selection → NCB Protection shown (NCB = 50%) → Review screen.
+
+---
+
+### TC-08 · MH08OP8008 — Preliminary Check: Two-Wheeler Registration
+
+**Scenario:** Registration number belongs to a bike. Preliminary check triggers the two-wheeler redirect flow.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle type | Two-wheeler |
+| Plan combination | N/A — redirected before quote |
+| Trigger | Preliminary check #3 |
+
+**What to test:** Two-wheeler detection message → "Continue insuring this two-wheeler" redirects to bike journey with reg pre-filled → "Edit registration number" re-enables the input field.
+
+---
+
+### TC-09 · MH09QR9009 — Preliminary Check: Already Insured (Same User)
+
+**Scenario:** Vehicle is already insured with ACKO under the same logged-in user's account.
+
+| Dimension | Value |
+|-----------|-------|
+| Trigger | Preliminary check #1 |
+| Active policy | Belongs to current user |
+
+**What to test:** "Already insured with ACKO" message → "View my running policy" navigates to policy details → "Edit registration number" re-enables input.
+
+---
+
+### TC-10 · MH10ST1010 — Preliminary Check: Already Insured (Different User)
+
+**Scenario:** Vehicle is insured with ACKO but under a different user's account.
+
+| Dimension | Value |
+|-----------|-------|
+| Trigger | Preliminary check #2 |
+| Active policy | Belongs to account with phone xxxx5511 |
+
+**What to test:** Message with masked phone number → "I'm buying this car" proceeds to purchase journey → "Login with other number" redirects to login → "Edit registration number" re-enables input.
+
+---
+
+### TC-11 · MH11UV1011 — Preliminary Check: Payment Done, Policy Not Issued
+
+**Scenario:** User has already paid for this vehicle's insurance but the policy is pending due to incomplete KYC.
+
+| Dimension | Value |
+|-----------|-------|
+| Trigger | Preliminary check #4 |
+| Pending step | KYC incomplete |
+
+**What to test:** Payment done + pending KYC message → "Complete KYC" navigates to KYC flow → "Edit registration number" re-enables input.
+
+---
+
+### TC-12 · MH12WX1212 — Maximum Add-on Recommendations
+
+**Scenario:** All add-on recommendation conditions are true simultaneously. Validates the full recommended pack is correctly assembled.
+
+| Dimension | Value |
+|-----------|-------|
+| Vehicle | 2024 Toyota Innova Crysta GX · Diesel · 2 years old |
+| NCB | 20% (> 0) |
+| Last year claim | No |
+| Paid driver | Yes |
+| Accessories fitted | Yes (upgraded audio system + alloy wheels) |
+| Plan combination | F |
+| Inspection required | No |
+
+**Expected recommended add-ons:** Engine Protect · RTI · Extra Car Protect · Personal Accident Cover · Passenger Protect Cover · NCB Protection · Paid Driver Cover · Electrical Accessory Cover · Non-Electrical Accessory Cover
+
+**What to test:** All 9 add-ons tagged Recommended → Paid Driver and NCB Protection visible → Verify both accessory add-ons appear.
+
+---
+
+
