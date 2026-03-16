@@ -7,13 +7,25 @@ description: Plan recommendation logic for car insurance users based on make, mo
 
 ## Purpose
 
-This document defines all rules and steps involved in guiding a customer through a car insurance purchase. It captures:
+This document defines all rules and steps involved in guiding a customer through a car insurance purchase on ACKO. It covers two distinct customer journeys:
 
+1. **Existing car owner renewing or switching insurance** — the customer already owns a car and is looking to renew their expiring/lapsed policy or switch their insurance to ACKO.
+2. **New car buyer purchasing insurance for the first time** — the customer has just bought or is in the process of buying a brand new car and needs to get it insured for the first time.
+
+For each journey, this document captures:
 - The input variables to consider when assessing the customer's vehicle and profile
 - The plans to recommend and what each plan means
 - The add-ons to display and what each add-on means
 - The meaning of key clauses and terms such as inspection, IDV, NCB, etc.
 - The end-to-end flow designed to result in a completed sale
+
+---
+
+## Journey 1 — Existing Car Owner (Renewal / Switch to ACKO)
+
+> All sections below — Preliminary Checks, Car/Policy/User Details, Request for Quote, Plan Selection, Add-on Selection, Confirm Details, and Review — apply to this journey unless explicitly noted otherwise.
+
+---
 
 ## Preliminary Checks
 
@@ -1157,5 +1169,392 @@ Each test case below maps to a dummy registration number. Together they cover th
 **What to test:** All 9 add-ons tagged Recommended → Paid Driver and NCB Protection visible → Verify both accessory add-ons appear.
 
 ---
+
+## Journey 2 — New Car Buyer (First-Time Insurance Purchase)
+
+### Purpose
+
+This journey covers a customer who has just purchased or is in the process of purchasing a brand new car and needs to insure it for the first time. Key differences from Journey 1:
+
+- The customer does not have a registration number yet (or may have a temporary/dealer-issued number) — the journey entry point and data collection approach is different.
+- There is no previous policy to renew — NCB starts at 0%, no policy expiry date to collect, and no inspection requirement.
+- The plan combination offered is always Comprehensive or TP — OD plans are not applicable since there is no active separate TP policy.
+- The dealer often plays a role — insurance is frequently offered at the dealership as part of the car purchase process.
+
+---
+
+### Car and User Details — New Car Journey
+
+#### Purpose
+
+Collect the minimum information needed to fetch a quote for a brand new car. Since there is no registration number, no previous policy, and no API to auto-fetch vehicle details, all inputs are collected manually from the user in a conversational one-question-at-a-time flow.
+
+---
+
+#### Questions Asked (in order)
+
+| # | Question / Field | Notes |
+|---|-----------------|-------|
+| 1 | **Car Make** | User selects from a list of manufacturers |
+| 2 | **Car Model** | Filtered by the selected make |
+| 3 | **Car Variant** | Filtered by model; user can further narrow down using **Fuel Type** and **Transmission Type** filters to find their exact variant |
+| 4 | **Has the car been booked yet?** | Yes / No — used internally to triage and qualify the lead; not surfaced to the user as a filtering criterion |
+| 5 | **Will this car be used for commercial purposes?** | Yes / No |
+| 6 | **Pincode** | User's location for pricing and zone-based underwriting |
+| 7 | **Phone Number** | Only asked if the user is not logged in. Used to map the policy to their ACKO account. |
+
+---
+
+#### UX Rules
+
+- Questions are presented **one at a time** in the order above — do not show a form with all fields at once.
+- **Car Make → Model → Variant** follow a dependent dropdown / selection pattern: each selection narrows the options for the next question.
+- **Variant selection** — provide **Fuel Type** (Petrol / Diesel / CNG / Electric) and **Transmission Type** (Manual / Automatic) as filter chips to help the user narrow down to their exact variant. This is especially useful for models with a large number of variants.
+- **Booking status** (Q4) is a triage signal for internal use only. The user's answer does not change the flow or the plans shown to them.
+- **Phone number** (Q7) is skipped entirely if the user is already logged in.
+
+---
+
+#### Request for Quote and Handling Blocked Users
+
+Once all questions are answered, the system sends a quote request to the backend using the collected inputs.
+
+**If no plans are available:**
+- Inform the user: _"Unfortunately, we are not able to offer any plans for your vehicle at this point."_
+- No further purchase journey steps are shown.
+- _Further handling TBD (e.g., exit options, support contact)._
+
+**If plans are available:**
+- Before showing the plan selection screen, surface the **Dealer Rebuttal — Myth Busters** section below.
+- After the user reads through the myth busters, proceed to plan selection. The same plan selection flow, add-on selection, confirm details, and review sections from Journey 1 apply here with the differences noted in the table further below.
+
+---
+
+#### Dealer Rebuttal — Myth Busters
+
+**When to show:** After the quote is successfully fetched and before the plan selection screen is shown to the user.
+
+**Why this exists:** Dealers earn commissions of up to 50% on insurance sold at the showroom. Because ACKO does not pay dealer commissions, it offers significantly lower premiums. To protect their earnings, dealers often spread misinformation about ACKO to discourage customers from choosing us. This section proactively addresses the most common myths before the user sees the quote, so they feel informed and empowered to make the right choice.
+
+---
+
+##### Myth 1 — "ACKO doesn't settle cashless claims at dealerships"
+
+> **Myth:** ACKO does not settle cashless claims at dealerships.
+
+> **Fact:** We settle claims in a cashless manner at any GST registered garage in India — including every dealership. We have settled over **1 lakh claims at dealership garages** across India.
+
+**UX guidance:**
+- Display this as a myth-busting card with a clear **Myth / Fact** layout.
+- Below the fact copy, show a **carousel of top dealerships** of the user's selected car make near their pincode — making the claim tangible and locally relevant.
+- Example carousel label: _"ACKO-approved dealerships near you"_
+
+---
+
+##### Myth 2 — "You have to buy insurance from the dealership"
+
+> **Myth:** You are required to purchase insurance from the dealership when buying a new car.
+
+> **Fact:** As per **IRDAI** — the insurance regulator appointed by the Government of India — it is your legal right to purchase insurance from any insurer of your choice. Any form of coercion by a dealer to force you to buy their insurance is strictly illegal.
+
+**UX guidance:**
+- Tone: empowering, not aggressive. The user should feel confident and protected by law in choosing ACKO.
+- Highlight **IRDAI** and **"strictly illegal"** visually to reinforce the authority and weight of the fact.
+- Suggested headline: _"Your right. Your choice."_
+
+---
+
+##### Myth 3 — "ACKO customers run around for weeks to settle claims"
+
+> **Myth:** ACKO customers have to chase for weeks to get their claims settled.
+
+> **Fact:** ACKO has the **highest claim settlement ratio among all private insurers in India**, as per an official IRDAI report. Our claims experience is fully digital and managed end-to-end:
+> - Register your claim in **5 minutes** using the ACKO app
+> - We **pick up your car** from your location and **deliver it back** to your doorstep after repairs
+> - Receive **daily repair updates on WhatsApp and the ACKO app** so you always know the status
+
+**UX guidance:**
+- Include a tappable link to the official IRDAI report for credibility.
+- Use the three claim steps (register → pickup → updates) as a simple visual step flow — not just bullet points.
+- Suggested headline: _"Fastest claims. Proven by IRDAI."_
+
+---
+
+##### Display Rules for the Myth Buster Section
+
+- Show all three myth-busting cards in sequence before the plan selection screen.
+- Each card follows a consistent **Myth → Fact** structure with clear visual contrast between the two (e.g., myth in muted/strikethrough style, fact in confident/highlighted style).
+- The dealership carousel in Myth 1 is dynamically populated using the user's selected car make and pincode.
+- After the user reads through the myth busters, a single CTA leads them to the plan selection screen: **"See your ACKO quote →"**
+
+---
+
+#### Key Differences vs Journey 1 in Downstream Steps
+
+| Step | Journey 1 (Existing owner) | Journey 2 (New car buyer) |
+|------|---------------------------|--------------------------|
+| Plan combinations | OD, OD ZD, Comp, ZD Comp, TP depending on vehicle age and active TP | Always ZD Comprehensive or Standard Comprehensive only |
+| NCB | May be > 0 based on previous policy | Always 0% — first policy |
+| NCB Protection add-on | Shown if NCB > 0 | Never shown (NCB = 0) |
+| Dealer myth busters | Not shown | Always shown before plan selection |
+| Policy expiry date (Confirm details) | Asked or pre-filled from previous policy | Not applicable — no previous policy to expire |
+| Inspection | May be required if previous policy lapsed > 10 days | Not required — brand new car |
+| Policy start date | Based on previous policy expiry | Based on car delivery / registration date — _TBD_ |
+
+---
+
+#### Plan Selection — New Car Journey
+
+New car buyers are offered two plans only: **Zero Depreciation (ZD) Comprehensive** and **Standard Comprehensive**. OD and TP-only plans are not offered in this journey.
+
+---
+
+##### Step 1 — Choose Between ZD and Standard Comprehensive
+
+- Ask the user to choose between the two plans.
+- Display both as selectable cards with their full benefit lists.
+- Show starting-from prices on each card.
+- **Recommendation logic:** Always recommend **Zero Depreciation** for new cars.
+
+---
+
+##### Plan Cards
+
+**Zero Depreciation (ZD) Comprehensive Card** _(recommended)_
+
+```
+┌────────────────────────────────────────────────┐
+│  TAG: "Recommended" (green)                    │
+│                                                │
+│  Zero Depreciation Plan                        │
+│  ₹X,XXX/yr                                     │
+│                                                │
+│  ✓ Covers accidental damage to your car        │
+│  ✓ Covers damage caused by your car to         │
+│    others and their property                   │
+│  ✓ Full cost of car parts covered if           │
+│    replaced during repairs                     │
+│  ✓ Unlimited cashless claims at all            │
+│    [Make] garages across India                 │
+│  ✓ Free coverage for damage caused by          │
+│    rat bites                                   │
+│  ✓ Free car pick-up and drop during claims     │
+│  ✓ 96% claim settlement ratio                 │
+└────────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Point 1: _"Covers accidental damage to your car"_
+- Point 2: _"Covers damage caused by your car to others and their property"_
+- Point 3: _"Covers the full cost of car parts if they are replaced during repairs"_ — key ZD differentiator, surface prominently
+- Point 4: _"Unlimited cashless claims at all `[Make]` garages across India"_ — dynamically replace `[Make]` with the user's selected car make (e.g., Tata, Maruti, Hyundai)
+- Point 5: _"Free coverage for damage caused by rat bites"_
+- Point 6: _"Free car pick-up and drop during claims"_
+- Point 7: _"96% claim settlement ratio"_
+
+---
+
+**Standard Comprehensive Card**
+
+```
+┌────────────────────────────────────────────────┐
+│  Comprehensive Plan                            │
+│  ₹X,XXX/yr                                     │
+│                                                │
+│  ✓ Covers accidental damage to your car        │
+│  ✓ Covers damage caused by your car to         │
+│    others and their property                   │
+│  ✓ Unlimited cashless claims at all            │
+│    [Make] garages across India                 │
+│  ✓ Free coverage for damage caused by          │
+│    rat bites                                   │
+│  ✓ Free car pick-up and drop during claims     │
+│  ✓ 96% claim settlement ratio                 │
+│                                                │
+│  ℹ Depreciation deducted on parts replaced     │
+│    during claims                               │
+└────────────────────────────────────────────────┘
+```
+
+**Copy guidance:**
+- Points 1–2: Same as ZD card
+- Point 3: _"Unlimited cashless claims at all `[Make]` garages across India"_
+- Point 4: _"Free coverage for damage caused by rat bites"_
+- Point 5: _"Free car pick-up and drop during claims"_
+- Point 6: _"96% claim settlement ratio"_
+- Depreciation note: _"Depreciation is deducted on parts replaced during repairs"_ — displayed in an ℹ info style to signal the key gap vs ZD without being alarming
+
+---
+
+##### General Display Rules
+
+- ZD card is always shown first, Standard Comprehensive second.
+- **`[Make]` in the cashless claims point** is dynamically populated with the user's selected car make.
+- The **Compare** toggle from Journey 1 (showing a worked depreciation example) applies here as well — surface it below the two cards so the user can understand the financial delta between the plans.
+- Once the user selects a plan → proceed to the **Add-on Selection** flow (same as Journey 1, with NCB Protection excluded since NCB = 0).
+
+---
+
+#### Add-on Selection — New Car Journey
+
+The add-on selection flow is identical to Journey 1 (existing car owner) with one exception: **NCB Protection is never offered** since new car buyers start with NCB = 0%.
+
+---
+
+##### Questions Asked (same as Journey 1)
+
+1. **Do you have a paid/hired driver for this car?** _(Yes / No)_
+2. **Do you have any electrical or non-electrical accessories fitted to your car after purchase?** _(e.g., upgraded audio system, alloy wheels, seat covers)_ _(Yes / No)_
+
+---
+
+##### Add-on Catalogue (same as Journey 1, NCB Protection excluded)
+
+**Add-ons that cover your family**
+
+| Add-on | What it covers |
+|--------|---------------|
+| **Personal Accident Cover** | Covers the policyholder against accidental death or permanent disability arising from a car accident |
+| **Passenger Protect Cover** | Extends accident cover to passengers travelling in the car at the time of an accident |
+| **Paid Driver Cover** | Covers a paid/hired driver against accidental death or disability while driving the insured vehicle |
+
+**Add-ons that cover your car**
+
+| Add-on | What it covers |
+|--------|---------------|
+| **Engine Protect** | Covers engine damage from water ingression, oil leakage, or hydrostatic lock |
+| **Return to Invoice (RTI)** | In total loss or theft, pays the original invoice value rather than the depreciated IDV |
+| **Extra Car Protect** | Bundles Roadside Assistance + Key Loss Cover + Out-of-Station Accommodation Cover |
+| **Electrical Accessory Cover** | Covers electrical accessories fitted after sale not part of manufacturer's standard specification |
+| **Non-Electrical Accessory Cover** | Covers non-electrical accessories fitted after sale not part of manufacturer's standard specification |
+
+> **NCB Protection is not offered in this journey.** New car buyers start at NCB = 0% and have no accumulated bonus to protect.
+
+---
+
+##### Recommendation Logic (same as Journey 1, adjusted for new car age)
+
+New cars are always ≤ 3 years old by definition, so the base recommendation pack and all age-based rules apply as follows:
+
+**Base recommendation (age < 8 years applies to all new cars):**
+Engine Protect · Extra Car Protect · Personal Accident Cover · Passenger Protect Cover
+
+**Additional rules layered on top:**
+
+| Condition | Add to recommended pack |
+|-----------|------------------------|
+| Age ≤ 3 years (always true for new cars) | Add **Return to Invoice (RTI)** |
+| User has a paid driver | Add **Paid Driver Cover** |
+| User has accessories fitted after sale | Add **Electrical Accessory Cover** and **Non-Electrical Accessory Cover** |
+
+> NCB Protection is never added regardless of any condition.
+
+---
+
+##### Display Rules (same as Journey 1)
+
+- List all add-ons grouped into two categories: **Add-ons that cover your family** and **Add-ons that cover your car**.
+- Each add-on shows its name and a short description of what it covers.
+- Add-ons qualifying under the recommendation logic are tagged **Recommended**.
+- Add-ons that do not qualify are still shown — the user can select them freely — but carry no recommended tag.
+- **NCB Protection is hidden entirely** — do not show it in this journey.
+- **Paid Driver Cover** is only shown if the user confirmed they have a paid driver.
+
+---
+
+#### Confirm Details — New Car Journey
+
+This section collects the personal and financial details needed to issue the policy. Questions are asked **one at a time** in the order below. There is no policy expiry date or inspection step in this journey.
+
+---
+
+##### Questions Asked (in order)
+
+| # | Question / Field | Mandatory | Notes |
+|---|-----------------|:---------:|-------|
+| 1 | **Name** | Yes | Name of the customer against whom the policy will be issued. Pre-fill if auto-fetched during pre-quote. |
+| 2 | **Email address** | Yes | Policy documents and updates will be sent here. |
+| 3 | **Phone number** | Yes | Policy details shared here; policy mapped to this ACKO account. Skip if user is already logged in. |
+| 4 | **GST number** | No | For customers purchasing as a business entity. Clearly mark as optional. |
+| 5 | **Have you taken a car loan for this car?** | No (default: No) | If Yes → show loan provider selection (see below). |
+
+---
+
+##### Car Loan Sub-flow (triggered if user selects Yes to Q5)
+
+- Display a list of common loan providers for the user to select from.
+- Include an **"Others"** option at the end of the list where the user can type in the name of their loan provider manually.
+- The selected loan provider is recorded and associated with the policy for hypothecation purposes.
+
+---
+
+##### UX Rules
+
+- Questions are presented **one at a time** — do not show a form with all fields at once.
+- **Name** — if auto-fetched, display pre-filled and allow the user to edit. Explain: _"This is the name that will appear on your policy document."_
+- **Email** — explain why it is needed: _"We'll send your policy documents and claim updates to this email address."_
+- **Phone number** — explain why it is needed: _"Your policy will be linked to the ACKO account associated with this number. You'll also receive policy and claim updates here."_ Skip entirely if user is logged in.
+- **GST number** — label clearly as optional: _"If you're purchasing this policy for your business, enter your GST number here (optional)."_
+- **Car loan question** — default is No. If the user selects Yes, the loan provider step appears inline immediately below without navigating away.
+
+Once all details are confirmed → proceed to the **Review Screen** (same as Journey 1 — coupon application, coverage summary, premium breakup, and Pay Now CTA).
+
+---
+
+#### Review Section — New Car Journey
+
+The review screen is identical to Journey 1 with one simplification: there is no inspection note and no policy start date complication — the policy start date is straightforward and shown directly.
+
+---
+
+##### Step 1 — Coupon Application
+
+Same as Journey 1:
+- Show eligible coupons as selectable cards/chips with discount value and any conditions.
+- Provide a text input for manually entering a coupon code.
+- One coupon at a time; premium recalculates immediately on apply.
+- Invalid code shows inline error: _"This coupon code is invalid or has expired."_
+
+---
+
+##### Step 2 — Review Details
+
+Display a summary grouped into the following sections:
+
+**Car & Personal Details**
+- Car make, model, variant, fuel type, transmission type
+- Policyholder name, email, phone number
+- GST number (if provided)
+- Loan provider (if car loan selected)
+
+**Coverage Details**
+
+| Detail | Value |
+|--------|-------|
+| Plan | Selected plan name (e.g., Zero Depreciation / Comprehensive) |
+| Add-ons | List of all selected add-ons |
+| IDV | Insured Declared Value of the vehicle |
+
+**Premium Breakup**
+- Base premium
+- Add-on premiums (itemised per add-on)
+- Coupon discount applied (shown as a deduction, if applicable)
+- GST
+- **Total payable amount** — prominently displayed
+
+**Policy Start Date**
+- Display the policy start date with a brief note: _"Your policy starts on `<date>`. Your vehicle will be covered from this date."_
+- No inspection note — this does not apply to new car buyers.
+
+---
+
+##### CTA
+
+- **"Pay Now"** — primary action button, always visible at the bottom of the screen.
+- Tapping Pay Now takes the user to the payment gateway.
+
+---
+
+
 
 
