@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Journey Map — Car Insurance</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f13; color: #e0e0e0; padding: 40px 60px; }
+    h1 { font-size: 32px; margin-bottom: 8px; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 48px; font-size: 15px; }
+    h2 { font-size: 22px; margin: 48px 0 8px; color: #c4b5fd; border-bottom: 1px solid #2a2a35; padding-bottom: 12px; }
+    h3 { font-size: 17px; margin: 32px 0 8px; color: #a5b4fc; }
+    p, li { font-size: 14px; line-height: 1.7; color: #bbb; }
+    ul { margin: 8px 0 16px 24px; }
+    .diagram-container { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 32px; margin: 20px 0 40px; overflow-x: auto; }
+    .diagram-container .mermaid { display: flex; justify-content: center; }
+    .toc { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 24px 32px; margin: 0 0 40px; }
+    .toc a { color: #a5b4fc; text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+    .toc ol { margin-left: 20px; }
+    .toc li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 13px; }
+    th { background: #1e1e2e; color: #c4b5fd; text-align: left; padding: 10px 14px; border: 1px solid #2a2a3a; }
+    td { padding: 8px 14px; border: 1px solid #2a2a3a; color: #bbb; }
+    tr:nth-child(even) td { background: #16161e; }
+    code { background: #2a2a3a; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #e0e0e0; }
+    .note { background: #1e1b2e; border-left: 3px solid #7c3aed; padding: 12px 16px; margin: 12px 0; border-radius: 0 8px 8px 0; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<h1>User Journey Map — Car Insurance</h1>
+<p class="subtitle">Complete end-to-end flowcharts for the ACKO conversational car insurance buy platform</p>
+
+<div class="toc">
+  <strong style="color:#fff">Table of Contents</strong>
+  <ol>
+    <li><a href="#s1">Master Journey Overview</a></li>
+    <li><a href="#s2">Entry &amp; Vehicle Type Selection</a></li>
+    <li><a href="#s3">Renewal vs Brand New Fork</a></li>
+    <li><a href="#s4">Branch A — Renewal (Existing Vehicle)</a></li>
+    <li><a href="#s4b">Dynamic Data Collection (Renewal)</a></li>
+    <li><a href="#s5">Branch B — Brand New Vehicle</a></li>
+    <li><a href="#s6">Login Logic — Skippable &amp; Mandatory Gates</a></li>
+    <li><a href="#s6b">Login Gate Placement in Journey</a></li>
+    <li><a href="#s6c">OTP Verification Flow</a></li>
+    <li><a href="#s7">Quote &amp; Plan Selection</a></li>
+    <li><a href="#s8">Plan Combination Routing</a></li>
+    <li><a href="#s8b">Bottom Sheet Flows (Comprehensive)</a></li>
+    <li><a href="#s9">Add-on Personalisation</a></li>
+    <li><a href="#s9b">Add-on Recommendation Engine</a></li>
+    <li><a href="#s10">Owner Details &amp; Pre-Payment</a></li>
+    <li><a href="#s11">Payment &amp; Post-Purchase</a></li>
+    <li><a href="#s12">PWILO — Pick Up Where I Left Off</a></li>
+    <li><a href="#s13">Step Reference Table</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════ 1. MASTER OVERVIEW ═══════════════════════ -->
+
+<h2 id="s1">1. Master Journey Overview</h2>
+<p>Highest-level view of the entire car insurance journey. Both renewal and brand new flows converge at quote &amp; plan selection.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START(["🏠 User lands on Homepage"]) --> HOME_ACTION{"User action"}
+    HOME_ACTION -->|"Clicks 'Car Insurance'"| MOTOR_PAGE["Motor Page Loads"]
+    HOME_ACTION -->|"PWILO card 'Continue'"| RESUME["Resume from Snapshot"]
+
+    MOTOR_PAGE --> INIT{"Initialisation"}
+    INIT -->|"Default entry"| REG_HAS_NUM["registration.has_number"]
+    INIT -->|"Dashboard param"| DASHBOARD["Dashboard Welcome"]
+    INIT -->|"Resume + snapshot"| RESTORE_SNAP["Restore Snapshot State"]
+
+    RESUME --> RESTORE_SNAP
+    RESTORE_SNAP --> RESTORED_STEP["Jump to saved step"]
+
+    REG_HAS_NUM --> FORK{"Renewal or Brand New?"}
+    FORK -->|"Renew existing car"| BRANCH_A["🔄 Branch A: Renewal"]
+    FORK -->|"Insure a new car"| BRANCH_B["🆕 Branch B: Brand New"]
+
+    BRANCH_A --> DATA_COLLECT["Data Collection"]
+    BRANCH_B --> DATA_COLLECT_BN["Brand New Data Collection"]
+
+    DATA_COLLECT --> LOGIN_PREQUOTE{"Logged in?"}
+    DATA_COLLECT_BN --> LOGIN_BN{"Logged in?"}
+
+    LOGIN_PREQUOTE -->|"Yes"| QUOTE_CALC
+    LOGIN_PREQUOTE -->|"No"| SKIP_LOGIN["🔓 Skippable Login"]
+    SKIP_LOGIN --> QUOTE_CALC
+
+    LOGIN_BN -->|"Yes"| QUOTE_CALC
+    LOGIN_BN -->|"No"| MAND_LOGIN_BN["🔒 Mandatory Login"]
+    MAND_LOGIN_BN --> QUOTE_CALC
+
+    QUOTE_CALC["📊 Quote Calculation"] --> PLAN_SELECT["📋 Plan Selection"]
+    PLAN_SELECT --> ADDONS["🛡️ Add-on Personalisation"]
+    ADDONS --> OWNER_DETAILS["👤 Owner Details"]
+    OWNER_DETAILS --> LOGIN_MANDATORY{"Logged in?"}
+    LOGIN_MANDATORY -->|"Yes"| REVIEW
+    LOGIN_MANDATORY -->|"No"| MANDATORY_LOGIN["🔒 Mandatory Login"]
+    MANDATORY_LOGIN --> REVIEW
+    REVIEW["💰 Premium Review"] --> PAYMENT["💳 Payment"]
+    PAYMENT --> POST_PURCHASE["✅ Post-Purchase"]
+    POST_PURCHASE --> END(["🎉 Journey Complete"])
+
+    style BRANCH_A fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style BRANCH_B fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style QUOTE_CALC fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PLAN_SELECT fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+    style END fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 2. ENTRY ═══════════════════════ -->
+
+<h2 id="s2">2. Entry &amp; Vehicle Type Selection</h2>
+<p>The journey begins when the user selects "Car Insurance" from the homepage.</p>
+<div class="note">All users bypass <code>LoginChatFlow</code> and enter <code>MotorChatContainer</code> directly. Vehicle type defaults to <code>car</code>.</div>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    HP(["🏠 Homepage"]) --> CAR_CLICK["User clicks 'Car Insurance'"]
+    CAR_CLICK --> MOTOR_INIT["Motor Page useEffect runs"]
+    MOTOR_INIT --> RESET["resetJourney — clear all state"]
+    RESET --> READ_PARAMS["Read URL params:\nvehicle, resume, journeyId, screen"]
+
+    READ_PARAMS --> SCREEN_CHECK{"screen param?"}
+    SCREEN_CHECK -->|"dashboard"| SEED_DASHBOARD["Seed demo state\n→ go to db.welcome"]
+    SCREEN_CHECK -->|"resume=1 + snapshot"| RESTORE["Restore snapshot\n→ jump to saved step"]
+    SCREEN_CHECK -->|"default / none"| DEFAULT_ENTRY["Set vehicleType = car"]
+
+    DEFAULT_ENTRY --> SET_STEP["currentStepId = 'registration.has_number'"]
+    SET_STEP --> SHOW_CHAT["Render MotorChatContainer"]
+
+    SEED_DASHBOARD --> SHOW_CHAT
+    RESTORE --> SHOW_CHAT
+
+    style HP fill:#1b4332,stroke:#22c55e,color:#fff
+    style SHOW_CHAT fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 3. FORK ═══════════════════════ -->
+
+<h2 id="s3">3. Renewal vs Brand New Fork</h2>
+<p>The first user-facing question determines the journey branch.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    REG["registration.has_number\nBot: 'Looking for car insurance?'\nWidget: selection_cards"] --> CHOICE{"User selects"}
+
+    CHOICE -->|"🔄 Renew / Transfer"| EXISTING["vehicleEntryType = 'existing'"]
+    CHOICE -->|"🆕 Insure a new car"| BRAND_NEW["vehicleEntryType = 'brand_new'"]
+
+    EXISTING --> ENTER_REG["registration.enter_number\n→ Branch A: Renewal"]
+    BRAND_NEW --> CONGRATS["manual_entry.congratulations\n→ Branch B: Brand New"]
+
+    style ENTER_REG fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style CONGRATS fill:#1e3a5f,stroke:#3b82f6,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 4. BRANCH A — RENEWAL ═══════════════════════ -->
+
+<h2 id="s4">4. Branch A — Renewal (Existing Vehicle)</h2>
+<p>Handles users who have an existing car and want to renew or transfer their insurance.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    ENTER_REG["registration.enter_number\nWidget: vehicle_reg_input\nValidation: uppercase, no spaces"]
+    ENTER_REG --> FETCH["vehicle_fetch.loading\nWidget: progressive_loader\n'Fetching details for KA01AB1234...'"]
+
+    FETCH --> RESULT{"API fetch result"}
+
+    RESULT -->|"✅ Success"| PRELIM["prelim.check\nRun preliminary checks"]
+    RESULT -->|"❌ Failure"| MANUAL["manual_entry.start\n'Let's enter details manually'"]
+
+    PRELIM --> PRELIM_R{"Prelim check result"}
+
+    PRELIM_R -->|"✅ clear"| VERIFY["vehicle_fetch.found\nWidget: vehicle_details_card\nShow auto-fetched fields"]
+    PRELIM_R -->|"insured_same_user"| P_SAME["'Already insured with ACKO'\n→ View policy / Edit reg"]
+    PRELIM_R -->|"insured_different_user"| P_DIFF["'Policy belongs to xxxx5511'\n→ Buying car / Login other / Edit reg"]
+    PRELIM_R -->|"two_wheeler_entered"| P_TW["'This is a two-wheeler'\n→ Continue TW / Edit reg"]
+    PRELIM_R -->|"payment_pending_steps"| P_PAY["'Payment done, pending steps'\n→ Complete steps / Edit reg"]
+
+    P_SAME -->|"Edit reg"| ENTER_REG
+    P_DIFF -->|"Buying car"| VERIFY
+    P_DIFF -->|"Edit reg"| ENTER_REG
+    P_TW -->|"Continue TW"| VERIFY
+    P_TW -->|"Edit reg"| ENTER_REG
+    P_PAY -->|"Edit reg"| ENTER_REG
+
+    VERIFY --> CONFIRM{"User confirms?"}
+    CONFIRM -->|"✅ Confirm"| MISSING["getNextMissingFieldStep()\nDynamic routing"]
+    CONFIRM -->|"Edit reg"| ENTER_REG
+
+    MANUAL --> BRAND["manual_entry.select_brand"]
+    BRAND --> MODEL["manual_entry.select_model"]
+    MODEL --> FUEL["manual_entry.select_fuel"]
+    FUEL --> VARIANT["manual_entry.select_variant\n(cars only)"]
+    VARIANT --> YEAR["manual_entry.select_year"]
+    YEAR --> MISSING
+
+    MISSING --> DATA["→ Dynamic Data Collection"]
+
+    style VERIFY fill:#1b4332,stroke:#22c55e,color:#fff
+    style DATA fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 4b. DYNAMIC DATA COLLECTION ═══════════════════════ -->
+
+<h2 id="s4b">4b. Dynamic Data Collection (Renewal)</h2>
+<p>After the verify card, the system asks <strong>only</strong> for fields that were not auto-fetched, in strict order per the all-or-nothing framework.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START["getNextMissingFieldStep()"] --> CAR{"Car details\nfetched?"}
+
+    CAR -->|"❌ No"| ASK_CAR["Ask: Make → Model →\nFuel → Variant → Year\n(only missing ones)"]
+    CAR -->|"✅ Yes"| COMM
+
+    ASK_CAR --> COMM{"Commercial\ncheck done?"}
+
+    COMM -->|"❌ No (car)"| COMMERCIAL["pre_quote.commercial_check\n'Personal or commercial?'"]
+    COMM -->|"✅ Yes / bike"| POLICY
+
+    COMMERCIAL -->|"Personal"| POLICY
+    COMMERCIAL -->|"Commercial"| REJECT["❌ commercial_rejection\n'Cannot cover commercial'\nDEAD END"]
+
+    POLICY{"Policy details\nfetched?"} -->|"❌ No"| ASK_TYPE["pre_quote.policy_type_ask\n'What type of policy?'"]
+    POLICY -->|"✅ Yes"| PINCODE
+
+    ASK_TYPE --> ASK_STATUS["pre_quote.policy_status\n'Active / Expired / Not sure?'"]
+
+    ASK_STATUS -->|"Active"| CLAIM["pre_quote.claim_history\n'Any claims this year?'"]
+    ASK_STATUS -->|"Expired"| EXPIRED["Expired flow:\nexpired_policy_type →\nexpiry_window →\nexpired_claim_history →\nexpired_insurer"]
+
+    CLAIM --> NCB_CHECK
+    EXPIRED --> PINCODE
+
+    PINCODE{"Pincode\ncollected?"} -->|"❌ No"| ASK_PIN["pre_quote.pincode_ask\n'Pincode where car is registered?'"]
+    PINCODE -->|"✅ Yes"| LOGIN_CHECK
+
+    ASK_PIN --> LOGIN_CHECK
+
+    LOGIN_CHECK{"User\nlogged in?"} -->|"❌ No"| SKIP_GATE["🔓 login.phone_gate_prequote\nWidget: login_gate_skippable\n'Verify phone for personalised plans'\nCan skip or complete"]
+    LOGIN_CHECK -->|"✅ Yes"| NCB_CHECK
+
+    SKIP_GATE --> NCB_CHECK
+
+    NCB_CHECK{"NCB\nfetched?"} -->|"❌ No"| ASK_NCB["pre_quote.ncb_selection\n'What is your NCB %?'"]
+    NCB_CHECK -->|"✅ Yes"| CLAIM_CHECK
+
+    ASK_NCB --> NCB_UP{"NCB increased?"}
+    NCB_UP -->|"Yes"| REWARD["pre_quote.ncb_reward\n'NCB increased to X%!'"]
+    NCB_UP -->|"No"| CLAIM_CHECK
+    REWARD --> CLAIM_CHECK
+
+    CLAIM_CHECK{"Last claim\nfetched?"} -->|"❌ No"| ASK_CLAIM["pre_quote.last_claim_ask\n'Claim last year?'"]
+    CLAIM_CHECK -->|"✅ Yes"| CNG
+
+    ASK_CLAIM --> CNG
+
+    CNG{"CNG check\ndone?"} -->|"❌ No (car)"| ASK_CNG["pre_quote.cng_check\n'External CNG kit?'"]
+    CNG -->|"✅ Yes / bike"| SUMMARY
+
+    ASK_CNG --> SUMMARY
+
+    SUMMARY["pre_quote.summary\nWidget: editable_summary\n'Review your details'"]
+    SUMMARY --> VIEW["pre_quote.view_prices\n'Fetching plans...'"]
+    VIEW --> LOGIN2{"Logged in?"}
+    LOGIN2 -->|"✅ Yes"| QUOTE(["→ Quote Calculation"])
+    LOGIN2 -->|"❌ No"| MAND["🔒 login.phone_gate_before_plans\nMUST complete to see plans"]
+    MAND --> QUOTE
+
+    style REJECT fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style QUOTE fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 5. BRANCH B — BRAND NEW ═══════════════════════ -->
+
+<h2 id="s5">5. Branch B — Brand New Vehicle</h2>
+<p>Handles users buying a new car who need insurance before or at delivery.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CONGRATS["manual_entry.congratulations\n'Exciting! A brand new car!'\n'We can save you up to 75%'"]
+    CONGRATS --> POPULAR["brand_new.popular_cars\nWidget: selection_cards\nPopular cars + 'Other'"]
+
+    POPULAR --> POP{"User selects"}
+    POP -->|"Popular car"| SET_MM["Set make + model\nfrom selection"]
+    POP -->|"'Other'"| MAN_BRAND["manual_entry.select_brand"]
+
+    MAN_BRAND --> MAN_MODEL["manual_entry.select_model"]
+    MAN_MODEL --> FUEL["manual_entry.select_fuel"]
+    SET_MM --> FUEL
+
+    FUEL --> VARIANT["manual_entry.select_variant\n(cars only, regYear = current)"]
+
+    VARIANT --> COMM["brand_new.commercial_check\n'Personal or commercial?'"]
+    COMM -->|"Personal"| DELIVERY
+    COMM -->|"Commercial"| REJECT["❌ commercial_rejection\nDEAD END"]
+
+    DELIVERY["brand_new.delivery_date\n'When is delivery?'\nToday / Next week / 2 weeks / Not sure"]
+    DELIVERY --> MOBILE["brand_new.mobile_pincode\nWidget: text_input (tel)\n'Your mobile number?'"]
+    MOBILE --> PIN["brand_new.pincode\nWidget: text_input (tel)\n'Your pincode?'"]
+    PIN --> SUMMARY["brand_new.summary\nWidget: editable_summary\n'Here are your car details'"]
+    SUMMARY --> VIEW["brand_new.view_prices\n'Fetching plans...'"]
+    VIEW --> QUOTE(["→ Quote Calculation"])
+
+    style REJECT fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style QUOTE fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 6. LOGIN LOGIC ═══════════════════════ -->
+
+<h2 id="s6">6. Login Logic — Skippable &amp; Mandatory Gates</h2>
+
+<h3>Skippable Gate</h3>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    TRIGGER["🔓 Skippable Gate triggered\n• login.phone_gate_prequote\n• login.phone_gate"]
+    TRIGGER --> CHECK{"User logged in?"}
+    CHECK -->|"✅ Yes"| AUTO["Gate auto-skipped\nProceed to next step"]
+    CHECK -->|"❌ No"| SHOW["Show login_gate_skippable\n'Verify phone for personalised plans'\n'Lets us save your progress'"]
+    SHOW --> ACTION{"User action"}
+    ACTION -->|"Enter phone + OTP"| LOGIN["✅ Login successful"]
+    ACTION -->|"'Skip for now'"| SKIPPED["Login skipped\nContinue without login"]
+    LOGIN --> NEXT["Proceed to next step"]
+    SKIPPED --> NEXT
+
+    style SHOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+  </pre>
+</div>
+
+<h3>Mandatory Gate</h3>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    TRIGGER["🔒 Mandatory Gate triggered\n• login.phone_gate_before_plans\n• login.phone_gate_mandatory"]
+    TRIGGER --> CHECK{"User logged in?"}
+    CHECK -->|"✅ Yes"| AUTO["Gate auto-skipped"]
+    CHECK -->|"❌ No"| SHOW["Show login_gate_mandatory\n'We need your phone to continue'\nNo skip button"]
+    SHOW --> OTP["User enters phone + OTP\n(must complete)"]
+    OTP --> DONE["✅ Login successful → proceed"]
+    AUTO --> DONE
+
+    style SHOW fill:#5c1a1a,stroke:#ef4444,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 6b. LOGIN PLACEMENT ═══════════════════════ -->
+
+<h2 id="s6b">6b. Login Gate Placement in the Journey</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart LR
+    subgraph RENEWAL ["🔄 Renewal Flow"]
+        R1["Data Collection"] -->|"if not logged in"| R_SKIP["🔓 Skippable\nphone_gate_prequote"]
+        R_SKIP --> R2["Continue collection"]
+        R2 --> R3["Summary → View Prices"]
+        R3 -->|"if not logged in"| R_MAND["🔒 Mandatory\nphone_gate_before_plans"]
+        R_MAND --> R4["Quote Calculation"]
+    end
+
+    subgraph BRAND_NEW ["🆕 Brand New Flow"]
+        B1["Vehicle + Mobile + Pincode"] --> B2["Summary → View Prices"]
+        B2 --> B3["Quote Calculation"]
+    end
+
+    subgraph POST_ADDONS ["Post Add-ons (Both)"]
+        P1["Add-ons Complete"] --> P2["Owner Details"]
+        P2 -->|"after name, if not logged in"| P_SKIP["🔓 Skippable\nphone_gate"]
+        P_SKIP --> P3["Email + other details"]
+        P3 -->|"if not logged in"| P_MAND["🔒 Mandatory\nphone_gate_mandatory"]
+        P_MAND --> P4["Premium Review"]
+    end
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 6c. OTP FLOW ═══════════════════════ -->
+
+<h2 id="s6c">6c. OTP Verification Flow</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    GATE["Login Gate Widget"] --> PHONE["📱 Phone number input\nValidation: 10-digit Indian mobile"]
+    PHONE --> SEND["Send OTP to phone"]
+    SEND --> OTP["🔢 OTP input (4 digits)\nAuto-focus, countdown timer"]
+    OTP --> VERIFY{"OTP correct?"}
+    VERIFY -->|"✅ Yes"| SUCCESS["Login success\nSet isLoggedIn = true"]
+    VERIFY -->|"❌ No"| RETRY["Show error\n'Incorrect OTP'\nAllow resend"]
+    RETRY --> OTP
+    SUCCESS --> NEXT["Proceed to next step"]
+
+    style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 7. QUOTE & PLAN SELECTION ═══════════════════════ -->
+
+<h2 id="s7">7. Quote &amp; Plan Selection</h2>
+<p>After all data is collected, the system calculates quotes and presents plan options.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CALC["quote.calculating\nWidget: plan_calculator\n'Fetching personalised quotes...'\nStages: Analysing → IDV → NCB → Plans"]
+    CALC --> READY["quote.plans_ready\n'Best plans for your Make Model'"]
+    READY --> SELECT["quote.plan_selection\nWidget: plan_selector\nShows plan cards"]
+
+    SELECT --> ACTION{"User action"}
+
+    ACTION -->|"Select a plan card"| CLICK["handlePlanClick()\nRoutes by plan type"]
+    ACTION -->|"'Help me choose'"| HELP["Help Me Choose flow"]
+
+    CLICK --> TYPE{"Plan type?"}
+
+    TYPE -->|"Comprehensive"| COMP{"ZD plans\navailable?"}
+    COMP -->|"Yes"| ZD_VS["⬇️ Bottom Sheet:\nZD vs Standard\n+ Compare example"]
+    COMP -->|"No, multiple variants"| GARAGE["⬇️ Bottom Sheet:\nGarage Tier"]
+    COMP -->|"No, single"| DONE
+
+    ZD_VS -->|"Zero Dep"| ZD_VAR{"Multiple\nZD variants?"}
+    ZD_VS -->|"Standard"| COMP_VAR{"Multiple\ncomp variants?"}
+
+    ZD_VAR -->|"Yes"| ZD_SHEET["⬇️ Bottom Sheet:\nSafe Driver vs Standard"]
+    ZD_VAR -->|"No"| DONE
+    COMP_VAR -->|"Yes"| GARAGE
+    COMP_VAR -->|"No"| DONE
+
+    ZD_SHEET --> DONE
+    GARAGE --> DONE
+
+    TYPE -->|"Third Party"| DONE
+    TYPE -->|"OD / OD ZD"| OD{"Multiple\nOD variants?"}
+    OD -->|"Yes"| OD_SHEET["⬇️ Bottom Sheet:\nOD variants"]
+    OD -->|"No"| DONE
+    OD_SHEET --> DONE
+
+    DONE["quote.plan_selected\n'Good choice. Now add-ons.'"]
+    DONE --> ADDONS(["→ Add-on Personalisation"])
+
+    HELP --> USAGE["help.usage_pattern\n'How do you use your car?'"]
+    USAGE --> AGE["help.vehicle_age\n'How old is your car?'"]
+    AGE --> BUDGET["help.budget_priority\n'What matters most?'"]
+    BUDGET --> REPAIR["help.repair_preference\n'Repair priority?'"]
+    REPAIR --> REC["help.recommendation\n'Based on your answers: [Plan]'"]
+    REC --> REC_A{"User action"}
+    REC_A -->|"Accept"| DONE
+    REC_A -->|"View all"| SELECT
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+    style ADDONS fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 8. PLAN COMBINATIONS ═══════════════════════ -->
+
+<h2 id="s8">8. Plan Combination Routing</h2>
+<p>The system determines which plans to serve based on vehicle age and policy status.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    DET["determinePlanCombination()"] --> TP{"Active TP policy\n+ car age 1–3 yrs?"}
+
+    TP -->|"Yes"| OD_COMBOS["OD Combinations\n(Only OD renewal needed)"]
+    TP -->|"No"| FULL["Full Combinations"]
+
+    OD_COMBOS --> OD_AGE{"Vehicle age?"}
+    OD_AGE -->|"≤ 1 year"| OD3["OD-3\nOD + OD ZD Safe + OD ZD Std"]
+    OD_AGE -->|"≤ 2 years"| OD2["OD-2\nOD + OD ZD Safe"]
+    OD_AGE -->|"≤ 3 years"| OD1["OD-1\nOD only"]
+
+    FULL --> FULL_AGE{"Vehicle age?"}
+    FULL_AGE -->|"≤ 1 year"| F["F: TP + Comp Std + Comp Network\n+ ZD Safe + ZD Standard"]
+    FULL_AGE -->|"≤ 3 years"| E["E: TP + Comp Std + Comp Network\n+ ZD Safe"]
+    FULL_AGE -->|"≤ 5 years"| D["D: TP + Comp Std + Comp Network"]
+    FULL_AGE -->|"> 5 years"| C["C: TP + Comp Std"]
+
+    style OD3 fill:#1b4332,stroke:#22c55e,color:#fff
+    style F fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 8b. BOTTOM SHEETS ═══════════════════════ -->
+
+<h2 id="s8b">8b. Bottom Sheet Flows (Comprehensive Card Click)</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CLICK["User clicks 'Explore plan'\non Comprehensive card"]
+    CLICK --> ZD_CHECK{"ZD plans available?\n(Combos E or F)"}
+
+    ZD_CHECK -->|"Yes"| BS1["⬇️ BOTTOM SHEET 1\n━━━━━━━━━━━━━━━━━━━━\n'Do you want Zero Depreciation?'\n\n🟢 Zero Depreciation (Recommended)\n  Starting from ₹X,XXX/yr\n  ✓ Full cost of parts\n  ✓ Zero out-of-pocket\n\n⚪ Standard Comprehensive\n  Starting from ₹X,XXX/yr\n  ✓ Parts after depreciation\n  ℹ 20-30% out-of-pocket\n\n📊 Compare: Bumper ₹15,000\n  ZD → You pay ₹0\n  Std → You pay ₹3-4.5K"]
+
+    BS1 -->|"Zero Dep"| ZD_VAR{"Multiple ZD\nvariants? (F)"}
+    BS1 -->|"Standard"| COMP_VAR{"Multiple comp\nvariants? (D,E,F)"}
+
+    ZD_VAR -->|"Yes"| BS2_ZD["⬇️ BOTTOM SHEET 2\n━━━━━━━━━━━━━━━━━━━━\n🟢 ZD · Safe Driver (Rec · Best value)\n  ₹X,XXX/yr\n  ✓ Built for responsible owners\n  ✓ All ZD benefits, lower premium\n  ⚡ Claim: ₹5,000 deductible\n\n⚪ ZD · Standard\n  ₹X,XXX/yr (higher)\n  ✓ No deductions of any kind\n  (GREYED if unavailable)"]
+    ZD_VAR -->|"No (Safe only)"| SELECTED
+
+    COMP_VAR -->|"Yes"| BS2_COMP["⬇️ BOTTOM SHEET 2\n━━━━━━━━━━━━━━━━━━━━\n🟢 Network Garage (Rec · Managed)\n  ₹X,XXX/yr\n  ✓ Fully managed claims\n  ✓ Free pickup + 1yr warranty\n  ⚡ ₹5K deductible outside network\n\n⚪ Standard\n  ₹X,XXX/yr (higher)\n  ✓ Any GST garage, no limits\n  (GREYED if unavailable)"]
+    COMP_VAR -->|"No"| SELECTED
+
+    ZD_CHECK -->|"No, multiple comp"| BS2_COMP
+    ZD_CHECK -->|"No, single comp"| SELECTED
+
+    BS2_ZD --> SELECTED
+    BS2_COMP --> SELECTED
+
+    SELECTED["✅ Plan selected\n→ Proceed to add-ons"]
+
+    style SELECTED fill:#1b4332,stroke:#22c55e,color:#fff
+    style BS1 fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+    style BS2_ZD fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+    style BS2_COMP fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 9. ADD-ONS ═══════════════════════ -->
+
+<h2 id="s9">9. Add-on Personalisation</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    Q1["addons.paid_driver_question\n'Do you have a paid/hired driver?'\nYes / No"]
+    Q1 --> Q2["addons.accessories_question\n'Any accessories fitted after purchase?'\nYes / No"]
+
+    Q2 --> PLAN{"Selected plan type?"}
+    PLAN -->|"Third Party"| PROTECT["addons.protect_everyone\n(No OD add-ons for TP)"]
+    PLAN -->|"Any OD-based plan"| OOP["addons.out_of_pocket\nWidget: out_of_pocket_addons\n'Add-ons that cover your car'"]
+
+    OOP --> PROTECT["addons.protect_everyone\nWidget: protect_everyone_addons\n'Add-ons that cover your family'"]
+
+    PROTECT --> COMPLETE["addons.complete\n'X add-ons selected.\nLet's build your final premium.'"]
+    COMPLETE --> OWNER(["→ Owner Details"])
+
+    style OWNER fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 9b. ADD-ON RECS ═══════════════════════ -->
+
+<h2 id="s9b">9b. Add-on Recommendation Engine</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    AGE{"Vehicle age?"} -->|"< 8 years"| BASE_Y["Base: Engine Protect +\nExtra Car + Personal Accident +\nPassenger Protect"]
+    AGE -->|"≥ 8 years"| BASE_O["Base: Extra Car +\nPersonal Accident +\nPassenger Protect"]
+
+    BASE_Y --> L1
+    BASE_O --> L1
+
+    L1{"Age ≤ 3?"} -->|"Yes"| RTI["+ Return to Invoice"]
+    L1 -->|"No"| L2
+    RTI --> L2
+
+    L2{"NCB > 0?"} -->|"Yes"| NCB["+ NCB Protection"]
+    L2 -->|"No"| L3
+    NCB --> L3
+
+    L3{"Paid driver?"} -->|"Yes"| DRV["+ Paid Driver Cover"]
+    L3 -->|"No"| L4
+    DRV --> L4
+
+    L4{"Aftermarket\naccessories?"} -->|"Yes"| ACC["+ Electrical + Non-Electrical\nAccessory Cover"]
+    L4 -->|"No"| DONE["Final recommended set"]
+    ACC --> DONE
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 10. OWNER DETAILS ═══════════════════════ -->
+
+<h2 id="s10">10. Owner Details &amp; Pre-Payment</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    INTRO["owner_details.intro\n'Almost there. A few details\nto issue the policy.'"]
+    INTRO --> NAME["owner_details.name\nWidget: text_input\n'Owner full name?'\nPre-fills from profile"]
+
+    NAME --> LOGIN{"Logged in?"}
+    LOGIN -->|"❌ No"| SKIP["🔓 login.phone_gate\nSkippable"]
+    LOGIN -->|"✅ Yes"| EMAIL
+
+    SKIP --> EMAIL["owner_details.email\n'Your email address?'"]
+
+    EMAIL --> BN{"Brand new\nvehicle?"}
+    BN -->|"Yes"| ENGINE["owner_details.engine_number\n'Engine number?'"]
+    BN -->|"No"| LOAN
+
+    ENGINE --> CHASSIS["owner_details.chassis_number\n'Chassis number?'"]
+    CHASSIS --> GST["owner_details.gst\n'GST number?'\nSkip / Enter"]
+    GST -->|"Enter"| GST_IN["owner_details.gst_input"]
+    GST -->|"Skip"| LOAN
+    GST_IN --> LOAN
+
+    LOAN["owner_details.loan_check\n'Car loan?'\nOwn outright / Financed"]
+    LOAN -->|"Financed"| PROVIDER["owner_details.loan_provider\n'Who is the lender?'"]
+    LOAN -->|"Own"| MAND_CHECK
+
+    PROVIDER --> MAND_CHECK
+
+    MAND_CHECK{"Logged in?"}
+    MAND_CHECK -->|"✅ Yes"| REVIEW
+    MAND_CHECK -->|"❌ No"| MAND["🔒 login.phone_gate_mandatory\nMUST login"]
+    MAND --> REVIEW
+
+    REVIEW["review.premium_breakdown\nWidget: premium_breakdown\n'Complete breakdown of your plan'"]
+    REVIEW --> PAYMENT(["→ Payment"])
+
+    style REVIEW fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 11. PAYMENT & POST-PURCHASE ═══════════════════════ -->
+
+<h2 id="s11">11. Payment &amp; Post-Purchase</h2>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    PAY["payment.process\nWidget: payment_gateway\n'Complete payment securely'"]
+    PAY --> SUCCESS["payment.success\nWidget: motor_celebration\n'Congratulations! Car insured!'\nPolicy number generated"]
+
+    SUCCESS --> STATUS["post_purchase.status_intro\n'Policy being prepared'"]
+    STATUS --> TRACKER["post_purchase.policy_tracker\nWidget: policy_tracker"]
+
+    TRACKER --> KYC["post_purchase.kyc_prompt\n'Complete KYC within 4 days'\nStart now / Later"]
+
+    KYC --> NPS["post_purchase.nps\nWidget: nps_feedback\n'How was your experience?'"]
+
+    NPS --> APP["post_purchase.app_download\nWidget: app_download_cta\n'Download ACKO app'"]
+
+    APP --> END_SCR["post_purchase.end\n'You're all set!'"]
+
+    END_SCR --> END_CHOICE{"User action"}
+    END_CHOICE -->|"Home"| HP(["🏠 Homepage"])
+    END_CHOICE -->|"Insure another"| NEW(["🔄 New journey"])
+
+    style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+    style HP fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style NEW fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 12. PWILO ═══════════════════════ -->
+
+<h2 id="s12">12. PWILO — Pick Up Where I Left Off</h2>
+<p>Journey state is auto-saved at key milestones. Snapshots are <strong>cleared</strong> on <code>payment.success</code>.</p>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    subgraph SAVE ["💾 Auto-Save Points"]
+        S1["vehicle_fetch.found"]
+        S2["manual_entry.select_brand"]
+        S3["brand_new.popular_cars"]
+        S4["owner_details.name"]
+        S5["pre_quote.summary"]
+        S6["pre_quote.view_prices"]
+        S7["quote.plans_ready"]
+        S8["quote.plan_selection"]
+        S9["quote.plan_selected"]
+        S10["addons.out_of_pocket"]
+        S11["addons.protect_everyone"]
+        S12["addons.complete"]
+        S13["review.premium_breakdown"]
+    end
+
+    subgraph CLEAR ["🗑️ Cleared (no PWILO card)"]
+        C1["payment.success → cleared"]
+        C2["completion.dashboard → cleared"]
+    end
+
+    subgraph RESUME ["🏠 Homepage PWILO"]
+        HP["Homepage loads"] --> CHECK{"Snapshots\nexist?"}
+        CHECK -->|"Yes"| CARDS["Show PWILO cards\n• Vehicle make/model\n• Drop-off text\n• 'Continue' button"]
+        CHECK -->|"No"| NONE["No PWILO section"]
+
+        CARDS --> CLICK{"User clicks"}
+        CLICK -->|"Continue"| URL["/motor?vehicle=car\n&resume=1&journeyId=xxx"]
+        CLICK -->|"Start new"| FRESH["/motor?vehicle=car"]
+    end
+  </pre>
+</div>
+
+<h3>Drop-off Display Mapping</h3>
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart LR
+    D1["vehicle_fetch.found\nmanual_entry.select_brand\nbrand_new.popular_cars"] --> T1["'Let's insure your car'"]
+    D2["owner_details.name\npre_quote.summary\npre_quote.view_prices"] --> T2["'Almost there'"]
+    D3["quote.plans_ready\nquote.plan_selection"] --> T3["'Quote ready'"]
+    D4["quote.plan_selected"] --> T4["'Plan selected,\ncustomize add-ons'"]
+    D5["addons.out_of_pocket\naddons.protect_everyone"] --> T5["'Finish selecting add-ons'"]
+    D6["addons.complete\nreview.premium_breakdown"] --> T6["'Complete your purchase'"]
+  </pre>
+</div>
+
+<!-- ═══════════════════════ 13. STEP TABLE ═══════════════════════ -->
+
+<h2 id="s13">13. Step Reference Table</h2>
+
+<table>
+  <thead>
+    <tr><th>Module</th><th>Step ID</th><th>Widget Type</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>registration</strong></td><td><code>registration.has_number</code></td><td>selection_cards</td><td>Renewal vs Brand New fork</td></tr>
+    <tr><td></td><td><code>registration.enter_number</code></td><td>vehicle_reg_input</td><td>Enter registration number</td></tr>
+    <tr><td><strong>vehicle_fetch</strong></td><td><code>vehicle_fetch.loading</code></td><td>progressive_loader</td><td>Fetch vehicle details from API</td></tr>
+    <tr><td></td><td><code>prelim.check</code></td><td>none</td><td>Run preliminary checks</td></tr>
+    <tr><td></td><td><code>prelim.insured_same_user</code></td><td>selection_cards</td><td>Already insured (same user)</td></tr>
+    <tr><td></td><td><code>prelim.insured_different_user</code></td><td>selection_cards</td><td>Already insured (different user)</td></tr>
+    <tr><td></td><td><code>prelim.two_wheeler_entered</code></td><td>selection_cards</td><td>Two-wheeler entered</td></tr>
+    <tr><td></td><td><code>prelim.payment_pending</code></td><td>selection_cards</td><td>Payment done, pending steps</td></tr>
+    <tr><td></td><td><code>vehicle_fetch.found</code></td><td>vehicle_details_card</td><td>Show verify card</td></tr>
+    <tr><td><strong>manual_entry</strong></td><td><code>manual_entry.congratulations</code></td><td>none</td><td>Brand new excitement</td></tr>
+    <tr><td></td><td><code>manual_entry.start</code></td><td>none</td><td>Fetch failed, manual entry</td></tr>
+    <tr><td></td><td><code>manual_entry.select_brand</code></td><td>brand_selector</td><td>Car make</td></tr>
+    <tr><td></td><td><code>manual_entry.select_model</code></td><td>model_selector</td><td>Car model</td></tr>
+    <tr><td></td><td><code>manual_entry.select_fuel</code></td><td>selection_cards</td><td>Fuel type</td></tr>
+    <tr><td></td><td><code>manual_entry.select_variant</code></td><td>variant_selector</td><td>Car variant</td></tr>
+    <tr><td></td><td><code>manual_entry.select_year</code></td><td>year_selector</td><td>Registration year</td></tr>
+    <tr><td></td><td><code>brand_new.popular_cars</code></td><td>selection_cards</td><td>Popular car suggestions</td></tr>
+    <tr><td></td><td><code>brand_new.commercial_check</code></td><td>selection_cards</td><td>Personal vs commercial</td></tr>
+    <tr><td></td><td><code>brand_new.delivery_date</code></td><td>selection_cards</td><td>Delivery window</td></tr>
+    <tr><td></td><td><code>brand_new.mobile_pincode</code></td><td>text_input</td><td>Mobile number</td></tr>
+    <tr><td></td><td><code>brand_new.pincode</code></td><td>text_input</td><td>Pincode</td></tr>
+    <tr><td></td><td><code>brand_new.summary</code></td><td>editable_summary</td><td>Review brand new details</td></tr>
+    <tr><td></td><td><code>brand_new.view_prices</code></td><td>none</td><td>Transition to quotes</td></tr>
+    <tr><td><strong>pre_quote</strong></td><td><code>pre_quote.pincode_ask</code></td><td>text_input</td><td>Pincode</td></tr>
+    <tr><td></td><td><code>pre_quote.policy_type_ask</code></td><td>selection_cards</td><td>Previous policy type</td></tr>
+    <tr><td></td><td><code>pre_quote.policy_status</code></td><td>selection_cards</td><td>Active / Expired</td></tr>
+    <tr><td></td><td><code>pre_quote.claim_history</code></td><td>selection_cards</td><td>Claims this year</td></tr>
+    <tr><td></td><td><code>pre_quote.ncb_selection</code></td><td>ncb_selector</td><td>NCB percentage</td></tr>
+    <tr><td></td><td><code>pre_quote.ncb_reward</code></td><td>ncb_reward</td><td>NCB increase</td></tr>
+    <tr><td></td><td><code>pre_quote.last_claim_ask</code></td><td>selection_cards</td><td>Last year claim</td></tr>
+    <tr><td></td><td><code>pre_quote.cng_check</code></td><td>selection_cards</td><td>CNG kit check</td></tr>
+    <tr><td></td><td><code>pre_quote.commercial_check</code></td><td>selection_cards</td><td>Commercial use</td></tr>
+    <tr><td></td><td><code>pre_quote.commercial_rejection</code></td><td>rejection_screen</td><td>Dead end</td></tr>
+    <tr><td></td><td><code>pre_quote.expired_policy_type</code></td><td>selection_cards</td><td>Expired policy type</td></tr>
+    <tr><td></td><td><code>pre_quote.expiry_window</code></td><td>selection_cards</td><td>When expired</td></tr>
+    <tr><td></td><td><code>pre_quote.expired_claim_history</code></td><td>selection_cards</td><td>Claims (expired)</td></tr>
+    <tr><td></td><td><code>pre_quote.expired_insurer</code></td><td>insurer_selector</td><td>Previous insurer</td></tr>
+    <tr><td></td><td><code>pre_quote.summary</code></td><td>editable_summary</td><td>Review all details</td></tr>
+    <tr><td></td><td><code>pre_quote.view_prices</code></td><td>none</td><td>Transition to quotes</td></tr>
+    <tr><td><strong>login</strong></td><td><code>login.phone_gate_prequote</code></td><td>login_gate_skippable</td><td>Skippable (data collection)</td></tr>
+    <tr><td></td><td><code>login.phone_gate</code></td><td>login_gate_skippable</td><td>Skippable (after name)</td></tr>
+    <tr><td></td><td><code>login.phone_gate_before_plans</code></td><td>login_gate_mandatory</td><td>Mandatory (before plans)</td></tr>
+    <tr><td></td><td><code>login.phone_gate_mandatory</code></td><td>login_gate_mandatory</td><td>Mandatory (before review)</td></tr>
+    <tr><td><strong>quote</strong></td><td><code>quote.calculating</code></td><td>plan_calculator</td><td>Calculate plans</td></tr>
+    <tr><td></td><td><code>quote.plans_ready</code></td><td>none</td><td>Plans found</td></tr>
+    <tr><td></td><td><code>quote.plan_selection</code></td><td>plan_selector</td><td>Plan cards + sheets</td></tr>
+    <tr><td></td><td><code>quote.plan_selected</code></td><td>none</td><td>Plan confirmed</td></tr>
+    <tr><td><strong>help</strong></td><td><code>help.usage_pattern</code></td><td>selection_cards</td><td>Car usage</td></tr>
+    <tr><td></td><td><code>help.vehicle_age</code></td><td>selection_cards</td><td>Car age</td></tr>
+    <tr><td></td><td><code>help.budget_priority</code></td><td>selection_cards</td><td>Priority</td></tr>
+    <tr><td></td><td><code>help.repair_preference</code></td><td>selection_cards</td><td>Repair pref</td></tr>
+    <tr><td></td><td><code>help.recommendation</code></td><td>plan_recommendation</td><td>AI recommendation</td></tr>
+    <tr><td><strong>addons</strong></td><td><code>addons.paid_driver_question</code></td><td>selection_cards</td><td>Paid driver?</td></tr>
+    <tr><td></td><td><code>addons.accessories_question</code></td><td>selection_cards</td><td>Accessories?</td></tr>
+    <tr><td></td><td><code>addons.out_of_pocket</code></td><td>out_of_pocket_addons</td><td>Car add-ons</td></tr>
+    <tr><td></td><td><code>addons.protect_everyone</code></td><td>protect_everyone_addons</td><td>Family add-ons</td></tr>
+    <tr><td></td><td><code>addons.complete</code></td><td>none</td><td>Add-on summary</td></tr>
+    <tr><td><strong>owner_details</strong></td><td><code>owner_details.intro</code></td><td>none</td><td>Intro</td></tr>
+    <tr><td></td><td><code>owner_details.name</code></td><td>text_input</td><td>Owner name</td></tr>
+    <tr><td></td><td><code>owner_details.email</code></td><td>text_input</td><td>Email</td></tr>
+    <tr><td></td><td><code>owner_details.engine_number</code></td><td>text_input</td><td>Engine (brand new)</td></tr>
+    <tr><td></td><td><code>owner_details.chassis_number</code></td><td>text_input</td><td>Chassis (brand new)</td></tr>
+    <tr><td></td><td><code>owner_details.gst</code></td><td>selection_cards</td><td>GST (optional)</td></tr>
+    <tr><td></td><td><code>owner_details.gst_input</code></td><td>text_input</td><td>GST number</td></tr>
+    <tr><td></td><td><code>owner_details.loan_check</code></td><td>selection_cards</td><td>Car loan?</td></tr>
+    <tr><td></td><td><code>owner_details.loan_provider</code></td><td>text_input</td><td>Lender</td></tr>
+    <tr><td><strong>review</strong></td><td><code>review.premium_breakdown</code></td><td>premium_breakdown</td><td>Premium breakdown</td></tr>
+    <tr><td><strong>payment</strong></td><td><code>payment.process</code></td><td>payment_gateway</td><td>Payment</td></tr>
+    <tr><td></td><td><code>payment.success</code></td><td>motor_celebration</td><td>Success</td></tr>
+    <tr><td><strong>post_purchase</strong></td><td><code>post_purchase.status_intro</code></td><td>none</td><td>Policy prep intro</td></tr>
+    <tr><td></td><td><code>post_purchase.policy_tracker</code></td><td>policy_tracker</td><td>Tracker</td></tr>
+    <tr><td></td><td><code>post_purchase.kyc_prompt</code></td><td>selection_cards</td><td>KYC prompt</td></tr>
+    <tr><td></td><td><code>post_purchase.nps</code></td><td>nps_feedback</td><td>NPS</td></tr>
+    <tr><td></td><td><code>post_purchase.app_download</code></td><td>app_download_cta</td><td>App download</td></tr>
+    <tr><td></td><td><code>post_purchase.end</code></td><td>selection_cards</td><td>Journey end</td></tr>
+  </tbody>
+</table>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#2d1b69',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#7c3aed',
+      lineColor: '#555',
+      secondaryColor: '#1e3a5f',
+      tertiaryColor: '#1b4332',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+      fontSize: '13px',
+    },
+    flowchart: {
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 20,
+      nodeSpacing: 30,
+      rankSpacing: 40,
+    },
+  });
+</script>
+
+</body>
+</html>
