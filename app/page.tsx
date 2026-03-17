@@ -234,9 +234,9 @@ function HeaderPill({
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
 
-  const pillBg = isLight ? '#f5f5f5' : theme === 'midnight' ? '#1C0B47' : '#121212';
-  const loginBg = isLight ? '#e0e0e1' : theme === 'midnight' ? 'rgba(255,255,255,0.06)' : '#19191a';
-  const loginBorder = isLight ? 'none' : '1px solid #6841e6';
+  const pillBg = isLight ? 'var(--color-surface)' : theme === 'midnight' ? '#1C0B47' : 'var(--color-surface-raised)';
+  const loginBg = isLight ? 'var(--color-surface-raised-hover)' : theme === 'midnight' ? 'rgba(255,255,255,0.06)' : 'var(--color-surface-raised)';
+  const loginBorder = isLight ? 'none' : '1px solid var(--color-primary)';
 
   useEffect(() => {
     const onScroll = () => {
@@ -270,7 +270,7 @@ function HeaderPill({
             <button
               onClick={() => router.push('/profile')}
               className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-[15px] font-medium"
-              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isDark ? 'white' : '#121212' }}
+              style={{ background: isLight ? '#c4a97d' : '#8B6F47', color: isDark ? 'var(--color-text-invert)' : 'var(--color-text-primary)' }}
             >
               {initial}
             </button>
@@ -280,7 +280,7 @@ function HeaderPill({
               className="h-[36px] px-4 rounded-lg text-[14px] font-medium tracking-[-0.28px]"
               style={{
                 background: loginBg,
-                color: isLight ? 'black' : '#fefefe',
+                color: 'var(--color-text-primary)',
                 border: loginBorder,
               }}
             >
@@ -294,7 +294,7 @@ function HeaderPill({
               onClick={onToggleMenu}
               className="w-8 h-8 flex items-center justify-center"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={isLight ? '#121212' : 'white'} strokeWidth="2" strokeLinecap="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-primary)" strokeWidth="2" strokeLinecap="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
@@ -312,8 +312,8 @@ function HeaderPill({
                     transition={{ duration: 0.15 }}
                     className="absolute right-0 top-full mt-2 z-50 rounded-xl overflow-hidden shadow-2xl min-w-[200px]"
                     style={{
-                      background: isLight ? 'white' : theme === 'midnight' ? 'rgba(30,15,70,0.95)' : 'rgba(30,30,30,0.95)',
-                      border: isLight ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.1)',
+                      background: isLight ? 'var(--color-surface-raised)' : theme === 'midnight' ? 'rgba(30,15,70,0.95)' : 'rgba(30,30,30,0.95)',
+                      border: '1px solid var(--color-border-subtle)',
                       backdropFilter: 'blur(20px)',
                     }}
                   >
@@ -321,8 +321,8 @@ function HeaderPill({
                       onClick={onThemeCycle}
                       className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
                       style={{
-                        color: isLight ? '#121212' : 'rgba(255,255,255,0.85)',
-                        borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+                        color: 'var(--color-text-primary)',
+                        borderBottom: '1px solid var(--color-border-subtle)',
                       }}
                     >
                       {theme === 'light' ? (
@@ -338,8 +338,8 @@ function HeaderPill({
                       onClick={onLangCycle}
                       className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
                       style={{
-                        color: isLight ? '#121212' : 'rgba(255,255,255,0.85)',
-                        borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+                        color: 'var(--color-text-primary)',
+                        borderBottom: '1px solid var(--color-border-subtle)',
                       }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -353,8 +353,8 @@ function HeaderPill({
                         onClick={() => { onToggleMenu(); onLogout(); }}
                         className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
                         style={{
-                          color: isLight ? '#121212' : 'rgba(255,255,255,0.85)',
-                          borderBottom: isLight ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.06)',
+                          color: 'var(--color-text-primary)',
+                          borderBottom: '1px solid var(--color-border-subtle)',
                         }}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -366,7 +366,7 @@ function HeaderPill({
                     <button
                       onClick={onResetFTU}
                       className="w-full px-4 py-3 text-left text-sm flex items-center gap-2.5 transition-colors"
-                      style={{ color: '#f87171' }}
+                      style={{ color: 'var(--color-text-error)' }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 4v6h6M23 20v-6h-6" />
@@ -489,7 +489,7 @@ function PwiloSection({
           <div className="flex gap-2.5 shrink-0">
             <button
               className="h-[32px] px-4 rounded-lg text-[12px] font-medium whitespace-nowrap"
-              style={{ background: '#6841e6', color: 'white' }}
+              style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
               onClick={(e) => { e.stopPropagation(); onContinue(entry); }}
             >
               {t.global.pwiloContinue}
@@ -747,7 +747,7 @@ function WhyAckoSection() {
             <div
               key={item.title}
               className="flex items-center gap-4 h-[72px] px-3 py-2 rounded-lg"
-              style={{ background: isDark ? 'var(--app-surface)' : 'white' }}
+              style={{ background: 'var(--color-surface-raised)' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -766,7 +766,7 @@ function WhyAckoSection() {
                 </p>
                 <p
                   className="text-[12px] leading-[18px]"
-                  style={{ color: isDark ? 'var(--app-text-muted)' : 'rgba(0,0,0,0.56)' }}
+                  style={{ color: 'var(--color-text-secondary)' }}
                 >
                   {item.description}
                 </p>
@@ -933,7 +933,7 @@ function GlobalHomepageInner() {
   if (!hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--app-bg)' }}>
-        <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary-muted)', borderTopColor: 'transparent' }} />
       </div>
     );
   }
