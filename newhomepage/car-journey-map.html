@@ -25,12 +25,55 @@
     tr:nth-child(even) td { background: #16161e; }
     code { background: #2a2a3a; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #e0e0e0; }
     .note { background: #1e1b2e; border-left: 3px solid #7c3aed; padding: 12px 16px; margin: 12px 0; border-radius: 0 8px 8px 0; font-size: 13px; }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      position: fixed; top: 24px; right: 32px;
+      display: flex; background: #1a1a24; border: 1px solid #2a2a3a;
+      border-radius: 999px; padding: 4px; gap: 2px; z-index: 100;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+    .mode-toggle button {
+      padding: 7px 20px; border: none; border-radius: 999px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: transparent; color: #666; transition: all 0.18s;
+      font-family: inherit;
+    }
+    .mode-toggle button.active { background: #7c3aed; color: #fff; }
+    .mode-toggle button:hover:not(.active) { color: #e0e0e0; background: rgba(255,255,255,0.07); }
+    .mode-badge {
+      display: inline-block; font-size: 12px; padding: 2px 10px;
+      border-radius: 999px; margin-left: 10px; vertical-align: middle;
+    }
+    .mode-badge.dev { background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .mode-badge.simple { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+
+    /* ── Show / hide by mode ── */
+    /* Default (no data-mode yet): show everything so mermaid can render all diagrams */
+    .dev-diagram, .simple-diagram, .dev-only, .simple-only, .dev-section, .simple-section { display: block; }
+
+    [data-mode="dev"]    .simple-diagram,
+    [data-mode="dev"]    .simple-only,
+    [data-mode="dev"]    .simple-section { display: none; }
+
+    [data-mode="simple"] .dev-diagram,
+    [data-mode="simple"] .dev-only,
+    [data-mode="simple"] .dev-section { display: none; }
   </style>
 </head>
 <body>
 
+<div class="mode-toggle">
+  <button class="mode-btn" data-mode="dev">Developer</button>
+  <button class="mode-btn" data-mode="simple">Stakeholder</button>
+</div>
+
 <h1>User Journey Map — Car Insurance</h1>
-<p class="subtitle">Complete end-to-end flowcharts for the ACKO conversational car insurance buy platform</p>
+<p class="subtitle">
+  Complete end-to-end flowcharts for the ACKO conversational car insurance buy platform
+  <span class="mode-badge dev dev-only">Developer view — step IDs &amp; widget names visible</span>
+  <span class="mode-badge simple simple-only">Stakeholder view — plain language, no implementation details</span>
+</p>
 
 <div class="toc">
   <strong style="color:#fff">Table of Contents</strong>
@@ -49,10 +92,12 @@
     <li><a href="#s8b">Bottom Sheet Flows (Comprehensive)</a></li>
     <li><a href="#s9">Add-on Personalisation</a></li>
     <li><a href="#s9b">Add-on Recommendation Engine</a></li>
-    <li><a href="#s10">Owner Details &amp; Pre-Payment</a></li>
-    <li><a href="#s11">Payment &amp; Post-Purchase</a></li>
-    <li><a href="#s12">PWILO — Pick Up Where I Left Off</a></li>
-    <li><a href="#s13">Step Reference Table</a></li>
+    <li><a href="#s10">Confirm Details</a></li>
+    <li><a href="#s11">Review &amp; Pay Now</a></li>
+    <li><a href="#s12">Owner Details &amp; Pre-Payment</a></li>
+    <li><a href="#s13">Payment &amp; Post-Purchase</a></li>
+    <li><a href="#s14">PWILO — Pick Up Where I Left Off</a></li>
+    <li><a href="#s15">Step Reference Table</a></li>
   </ol>
 </div>
 
@@ -60,6 +105,8 @@
 
 <h2 id="s1">1. Master Journey Overview</h2>
 <p>Highest-level view of the entire car insurance journey. Both renewal and brand new flows converge at quote &amp; plan selection.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -95,12 +142,13 @@ flowchart TB
 
     QUOTE_CALC["📊 Quote Calculation"] --> PLAN_SELECT["📋 Plan Selection"]
     PLAN_SELECT --> ADDONS["🛡️ Add-on Personalisation"]
-    ADDONS --> OWNER_DETAILS["👤 Owner Details"]
+    ADDONS --> CONFIRM["📋 Confirm Details"]
+    CONFIRM --> REVIEW["💰 Review & Pay Now"]
+    REVIEW --> OWNER_DETAILS["👤 Owner Details"]
     OWNER_DETAILS --> LOGIN_MANDATORY{"Logged in?"}
-    LOGIN_MANDATORY -->|"Yes"| REVIEW
+    LOGIN_MANDATORY -->|"Yes"| PAYMENT["💳 Payment"]
     LOGIN_MANDATORY -->|"No"| MANDATORY_LOGIN["🔒 Mandatory Login"]
-    MANDATORY_LOGIN --> REVIEW
-    REVIEW["💰 Premium Review"] --> PAYMENT["💳 Payment"]
+    MANDATORY_LOGIN --> PAYMENT
     PAYMENT --> POST_PURCHASE["✅ Post-Purchase"]
     POST_PURCHASE --> END(["🎉 Journey Complete"])
 
@@ -112,12 +160,56 @@ flowchart TB
     style END fill:#1b4332,stroke:#22c55e,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START(["🏠 Homepage"]) --> ACTION{"What does the user do?"}
+    ACTION -->|"Taps Car Insurance"| FRESH["Start a new journey"]
+    ACTION -->|"Taps Continue on saved quote"| RESUME["Resume where they left off"]
+
+    FRESH --> FORK{"Renewing or new car?"}
+    RESUME --> FORK
+
+    FORK -->|"Renewing existing car"| RENEWAL["🔄 Renewal Path"]
+    FORK -->|"New car"| BRANDNEW["🆕 New Car Path"]
+
+    RENEWAL --> COLLECT["Answer questions about car & policy"]
+    BRANDNEW --> COLLECT_BN["Choose car & enter details"]
+
+    COLLECT --> QUOTES["Get personalised quotes"]
+    COLLECT_BN --> QUOTES
+
+    QUOTES --> PLAN["Choose a plan"]
+    PLAN --> ADDONS["Personalise add-ons"]
+    ADDONS --> CONFIRM["Confirm details & inspection"]
+    CONFIRM --> REVIEW["Review everything & pay"]
+    REVIEW --> PAYMENT["💳 Pay securely"]
+    PAYMENT --> DONE(["🎉 Policy issued"])
+
+    style RENEWAL fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style BRANDNEW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 2. ENTRY ═══════════════════════ -->
 
 <h2 id="s2">2. Entry &amp; Vehicle Type Selection</h2>
 <p>The journey begins when the user selects "Car Insurance" from the homepage.</p>
+
+<div class="dev-only">
 <div class="note">All users bypass <code>LoginChatFlow</code> and enter <code>MotorChatContainer</code> directly. Vehicle type defaults to <code>car</code>.</div>
+</div>
+<div class="simple-only">
+<div class="note">All users go straight into the car insurance flow. The app checks for saved progress or special modes before showing the first question.</div>
+</div>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -141,11 +233,34 @@ flowchart TB
     style SHOW_CHAT fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    HP(["🏠 Homepage"]) --> CLICK["User taps 'Car Insurance'"]
+    CLICK --> HOW{"How did they arrive?"}
+    HOW -->|"Fresh visit"| FIRST["Show first question:\n'Renewing or new car?'"]
+    HOW -->|"Returning with saved progress"| RESUME["Jump back to where they left off"]
+    HOW -->|"Preview / demo mode"| DEMO["Load demo walkthrough"]
+
+    FIRST --> JOURNEY(["Journey begins"])
+    RESUME --> JOURNEY
+    DEMO --> JOURNEY
+
+    style HP fill:#1b4332,stroke:#22c55e,color:#fff
+    style JOURNEY fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 3. FORK ═══════════════════════ -->
 
 <h2 id="s3">3. Renewal vs Brand New Fork</h2>
 <p>The first user-facing question determines the journey branch.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -161,11 +276,29 @@ flowchart TB
     style CONGRATS fill:#1e3a5f,stroke:#3b82f6,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    Q["Bot: 'What are you here for?'"] --> CHOICE{"User selects"}
+
+    CHOICE -->|"🔄 Renew or transfer\nexisting car insurance"| RENEWAL["Enter your car's\nregistration number\n→ Renewal Path"]
+    CHOICE -->|"🆕 Get insurance for\na brand new car"| BRANDNEW["Choose your car model\n→ New Car Path"]
+
+    style RENEWAL fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style BRANDNEW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 4. BRANCH A — RENEWAL ═══════════════════════ -->
 
 <h2 id="s4">4. Branch A — Renewal (Existing Vehicle)</h2>
 <p>Handles users who have an existing car and want to renew or transfer their insurance.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -209,11 +342,51 @@ flowchart TB
     style DATA fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    ENTER["Enter your car's registration number"]
+    ENTER --> LOOKUP["Looking up your car details..."]
+
+    LOOKUP --> RESULT{"Car found?"}
+    RESULT -->|"✅ Yes"| CHECKS{"Any issues?"}
+    RESULT -->|"❌ No"| MANUAL["Enter car details manually"]
+
+    CHECKS -->|"All clear"| REVIEW["Review your auto-filled car details"]
+    CHECKS -->|"Already insured with ACKO"| SAME["View existing policy\nor try a different number"]
+    CHECKS -->|"Policy belongs to another account"| DIFF["Confirm you're buying this car\nor use another account"]
+    CHECKS -->|"Looks like a two-wheeler"| TW["Continue as two-wheeler\nor correct the number"]
+    CHECKS -->|"Incomplete purchase found"| PENDING["Complete your previous purchase"]
+
+    REVIEW --> CONFIRMED{"Happy with details?"}
+    CONFIRMED -->|"✅ Yes"| NEXT["Fill in any remaining missing details"]
+    CONFIRMED -->|"Edit"| ENTER
+
+    MANUAL --> BRAND["Choose brand"]
+    BRAND --> MODEL["Choose model"]
+    MODEL --> FUEL["Choose fuel type"]
+    FUEL --> VARIANT["Choose variant"]
+    VARIANT --> YEAR["Choose year"]
+    YEAR --> NEXT
+
+    NEXT --> DATA(["→ Answer a few more questions"])
+
+    style REVIEW fill:#1b4332,stroke:#22c55e,color:#fff
+    style DATA fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 4b. DYNAMIC DATA COLLECTION ═══════════════════════ -->
 
 <h2 id="s4b">4b. Dynamic Data Collection (Renewal)</h2>
-<p>After the verify card, the system asks <strong>only</strong> for fields that were not auto-fetched, in strict order per the all-or-nothing framework.</p>
+<div class="dev-only"><p>After the verify card, the system asks <strong>only</strong> for fields that were not auto-fetched, in strict order per the all-or-nothing framework.</p></div>
+<div class="simple-only"><p>The system only asks for information it doesn't already have. Auto-fetched details are skipped automatically.</p></div>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -280,11 +453,79 @@ flowchart TB
     style QUOTE fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START["Checking what info we already have..."] --> CARQ{"Car details\ncomplete?"}
+
+    CARQ -->|"❌ Missing"| ASKCAR["Ask: Brand → Model → Fuel → Variant → Year"]
+    CARQ -->|"✅ Got it"| USEQ
+    ASKCAR --> USEQ
+
+    USEQ{"Personal or\nbusiness use?"}
+    USEQ -->|"Personal"| POLICYQ
+    USEQ -->|"Business"| REJECT["❌ Sorry, we only cover personal vehicles"]
+
+    POLICYQ{"Previous policy\ndetails known?"}
+    POLICYQ -->|"❌ Missing"| ASKTYPE["What type was it?\nComprehensive / Third Party / Not sure"]
+    POLICYQ -->|"✅ Got it"| PINQ
+
+    ASKTYPE --> STATUSQ["Was the policy active or expired?"]
+    STATUSQ -->|"Active"| CLAIMQ["Any claims this year?"]
+    STATUSQ -->|"Expired"| EXPIREDQ["A few questions about the expired policy"]
+    CLAIMQ --> PINQ
+    EXPIREDQ --> PINQ
+
+    PINQ{"Pincode\nknown?"}
+    PINQ -->|"❌ Missing"| ASKPIN["Which pincode is your car registered at?"]
+    PINQ -->|"✅ Got it"| LOGINQ
+    ASKPIN --> LOGINQ
+
+    LOGINQ{"Signed in?"}
+    LOGINQ -->|"❌ No"| OPTIN["Optional: Verify your phone\nfor personalised plans — can skip"]
+    LOGINQ -->|"✅ Yes"| NCBQ
+    OPTIN --> NCBQ
+
+    NCBQ{"No-claims discount\n(NCB) known?"}
+    NCBQ -->|"❌ Missing"| ASKNCB["What is your No Claim Bonus?"]
+    NCBQ -->|"✅ Got it"| CLAIMHISTQ
+    ASKNCB --> NCBUP{"Good news —\nNCB increased?"}
+    NCBUP -->|"Yes"| REWARD["🎉 Your NCB went up!"]
+    NCBUP -->|"No"| CLAIMHISTQ
+    REWARD --> CLAIMHISTQ
+
+    CLAIMHISTQ{"Last year's\nclaims known?"}
+    CLAIMHISTQ -->|"❌ Missing"| ASKCLAIM["Did you make a claim last year?"]
+    CLAIMHISTQ -->|"✅ Got it"| CNGQ
+    ASKCLAIM --> CNGQ
+
+    CNGQ{"CNG kit\nchecked?"}
+    CNGQ -->|"❌ Need to ask"| ASKCNG["Is there an external CNG kit on the car?"]
+    CNGQ -->|"✅ Done"| SUMMARY
+    ASKCNG --> SUMMARY
+
+    SUMMARY["Review all your details\nbefore getting quotes"]
+    SUMMARY --> GETQ["Fetching personalised plans..."]
+    GETQ --> LOGINREQ{"Signed in?"}
+    LOGINREQ -->|"✅ Yes"| QUOTES(["→ See Plans"])
+    LOGINREQ -->|"❌ No"| MUSTLOGIN["Sign in required to view plans\n(must complete)"]
+    MUSTLOGIN --> QUOTES
+
+    style REJECT fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style QUOTES fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 5. BRANCH B — BRAND NEW ═══════════════════════ -->
 
 <h2 id="s5">5. Branch B — Brand New Vehicle</h2>
 <p>Handles users buying a new car who need insurance before or at delivery.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -316,12 +557,46 @@ flowchart TB
     style QUOTE fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CONGRATS["🎉 Exciting — a brand new car!\nWe can save you up to 75%"]
+    CONGRATS --> POPULAR["Popular cars shown as quick picks"]
+
+    POPULAR --> PICK{"Choose your car"}
+    PICK -->|"Select a popular car"| SETCAR["Car model selected"]
+    PICK -->|"Not listed — search manually"| MANUAL["Choose brand → model → fuel type"]
+
+    SETCAR --> FUEL
+    MANUAL --> FUEL["Select fuel type"]
+    FUEL --> VARIANT["Select variant"]
+
+    VARIANT --> USECHECK{"Personal or business use?"}
+    USECHECK -->|"Personal"| DELIVERY
+    USECHECK -->|"Business"| REJECT["❌ We only cover personal vehicles"]
+
+    DELIVERY["When is the car being delivered?\nToday / Next week / 2 weeks / Not sure"]
+    DELIVERY --> MOBILE["Your mobile number"]
+    MOBILE --> PINCODE["Your pincode"]
+    PINCODE --> REVIEW["Review your car details"]
+    REVIEW --> QUOTES(["→ Get Quotes"])
+
+    style REJECT fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style QUOTES fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 6. LOGIN LOGIC ═══════════════════════ -->
 
 <h2 id="s6">6. Login Logic — Skippable &amp; Mandatory Gates</h2>
 
 <h3>Skippable Gate</h3>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -338,8 +613,30 @@ flowchart TB
     style SHOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    TRIGGER["🔓 Optional sign-in point"]
+    TRIGGER --> CHECK{"Already signed in?"}
+    CHECK -->|"✅ Yes"| AUTO["Automatically move on"]
+    CHECK -->|"❌ No"| SHOW["'Verify your phone for better plans'\nYou can skip this"]
+    SHOW --> ACTION{"What does the user do?"}
+    ACTION -->|"Enters phone + code"| DONE["✅ Signed in — continue"]
+    ACTION -->|"Skips"| DONE2["Continue without signing in"]
+    DONE --> NEXT["Move to next step"]
+    DONE2 --> NEXT
+
+    style SHOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+  </pre>
+</div>
+</div>
 
 <h3>Mandatory Gate</h3>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -354,10 +651,30 @@ flowchart TB
     style SHOW fill:#5c1a1a,stroke:#ef4444,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    TRIGGER["🔒 Sign-in required to continue"]
+    TRIGGER --> CHECK{"Already signed in?"}
+    CHECK -->|"✅ Yes"| AUTO["Automatically move on"]
+    CHECK -->|"❌ No"| SHOW["'We need your phone number\nto continue' — no skip option"]
+    SHOW --> OTP["Enter phone + verification code\n(must complete)"]
+    OTP --> DONE["✅ Signed in — continue"]
+    AUTO --> DONE
+
+    style SHOW fill:#5c1a1a,stroke:#ef4444,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 6b. LOGIN PLACEMENT ═══════════════════════ -->
 
 <h2 id="s6b">6b. Login Gate Placement in the Journey</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart LR
@@ -383,10 +700,41 @@ flowchart LR
     end
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart LR
+    subgraph RENEWAL ["🔄 Renewal Path"]
+        R1["Collecting car & policy info"] -->|"if not signed in"| R_SKIP["🔓 Optional sign-in\ncan skip"]
+        R_SKIP --> R2["Continue collecting info"]
+        R2 --> R3["Review details → Get quotes"]
+        R3 -->|"if not signed in"| R_MAND["🔒 Must sign in\nbefore seeing plans"]
+        R_MAND --> R4["Plans shown"]
+    end
+
+    subgraph BRAND_NEW_FLOW ["🆕 New Car Path"]
+        B1["Enter car + contact details"] --> B2["Review → Get quotes"]
+        B2 --> B3["Plans shown"]
+    end
+
+    subgraph AFTER_ADDONS ["Both paths — after add-ons"]
+        P1["Add-ons confirmed"] --> P2["Enter owner name"]
+        P2 -->|"if not signed in"| P_SKIP["🔓 Optional sign-in\ncan skip"]
+        P_SKIP --> P3["Email & remaining details"]
+        P3 -->|"if not signed in"| P_MAND["🔒 Must sign in\nbefore paying"]
+        P_MAND --> P4["Review & Pay"]
+    end
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 6c. OTP FLOW ═══════════════════════ -->
 
 <h2 id="s6c">6c. OTP Verification Flow</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -402,11 +750,32 @@ flowchart TB
     style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    GATE["Sign-in screen appears"] --> PHONE["📱 Enter your mobile number"]
+    PHONE --> SEND["Verification code sent to your phone"]
+    SEND --> OTP["🔢 Enter the 4-digit code\n(auto-focuses, has a countdown timer)"]
+    OTP --> VERIFY{"Code correct?"}
+    VERIFY -->|"✅ Yes"| SUCCESS["✅ Signed in — moving on"]
+    VERIFY -->|"❌ No"| RETRY["'Incorrect code'\nRequest a new one"]
+    RETRY --> OTP
+    SUCCESS --> NEXT["Continue journey"]
+
+    style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 7. QUOTE & PLAN SELECTION ═══════════════════════ -->
 
 <h2 id="s7">7. Quote &amp; Plan Selection</h2>
 <p>After all data is collected, the system calculates quotes and presents plan options.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -459,11 +828,65 @@ flowchart TB
     style ADDONS fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CALC["Calculating your personalised quotes..."]
+    CALC --> READY["Your plans are ready!"]
+    READY --> SELECT["Plan cards shown with pricing"]
+
+    SELECT --> ACTION{"User action"}
+    ACTION -->|"Picks a plan"| CLICK["Plan tapped"]
+    ACTION -->|"'Help me choose'"| HELP["Guided plan selector\n4 quick questions"]
+
+    CLICK --> TYPE{"Which plan type?"}
+    TYPE -->|"Comprehensive"| COMP{"Zero Depreciation\navailable?"}
+    COMP -->|"Yes"| ZD_VS["Ask: Zero Dep or Standard?\nwith cost comparison example"]
+    COMP -->|"Multiple options, no Zero Dep"| GARAGE["Ask: Network Garage or Any Garage?"]
+    COMP -->|"Only one option"| DONE
+
+    ZD_VS -->|"Zero Dep"| ZD_VAR{"Multiple Zero Dep tiers?"}
+    ZD_VS -->|"Standard"| COMP_VAR{"Multiple Standard tiers?"}
+    ZD_VAR -->|"Yes"| ZD_SHEET["Choose: Safe Driver or Standard Zero Dep"]
+    ZD_VAR -->|"No"| DONE
+    COMP_VAR -->|"Yes"| GARAGE
+    COMP_VAR -->|"No"| DONE
+    ZD_SHEET --> DONE
+    GARAGE --> DONE
+
+    TYPE -->|"Third Party only"| DONE
+    TYPE -->|"Own Damage"| OD{"Multiple OD options?"}
+    OD -->|"Yes"| OD_SHEET["Choose Own Damage variant"]
+    OD -->|"No"| DONE
+    OD_SHEET --> DONE
+
+    DONE["Plan confirmed — 'Great choice!'"]
+    DONE --> ADDONS(["→ Personalise add-ons"])
+
+    HELP --> Q1["How do you use your car?"]
+    Q1 --> Q2["How old is your car?"]
+    Q2 --> Q3["What matters most to you?"]
+    Q3 --> Q4["Repair preference?"]
+    Q4 --> REC["Recommended plan shown"]
+    REC --> REC_A{"User action"}
+    REC_A -->|"Accept"| DONE
+    REC_A -->|"See all plans"| SELECT
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+    style ADDONS fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 8. PLAN COMBINATIONS ═══════════════════════ -->
 
 <h2 id="s8">8. Plan Combination Routing</h2>
 <p>The system determines which plans to serve based on vehicle age and policy status.</p>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -487,10 +910,39 @@ flowchart TB
     style F fill:#1b4332,stroke:#22c55e,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CHECK{"Does the car already have\nan active Third Party policy\nand is 1–3 years old?"}
+
+    CHECK -->|"Yes — only Own Damage\nrenewal needed"| OD_ONLY["Offer Own Damage plans only"]
+    CHECK -->|"No — full plans available"| FULL["Offer complete plan range"]
+
+    OD_ONLY --> OD_AGE{"How old is the car?"}
+    OD_AGE -->|"Up to 1 year old"| OD3["Own Damage\n+ Zero Dep Safe Driver\n+ Zero Dep Standard"]
+    OD_AGE -->|"Up to 2 years old"| OD2["Own Damage\n+ Zero Dep Safe Driver"]
+    OD_AGE -->|"Up to 3 years old"| OD1["Own Damage only"]
+
+    FULL --> FULL_AGE{"How old is the car?"}
+    FULL_AGE -->|"Up to 1 year old"| F["Third Party + Comprehensive\n+ Network Garage Comp\n+ Zero Dep Safe Driver\n+ Zero Dep Standard"]
+    FULL_AGE -->|"Up to 3 years old"| E["Third Party + Comprehensive\n+ Network Garage Comp\n+ Zero Dep Safe Driver"]
+    FULL_AGE -->|"Up to 5 years old"| D["Third Party\n+ Comprehensive\n+ Network Garage Comprehensive"]
+    FULL_AGE -->|"Older than 5 years"| C["Third Party\n+ Comprehensive only"]
+
+    style OD3 fill:#1b4332,stroke:#22c55e,color:#fff
+    style F fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 8b. BOTTOM SHEETS ═══════════════════════ -->
 
 <h2 id="s8b">8b. Bottom Sheet Flows (Comprehensive Card Click)</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -522,10 +974,47 @@ flowchart TB
     style BS2_COMP fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    CLICK["User taps 'Explore Comprehensive'"]
+    CLICK --> ZD_CHECK{"Zero Depreciation available?"}
+
+    ZD_CHECK -->|"Yes"| BS1["Panel slides up:\n'Do you want Zero Depreciation cover?'\n\n🟢 Zero Depreciation — Recommended\n   Full cost of parts covered\n   You pay ₹0 out-of-pocket\n\n⚪ Standard Comprehensive\n   Parts after normal wear deduction\n   ~20-30% out-of-pocket\n\nExample: ₹15K bumper repair\n  Zero Dep → You pay ₹0\n  Standard → You pay ₹3-4.5K"]
+
+    BS1 -->|"Zero Dep chosen"| ZD_VAR{"Multiple Zero Dep options?"}
+    BS1 -->|"Standard chosen"| COMP_VAR{"Multiple Standard options?"}
+
+    ZD_VAR -->|"Yes"| BS2_ZD["Panel: Choose your Zero Dep tier\n\n🟢 Safe Driver — Recommended\n   Lower premium, ₹5K deductible on claims\n\n⚪ Standard Zero Dep\n   Higher premium, no deductibles at all"]
+    ZD_VAR -->|"No"| SEL
+
+    COMP_VAR -->|"Yes"| BS2_COMP["Panel: Choose your garage type\n\n🟢 Network Garage — Recommended\n   Fully managed, free pickup, 1yr warranty\n   ₹5K deductible outside network\n\n⚪ Standard\n   Any GST garage, no restrictions"]
+    COMP_VAR -->|"No"| SEL
+
+    ZD_CHECK -->|"No, multiple options"| BS2_COMP
+    ZD_CHECK -->|"No, single option"| SEL
+
+    BS2_ZD --> SEL
+    BS2_COMP --> SEL
+
+    SEL["✅ Plan chosen — moving to add-ons"]
+
+    style SEL fill:#1b4332,stroke:#22c55e,color:#fff
+    style BS1 fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+    style BS2_ZD fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+    style BS2_COMP fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 9. ADD-ONS ═══════════════════════ -->
 
 <h2 id="s9">9. Add-on Personalisation</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -544,10 +1033,34 @@ flowchart TB
     style OWNER fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    Q1["Do you have a paid or hired driver?\nYes / No"]
+    Q1 --> Q2["Any accessories added after purchase?\nYes / No"]
+
+    Q2 --> PLAN{"Which plan was selected?"}
+    PLAN -->|"Third Party"| PROTECT["Choose family & liability\nprotection add-ons"]
+    PLAN -->|"Comprehensive or Own Damage"| OOP["Choose car protection add-ons"]
+
+    OOP --> PROTECT
+
+    PROTECT --> DONE["Add-ons confirmed\n'Building your final premium...'"]
+    DONE --> NEXT(["→ Confirm your details"])
+
+    style NEXT fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
 
 <!-- ═══════════════════════ 9b. ADD-ON RECS ═══════════════════════ -->
 
 <h2 id="s9b">9b. Add-on Recommendation Engine</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -576,10 +1089,238 @@ flowchart TB
     style DONE fill:#1b4332,stroke:#22c55e,color:#fff
   </pre>
 </div>
+</div>
 
-<!-- ═══════════════════════ 10. OWNER DETAILS ═══════════════════════ -->
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    AGE{"How old is the car?"} -->|"Under 8 years"| BASE_Y["Start with:\nEngine Protect + Extra Car Cover\n+ Personal Accident + Passenger Cover"]
+    AGE -->|"8 years or older"| BASE_O["Start with:\nExtra Car Cover\n+ Personal Accident + Passenger Cover"]
 
-<h2 id="s10">10. Owner Details &amp; Pre-Payment</h2>
+    BASE_Y --> L1
+    BASE_O --> L1
+
+    L1{"Car 3 years old\nor less?"} -->|"Yes"| RTI["+ Return to Invoice cover"]
+    L1 -->|"No"| L2
+    RTI --> L2
+
+    L2{"Has a no-claims\ndiscount?"} -->|"Yes"| NCBP["+ No Claim Bonus Protection"]
+    L2 -->|"No"| L3
+    NCBP --> L3
+
+    L3{"Has a paid driver?"} -->|"Yes"| DRV["+ Paid Driver Cover"]
+    L3 -->|"No"| L4
+    DRV --> L4
+
+    L4{"Has aftermarket\naccessories?"} -->|"Yes"| ACC["+ Electrical and Non-Electrical\nAccessory Cover"]
+    L4 -->|"No"| DONE["Final recommended add-on set"]
+    ACC --> DONE
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+</div>
+
+<!-- ═══════════════════════ 10. CONFIRM DETAILS ═══════════════════════ -->
+
+<h2 id="s10">10. Confirm Details</h2>
+<p>After add-on selection, the system reconfirms key details before moving to the review screen: policy expiry date, inspection requirement, and personal details.</p>
+
+<h3>Step 1 — Policy Expiry Date</h3>
+<div class="note">If the expiry date was auto-fetched or entered during pre-quote, it is shown pre-filled. Otherwise the user must enter it — it's mandatory for continued coverage.</div>
+
+<h3>Step 2 — Inspection Requirement</h3>
+<div class="dev-only"><div class="note"><strong>No inspection:</strong> Policy not expired or expired ≤ 10 days → show policy start date.<br/><strong>Inspection required:</strong> Expired 10–90 days + Comp/ZD/OD plan → schedule via slot picker (< 10 min, crew comes to user).</div></div>
+<div class="simple-only"><div class="note"><strong>No inspection needed</strong> if the policy is still active or expired within 10 days. <strong>Inspection required</strong> (under 10 minutes, team comes to the user) if it expired 11–90 days ago and the user chose comprehensive cover.</div></div>
+
+<h3>Step 3 — Personal Details</h3>
+<div class="note">Name (pre-filled, editable) + Email (always required) + Phone (only if not logged in). Once confirmed → Review Screen.</div>
+
+<div class="dev-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    ADDONS_DONE["addons.complete\n'Add-ons confirmed'"] --> EXPIRY{"Policy expiry\ndate known?"}
+
+    EXPIRY -->|"Pre-filled\n(fetched or entered)"| SHOW_EXP["confirm.policy_expiry\nShow pre-filled date\nUser can edit"]
+    EXPIRY -->|"Unknown"| ASK_EXP["confirm.policy_expiry_ask\n'We need your expiry date\nfor continued coverage'\nWidget: date_input (mandatory)"]
+
+    SHOW_EXP --> CONFIRMED["Expiry confirmed"]
+    ASK_EXP --> CONFIRMED
+
+    CONFIRMED --> INSPECT{"How long ago\ndid policy expire?"}
+
+    INSPECT -->|"Not expired OR\n≤ 10 days"| NO_INSP["confirm.no_inspection\n'No inspection needed'\nFetch & show policy start date"]
+    INSPECT -->|"10–90 days\n+ Comp/ZD/OD"| YES_INSP["confirm.inspection_required\n'Quick inspection needed'\n'Pick a date — takes < 10 min'\nWidget: inspection_slot_picker"]
+
+    NO_INSP --> PERSONAL
+    YES_INSP --> PERSONAL
+
+    PERSONAL["confirm.personal_details\nConfirm: Name + Email + Phone"]
+
+    PERSONAL --> NAME{"Name\npre-filled?"}
+    NAME -->|"Yes"| SHOW_NAME["Show name (editable)\n'Change after purchase\nif buying for someone else'"]
+    NAME -->|"No"| ASK_NAME["'Full name for KYC'"]
+
+    SHOW_NAME --> EMAIL
+    ASK_NAME --> EMAIL
+
+    EMAIL["confirm.email\n'Policy docs & claim updates\nwill go to this email'"]
+
+    EMAIL --> PHONE{"Logged in?"}
+    PHONE -->|"✅ Yes"| DONE(["→ Review Screen"])
+    PHONE -->|"❌ No"| ASK_PHONE["confirm.phone\n'Policy mapped to this number'\nWidget: text_input (tel)"]
+    ASK_PHONE --> DONE
+
+    style YES_INSP fill:#5c3a1a,stroke:#f59e0b,color:#fff
+    style DONE fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START["Add-ons confirmed — moving to final details"] --> EXPIRY{"Previous policy\nexpiry date known?"}
+
+    EXPIRY -->|"Yes — already on file"| SHOW_EXP["Show expiry date\n(user can edit if wrong)"]
+    EXPIRY -->|"No — not sure"| ASK_EXP["'We need this date to ensure\nno gap in your coverage'\n(required)"]
+
+    SHOW_EXP --> CONFIRMED["Expiry date confirmed"]
+    ASK_EXP --> CONFIRMED
+
+    CONFIRMED --> INSPECT{"When did the\npolicy expire?"}
+
+    INSPECT -->|"Not yet expired OR\nwithin last 10 days"| NO_INSP["No inspection needed\nWe'll show your new policy start date"]
+    INSPECT -->|"11–90 days ago\n+ Comprehensive plan"| YES_INSP["Quick vehicle inspection needed\n'Pick a slot — under 10 minutes'\nOur team comes to you"]
+
+    NO_INSP --> PERSONAL
+    YES_INSP --> PERSONAL
+
+    PERSONAL["Confirm your personal details"]
+    PERSONAL --> NAME{"Name already\non file?"}
+    NAME -->|"Yes"| SHOW_NAME["Show name — can edit\n'Change after purchase\nif buying for someone else'"]
+    NAME -->|"No"| ASK_NAME["Enter full name\n(needed for identity check)"]
+
+    SHOW_NAME --> EMAIL
+    ASK_NAME --> EMAIL
+
+    EMAIL["Enter email address\n(for policy docs and claim updates)"]
+    EMAIL --> PHONE{"Already signed in?"}
+    PHONE -->|"✅ Yes"| DONE(["→ Review screen"])
+    PHONE -->|"❌ No"| ASK_PHONE["Enter phone number\n(policy will be linked to this account)"]
+    ASK_PHONE --> DONE
+
+    style YES_INSP fill:#5c3a1a,stroke:#f59e0b,color:#fff
+    style DONE fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
+
+<!-- ═══════════════════════ 11. REVIEW & PAY NOW ═══════════════════════ -->
+
+<h2 id="s11">11. Review &amp; Pay Now</h2>
+<p>The user reviews everything before paying. The primary CTA is <strong>"Pay Now"</strong>.</p>
+
+<h3>Coupon Application</h3>
+<div class="note">Eligible coupons shown as cards/chips. Manual code entry supported. One coupon at a time. Premium recalculated on apply.</div>
+
+<h3>Review Details</h3>
+<div class="note">Grouped into: Car &amp; Personal Details · Coverage Details (plan, add-ons, IDV, NCB) · Premium Breakup (base + add-ons − NCB discount − coupon + GST = <strong>Total</strong>) · Policy Start / Inspection Note.</div>
+
+<div class="dev-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START["review.start\n'Review your plan before paying'"]
+
+    START --> COUPON{"Eligible\ncoupons?"}
+    COUPON -->|"Yes"| SHOW_C["review.coupons\nWidget: coupon_selector\nEligible coupons as cards\n+ manual code input\nOne at a time"]
+    COUPON -->|"No"| SUMMARY
+
+    SHOW_C --> C_ACTION{"User action"}
+    C_ACTION -->|"Apply coupon"| RECALC["Recalculate premium\nShow updated total"]
+    C_ACTION -->|"Type code"| VALID{"Code valid?"}
+    C_ACTION -->|"Skip"| SUMMARY
+
+    VALID -->|"✅ Yes"| RECALC
+    VALID -->|"❌ No"| ERR["'Coupon invalid or expired'"]
+    ERR --> SHOW_C
+    RECALC --> SUMMARY
+
+    SUMMARY["review.summary\nWidget: review_summary"]
+
+    SUMMARY --> D1["🚗 Car & Personal Details\nMake · Model · Variant · Year · Fuel\nName · Email · Phone"]
+    D1 --> D2["🛡️ Coverage Details\nPlan + variant · Add-ons\nIDV · NCB %"]
+    D2 --> D3["💰 Premium Breakup\nBase premium\n+ Add-on premiums\n− NCB discount\n− Coupon discount\n+ GST\n━━━━━━━━━━━\nTOTAL PAYABLE"]
+    D3 --> POLICY_NOTE{"Inspection\nrequired?"}
+
+    POLICY_NOTE -->|"No"| START_DATE["'Your policy starts on &lt;date&gt;.\nVehicle covered from this date.'"]
+    POLICY_NOTE -->|"Yes"| INSPECT_NOTE["'Policy issued after inspection\non &lt;date/time&gt;.\nWe'll send a reminder.'"]
+
+    START_DATE --> PAY
+    INSPECT_NOTE --> PAY
+
+    PAY["💳 PAY NOW\nPrimary CTA\nAlways visible at bottom"]
+    PAY --> GATEWAY(["→ Payment Gateway"])
+
+    style PAY fill:#1b4332,stroke:#22c55e,color:#fff
+    style GATEWAY fill:#1b4332,stroke:#22c55e,color:#fff
+    style D3 fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+  </pre>
+</div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    START["Review your plan before paying"]
+
+    START --> COUPON{"Any discounts\navailable?"}
+    COUPON -->|"Yes"| SHOW_C["Eligible coupons shown as cards\nOr type a code manually\nOne discount at a time"]
+    COUPON -->|"No"| SUMMARY
+
+    SHOW_C --> C_ACTION{"User action"}
+    C_ACTION -->|"Apply a discount"| RECALC["Price updated instantly"]
+    C_ACTION -->|"Type code"| VALID{"Valid code?"}
+    C_ACTION -->|"Skip"| SUMMARY
+
+    VALID -->|"✅ Yes"| RECALC
+    VALID -->|"❌ No"| ERR["'That code is invalid or expired'"]
+    ERR --> SHOW_C
+    RECALC --> SUMMARY
+
+    SUMMARY["Summary screen"]
+
+    SUMMARY --> D1["🚗 Your car details\nMake · Model · Variant · Year · Fuel\nYour name · Email · Phone"]
+    D1 --> D2["🛡️ What you are covered for\nPlan type and add-ons · Car value · No-claims discount"]
+    D2 --> D3["💰 Cost breakdown\nBase price + add-ons\n− No-claims discount\n− Coupon saving\n+ Tax\n━━━━━━━━━━━\nTotal amount to pay"]
+    D3 --> NOTE{"Inspection booked?"}
+
+    NOTE -->|"No"| START_DATE["'Your policy starts on date'\nVehicle covered from that date"]
+    NOTE -->|"Yes"| INSPECT_NOTE["'Policy issued after your inspection on date'\nWe will send a reminder"]
+
+    START_DATE --> PAY
+    INSPECT_NOTE --> PAY
+
+    PAY["💳 PAY NOW\nAlways visible at the bottom of the screen"]
+    PAY --> GATEWAY(["→ Payment"])
+
+    style PAY fill:#1b4332,stroke:#22c55e,color:#fff
+    style GATEWAY fill:#1b4332,stroke:#22c55e,color:#fff
+    style D3 fill:#1e1b2e,stroke:#7c3aed,color:#e0e0e0
+  </pre>
+</div>
+</div>
+
+<!-- ═══════════════════════ 12. OWNER DETAILS ═══════════════════════ -->
+
+<h2 id="s12">12. Owner Details &amp; Pre-Payment</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -620,10 +1361,54 @@ flowchart TB
     style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
   </pre>
 </div>
+</div>
 
-<!-- ═══════════════════════ 11. PAYMENT & POST-PURCHASE ═══════════════════════ -->
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    INTRO["'Almost there — just a few details\nto issue your policy'"]
+    INTRO --> NAME["Vehicle owner's full name\n(pre-filled if we have it)"]
 
-<h2 id="s11">11. Payment &amp; Post-Purchase</h2>
+    NAME --> LOGIN{"Signed in?"}
+    LOGIN -->|"❌ No"| SKIP["🔓 Optional sign-in\n(can skip)"]
+    LOGIN -->|"✅ Yes"| EMAIL
+    SKIP --> EMAIL["Email address"]
+
+    EMAIL --> BN{"Brand new car?"}
+    BN -->|"Yes"| ENGINE["Engine number\n(from dealer invoice)"]
+    BN -->|"No"| LOAN
+
+    ENGINE --> CHASSIS["Chassis number"]
+    CHASSIS --> GST["Have a GST number?\nSkip or enter"]
+    GST -->|"Enter"| GST_IN["Enter GST number"]
+    GST -->|"Skip"| LOAN
+    GST_IN --> LOAN
+
+    LOAN["Is the car owned outright\nor financed?"]
+    LOAN -->|"Financed"| PROVIDER["Who is the lender?"]
+    LOAN -->|"Owned"| MAND_CHECK
+    PROVIDER --> MAND_CHECK
+
+    MAND_CHECK{"Signed in?"}
+    MAND_CHECK -->|"✅ Yes"| REVIEW
+    MAND_CHECK -->|"❌ No"| MAND["🔒 Must sign in to proceed"]
+    MAND --> REVIEW
+
+    REVIEW["Review your full plan\nbefore paying"]
+    REVIEW --> PAYMENT(["→ Payment"])
+
+    style REVIEW fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+  </pre>
+</div>
+</div>
+
+<!-- ═══════════════════════ 13. PAYMENT & POST-PURCHASE ═══════════════════════ -->
+
+<h2 id="s13">13. Payment &amp; Post-Purchase</h2>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -650,11 +1435,44 @@ flowchart TB
     style NEW fill:#2d1b69,stroke:#7c3aed,color:#fff
   </pre>
 </div>
+</div>
 
-<!-- ═══════════════════════ 12. PWILO ═══════════════════════ -->
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    PAY["💳 Complete payment securely"]
+    PAY --> SUCCESS["🎉 Congratulations!\nYour car is now insured!\nPolicy number generated instantly"]
 
-<h2 id="s12">12. PWILO — Pick Up Where I Left Off</h2>
-<p>Journey state is auto-saved at key milestones. Snapshots are <strong>cleared</strong> on <code>payment.success</code>.</p>
+    SUCCESS --> STATUS["Your policy documents\nare being prepared"]
+    STATUS --> TRACKER["Live progress tracker\nshowing policy stages"]
+
+    TRACKER --> KYC["Complete identity verification\nwithin 4 days\nStart now or do it later"]
+
+    KYC --> NPS["How was your experience?\n(Quick rating + optional comment)"]
+
+    NPS --> APP["Download the ACKO app\nto manage your policy"]
+
+    APP --> END_SCR["You are all set! 🎉"]
+
+    END_SCR --> END_CHOICE{"What next?"}
+    END_CHOICE -->|"Go home"| HP(["🏠 Homepage"])
+    END_CHOICE -->|"Insure another car"| NEW(["🔄 Start new journey"])
+
+    style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+    style HP fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style NEW fill:#2d1b69,stroke:#7c3aed,color:#fff
+  </pre>
+</div>
+</div>
+
+<!-- ═══════════════════════ 14. PWILO ═══════════════════════ -->
+
+<h2 id="s14">14. PWILO — Pick Up Where I Left Off</h2>
+<div class="dev-only"><p>Journey state is auto-saved at key milestones. Snapshots are <strong>cleared</strong> on <code>payment.success</code>.</p></div>
+<div class="simple-only"><p>Progress is automatically saved as the user moves through the journey. If they close the browser, a "Continue" card appears on the homepage so they can pick up exactly where they left off.</p></div>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart TB
@@ -690,8 +1508,48 @@ flowchart TB
     end
   </pre>
 </div>
+</div>
+
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart TB
+    subgraph SAVEPOINTS ["💾 Progress is auto-saved at these moments"]
+        A["Car details verified"]
+        B["Started entering car manually"]
+        C["Started a new car journey"]
+        D["Entered owner name"]
+        E["Reviewed car details"]
+        F["Got personalised quotes"]
+        G["Browsing plan options"]
+        H["Plan selected"]
+        I["Browsing car add-ons"]
+        J["Browsing family add-ons"]
+        K["Add-ons confirmed"]
+        L["Reached review screen"]
+    end
+
+    subgraph CLEARED ["Progress cleared after..."]
+        CL1["Payment completed successfully"]
+        CL2["Policy fully issued"]
+    end
+
+    subgraph RESUME_FLOW ["How 'Continue' works on homepage"]
+        HP2["Homepage loads"] --> CHECK2{"Saved progress found?"}
+        CHECK2 -->|"Yes"| CARDS2["Show 'Continue' card\nwith car details and where they left off"]
+        CHECK2 -->|"No"| NOTHING["No card shown"]
+
+        CARDS2 --> ACTION{"User taps..."}
+        ACTION -->|"Continue"| BACK["Jump back to where they left off"]
+        ACTION -->|"Start fresh"| FRESH2["Begin a new quote"]
+    end
+  </pre>
+</div>
+</div>
 
 <h3>Drop-off Display Mapping</h3>
+
+<div class="dev-diagram">
 <div class="diagram-container">
   <pre class="mermaid">
 flowchart LR
@@ -703,11 +1561,52 @@ flowchart LR
     D6["addons.complete\nreview.premium_breakdown"] --> T6["'Complete your purchase'"]
   </pre>
 </div>
+</div>
 
-<!-- ═══════════════════════ 13. STEP TABLE ═══════════════════════ -->
+<div class="simple-diagram">
+<div class="diagram-container">
+  <pre class="mermaid">
+flowchart LR
+    D1["Car details verified\nor just starting entry"] --> T1["Card shows:\n'Let's insure your car'"]
+    D2["Details reviewed\nor viewing prices"] --> T2["Card shows:\n'Almost there'"]
+    D3["Quotes calculated\nor browsing plans"] --> T3["Card shows:\n'Quote ready'"]
+    D4["Plan chosen"] --> T4["Card shows:\n'Plan selected — customise add-ons'"]
+    D5["Selecting add-ons"] --> T5["Card shows:\n'Finish selecting add-ons'"]
+    D6["Add-ons confirmed\nor at review"] --> T6["Card shows:\n'Complete your purchase'"]
+  </pre>
+</div>
+</div>
 
-<h2 id="s13">13. Step Reference Table</h2>
+<!-- ═══════════════════════ 15. STEP TABLE ═══════════════════════ -->
 
+<h2 id="s15">
+  <span class="dev-only">15. Step Reference Table</span>
+  <span class="simple-only">15. Journey Phase Summary</span>
+</h2>
+
+<div class="simple-section">
+<p>High-level overview of each phase in the journey — what the user experiences and what follows.</p>
+<table>
+  <thead>
+    <tr><th>Phase</th><th>What the user sees or does</th><th>What happens next</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Entry</strong></td><td>Taps 'Car Insurance' on the homepage</td><td>First question: renewing or new car?</td></tr>
+    <tr><td><strong>Vehicle Details</strong></td><td>Enters registration number or picks a car model</td><td>System looks up or confirms car details</td></tr>
+    <tr><td><strong>Policy Info</strong></td><td>Answers 3–5 questions about their current policy, claims, and pincode</td><td>System builds personalised quote inputs</td></tr>
+    <tr><td><strong>Sign In (optional)</strong></td><td>Prompted to verify their phone number — can skip</td><td>Saves progress and unlocks personalised plans</td></tr>
+    <tr><td><strong>Get Quotes</strong></td><td>Sees personalised plan cards with pricing</td><td>Picks a plan, or uses the guided plan selector</td></tr>
+    <tr><td><strong>Plan Selection</strong></td><td>Chooses plan type, Zero Dep option, and garage tier</td><td>Plan confirmed — move to add-ons</td></tr>
+    <tr><td><strong>Add-ons</strong></td><td>Personalises car protection and family protection add-ons</td><td>Final add-on set confirmed</td></tr>
+    <tr><td><strong>Confirm Details</strong></td><td>Confirms policy expiry date, name, email, and phone</td><td>Inspection booked if needed — move to review</td></tr>
+    <tr><td><strong>Review &amp; Pay</strong></td><td>Reviews full plan, applies coupon, sees total cost</td><td>Taps 'Pay Now'</td></tr>
+    <tr><td><strong>Payment</strong></td><td>Completes payment securely</td><td>Policy issued instantly</td></tr>
+    <tr><td><strong>Post-Purchase</strong></td><td>Policy tracker, identity check prompt, app download, experience rating</td><td>Journey complete</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="dev-section">
 <table>
   <thead>
     <tr><th>Module</th><th>Step ID</th><th>Widget Type</th><th>Purpose</th></tr>
@@ -779,7 +1678,18 @@ flowchart LR
     <tr><td></td><td><code>owner_details.gst_input</code></td><td>text_input</td><td>GST number</td></tr>
     <tr><td></td><td><code>owner_details.loan_check</code></td><td>selection_cards</td><td>Car loan?</td></tr>
     <tr><td></td><td><code>owner_details.loan_provider</code></td><td>text_input</td><td>Lender</td></tr>
-    <tr><td><strong>review</strong></td><td><code>review.premium_breakdown</code></td><td>premium_breakdown</td><td>Premium breakdown</td></tr>
+    <tr><td><strong>confirm</strong></td><td><code>confirm.policy_expiry</code></td><td>date_input</td><td>Pre-filled expiry (editable)</td></tr>
+    <tr><td></td><td><code>confirm.policy_expiry_ask</code></td><td>date_input</td><td>Ask expiry (if unknown)</td></tr>
+    <tr><td></td><td><code>confirm.no_inspection</code></td><td>none</td><td>No inspection — show start date</td></tr>
+    <tr><td></td><td><code>confirm.inspection_required</code></td><td>inspection_slot_picker</td><td>Schedule inspection</td></tr>
+    <tr><td></td><td><code>confirm.personal_details</code></td><td>none</td><td>Personal details intro</td></tr>
+    <tr><td></td><td><code>confirm.name</code></td><td>text_input</td><td>Confirm owner name</td></tr>
+    <tr><td></td><td><code>confirm.email</code></td><td>text_input</td><td>Email address</td></tr>
+    <tr><td></td><td><code>confirm.phone</code></td><td>text_input</td><td>Phone (if not logged in)</td></tr>
+    <tr><td><strong>review</strong></td><td><code>review.coupons</code></td><td>coupon_selector</td><td>Apply coupons</td></tr>
+    <tr><td></td><td><code>review.summary</code></td><td>review_summary</td><td>Full review + breakup</td></tr>
+    <tr><td></td><td><code>review.pay_now</code></td><td>pay_now_cta</td><td>Pay Now CTA</td></tr>
+    <tr><td></td><td><code>review.premium_breakdown</code></td><td>premium_breakdown</td><td>Premium breakdown</td></tr>
     <tr><td><strong>payment</strong></td><td><code>payment.process</code></td><td>payment_gateway</td><td>Payment</td></tr>
     <tr><td></td><td><code>payment.success</code></td><td>motor_celebration</td><td>Success</td></tr>
     <tr><td><strong>post_purchase</strong></td><td><code>post_purchase.status_intro</code></td><td>none</td><td>Policy prep intro</td></tr>
@@ -790,11 +1700,13 @@ flowchart LR
     <tr><td></td><td><code>post_purchase.end</code></td><td>selection_cards</td><td>Journey end</td></tr>
   </tbody>
 </table>
+</div>
 
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
   mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false,
     theme: 'dark',
     themeVariables: {
       primaryColor: '#2d1b69',
@@ -814,6 +1726,29 @@ flowchart LR
       rankSpacing: 40,
     },
   });
+
+  function setMode(mode) {
+    document.body.dataset.mode = mode;
+    localStorage.setItem('flowchart-mode', mode);
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+  }
+
+  (async () => {
+    // Render ALL diagrams (both dev + simple) before hiding anything,
+    // so SVG sizing is calculated correctly.
+    await mermaid.run();
+
+    // Now apply the saved or default mode
+    const saved = localStorage.getItem('flowchart-mode') || 'dev';
+    setMode(saved);
+
+    // Wire up toggle buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+  })();
 </script>
 
 </body>
