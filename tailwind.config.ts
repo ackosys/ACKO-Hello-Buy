@@ -72,6 +72,47 @@ const config: Config = {
           700: '#B15A08',
           800: '#5B2C00',
         },
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          raised: 'var(--color-surface-raised)',
+        },
+        'theme-text': {
+          primary: 'var(--color-text-primary)',
+          DEFAULT: 'var(--color-text-default)',
+          secondary: 'var(--color-text-secondary)',
+          supporting: 'var(--color-text-supporting)',
+          brand: 'var(--color-text-brand)',
+          error: 'var(--color-text-error)',
+          success: 'var(--color-text-success)',
+          disabled: 'var(--color-text-disabled)',
+        },
+        'theme-border': {
+          DEFAULT: 'var(--color-border)',
+          strong: 'var(--color-border-strong)',
+          subtle: 'var(--color-border-subtle)',
+        },
+        'theme-card': {
+          DEFAULT: 'var(--color-card-bg)',
+          border: 'var(--color-card-border)',
+          elevated: 'var(--color-card-elevated-bg)',
+        },
+        'theme-error': {
+          DEFAULT: 'var(--color-error)',
+          text: 'var(--color-error-text)',
+          subtle: 'var(--color-error-subtle)',
+          border: 'var(--color-error-border)',
+        },
+        'theme-success': {
+          DEFAULT: 'var(--color-success)',
+          text: 'var(--color-success-text)',
+          subtle: 'var(--color-success-subtle)',
+          border: 'var(--color-success-border)',
+        },
+        'theme-warning': {
+          text: 'var(--color-warning-text)',
+          subtle: 'var(--color-warning-subtle)',
+          border: 'var(--color-warning-border)',
+        },
       },
       borderRadius: {
         'sm': '6px',

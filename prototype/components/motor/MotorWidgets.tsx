@@ -1767,7 +1767,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-[14px] font-semibold text-white">{addon.name}</h4>
                     {addon.hasVariants && <span className="text-[10px] text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">2 options</span>}
-                    {addon.recommended && <span className="text-[10px] text-green-300 bg-green-500/20 px-2 py-0.5 rounded-full">Recommended</span>}
+                    {addon.recommended && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `linear-gradient(0deg, var(--color-badge-green-gradient-from), var(--color-badge-green-gradient-to))`, border: `1px solid var(--color-badge-green-border)`, color: 'var(--color-badge-green-text)' }}>Recommended</span>}
                   </div>
                   <p className="text-[12px] text-white/60 leading-relaxed">{addon.description}</p>
                   {selected && variantName && <p className="text-[11px] text-purple-300 mt-1">Selected: {variantName}</p>}
@@ -1811,7 +1811,7 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
+                          {variant.recommended && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `linear-gradient(0deg, var(--color-badge-purple-gradient-from), var(--color-badge-purple-gradient-to))`, border: `1px solid var(--color-badge-purple-border)`, color: 'var(--color-badge-purple-text)' }}>Recommended</span>}
                           {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>
@@ -1971,7 +1971,7 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-white">{variant.name}</span>
-                          {variant.recommended && <span className="text-[10px] text-purple-300 bg-purple-500/30 px-2 py-0.5 rounded-full">Recommended</span>}
+                          {variant.recommended && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `linear-gradient(0deg, var(--color-badge-purple-gradient-from), var(--color-badge-purple-gradient-to))`, border: `1px solid var(--color-badge-purple-border)`, color: 'var(--color-badge-purple-text)' }}>Recommended</span>}
                           {variant.badge && <span className="text-[10px] text-green-300 bg-green-500/30 px-2 py-0.5 rounded-full">{variant.badge}</span>}
                         </div>
                         <span className="text-[16px] font-bold text-white">₹{variant.price}</span>

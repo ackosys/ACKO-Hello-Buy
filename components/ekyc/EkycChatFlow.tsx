@@ -191,28 +191,28 @@ export function useEkycFlow(onComplete: () => void, options?: UseEkycFlowOptions
         addBotMessage(
           <div className="space-y-4">
             <div className="flex flex-col items-center py-6">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--color-success-subtle)' }}>
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-success-text)' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-white mb-1">{ek.identityVerified}</h3>
-              <p className="text-purple-200/70 text-sm">{ek.kycCompleted}</p>
+              <p className="text-sm" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>{ek.kycCompleted}</p>
             </div>
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+            <div className="rounded-xl p-4" style={{ background: 'var(--color-success-subtle)', borderColor: 'var(--color-success-border)', borderWidth: 1, borderStyle: 'solid' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-success-subtle)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-success-text)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
                   </svg>
                 </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold text-sm mb-0.5">{ek.aadhaarKycComplete}</p>
-                  <p className="text-emerald-300/70 text-xs">{ek.linkedTo(maskedMobile)}</p>
+                  <p className="text-xs" style={{ color: 'var(--color-success-text)', opacity: 0.7 }}>{ek.linkedTo(maskedMobile)}</p>
                 </div>
               </div>
             </div>
-            <p className="text-center text-purple-200/60 text-sm">{ek.proceedingNextStep}</p>
+            <p className="text-center text-sm" style={{ color: 'var(--color-primary-active)', opacity: 0.6 }}>{ek.proceedingNextStep}</p>
           </div>
         );
         setStep('success');
@@ -256,14 +256,14 @@ function EkycStepsCard() {
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-purple-500/20 flex items-center justify-center shrink-0">
-          <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-primary-subtle)' }}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-primary-active)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
           </svg>
         </div>
         <div className="flex-1">
           <h3 className="text-white font-semibold text-sm mb-1">e-KYC Verification</h3>
-          <p className="text-purple-200/70 text-xs">Aadhaar-based identity verification</p>
+          <p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Aadhaar-based identity verification</p>
         </div>
       </div>
       <div className="space-y-2.5">
@@ -279,7 +279,7 @@ function EkycStepsCard() {
         ))}
       </div>
       <div className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2.5 border border-white/10">
-        <svg className="w-4 h-4 text-purple-300 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-primary-active)' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
         </svg>
         <p className="text-xs text-white/60 leading-relaxed">
@@ -344,7 +344,7 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
     return (
       <div className="space-y-3">
         <div className="text-center mb-2">
-          <p className="text-xs text-purple-200/70">Enter your 12-digit Aadhaar number</p>
+          <p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Enter your 12-digit Aadhaar number</p>
         </div>
         <input
           type="tel"
@@ -353,13 +353,14 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
           onChange={(e) => actions.setAadhaar(formatAadhaar(e.target.value))}
           onKeyDown={(e) => e.key === 'Enter' && actions.handleAadhaarSubmit()}
           placeholder="1234 5678 9012"
-          className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors"
+          className="w-full px-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-white/40 focus:outline-none focus:bg-white/15 transition-colors focus:border-[var(--color-primary)]"
           autoFocus
         />
         <button
           onClick={actions.handleAadhaarSubmit}
           disabled={state.aadhaar.replace(/\s/g, '').length !== 12}
-          className="w-full py-3.5 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+          style={{ background: 'var(--btn-primary-bg)' }}
         >
           Start e-KYC
         </button>
@@ -372,17 +373,17 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
     return (
       <div className="space-y-3">
         <div className="text-center mb-3">
-          <p className="text-xs text-purple-200/70 mb-2">OTP sent to {maskedMobile}</p>
+          <p className="text-xs mb-2" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>OTP sent to {maskedMobile}</p>
           {!state.otpExpired && (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-6 h-6 rounded-full border-2 border-purple-400 flex items-center justify-center">
-                <span className="text-xs font-semibold text-purple-300">{state.timerSeconds}</span>
+              <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center" style={{ borderColor: 'var(--color-primary)' }}>
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-primary-active)' }}>{state.timerSeconds}</span>
               </div>
-              <span className="text-xs text-purple-300">OTP expires in {state.timerSeconds}s</span>
+              <span className="text-xs" style={{ color: 'var(--color-primary-active)' }}>OTP expires in {state.timerSeconds}s</span>
             </div>
           )}
           {state.otpExpired && (
-            <p className="text-xs text-red-400">⚠️ OTP has expired</p>
+            <p className="text-xs" style={{ color: 'var(--color-error-text)' }}>⚠️ OTP has expired</p>
           )}
         </div>
 
@@ -416,7 +417,7 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
                 }
               }}
               data-index={index}
-              className="w-12 h-12 text-center bg-white/10 border border-white/20 rounded-xl text-white text-lg font-semibold focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-colors"
+              className="w-12 h-12 text-center bg-white/10 border border-white/20 rounded-xl text-white text-lg font-semibold focus:outline-none focus:bg-white/15 transition-colors focus:border-[var(--color-primary)]"
               autoFocus={index === 0}
             />
           ))}
@@ -426,20 +427,21 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
           <button
             onClick={actions.handleResendOtp}
             disabled={!state.otpExpired && state.timerSeconds > 0}
-            className="text-purple-300 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ color: 'var(--color-primary-active)' }}
           >
             Resend OTP
           </button>
-          <button className="text-purple-300 hover:text-white transition-colors">
+          <button className="hover:text-white transition-colors" style={{ color: 'var(--color-primary-active)' }}>
             Wrong Aadhaar?
           </button>
         </div>
 
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5 flex items-start gap-2">
-          <svg className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <div className="rounded-xl px-3 py-2.5 flex items-start gap-2" style={{ background: 'var(--color-warning-subtle)', borderColor: 'var(--color-warning-border)', borderWidth: 1, borderStyle: 'solid' }}>
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-warning-text)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
-          <p className="text-xs text-amber-200/90">
+          <p className="text-xs" style={{ color: 'var(--color-warning-text)', opacity: 0.9 }}>
             Demo: Enter <strong>123456</strong> to simulate successful verification
           </p>
         </div>
@@ -447,7 +449,8 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
         <button
           onClick={actions.handleOtpSubmit}
           disabled={state.otp.length !== 6 || state.otpExpired}
-          className="w-full py-3.5 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+          style={{ background: 'var(--btn-primary-bg)' }}
         >
           Verify OTP
         </button>
@@ -464,13 +467,13 @@ export function EkycInputWidget({ state, actions }: UseEkycFlowReturn) {
 function EkycFooterLinks() {
   return (
     <div className="flex items-center justify-between text-xs">
-      <button className="flex items-center gap-1.5 text-purple-300 hover:text-white transition-colors">
+      <button className="flex items-center gap-1.5 hover:text-white transition-colors" style={{ color: 'var(--color-primary-active)' }}>
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
         </svg>
         KYC Help
       </button>
-      <button className="flex items-center gap-1.5 text-purple-300 hover:text-white transition-colors">
+      <button className="flex items-center gap-1.5 hover:text-white transition-colors" style={{ color: 'var(--color-primary-active)' }}>
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
         </svg>

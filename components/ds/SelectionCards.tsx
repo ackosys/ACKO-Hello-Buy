@@ -26,15 +26,15 @@ export interface SelectionTheme {
 }
 
 const DEFAULT_THEME: SelectionTheme = {
-  surface: 'rgba(255,255,255,0.06)',
-  surfaceSelected: 'rgba(255,255,255,0.15)',
-  surface2: 'rgba(255,255,255,0.10)',
-  border: 'rgba(255,255,255,0.10)',
-  borderSelected: 'rgb(192,132,252)',
-  text: 'rgba(255,255,255,0.9)',
-  textMuted: 'rgba(255,255,255,0.4)',
-  badgeBg: 'rgb(236,72,153)',
-  badgeText: '#fff',
+  surface: 'var(--app-surface, var(--motor-surface, rgba(255,255,255,0.06)))',
+  surfaceSelected: 'var(--app-surface-hover, var(--motor-surface-hover, rgba(255,255,255,0.15)))',
+  surface2: 'var(--app-surface-2, var(--motor-surface-2, rgba(255,255,255,0.10)))',
+  border: 'var(--app-border, var(--motor-border, rgba(255,255,255,0.10)))',
+  borderSelected: 'var(--color-primary-active, rgb(192,132,252))',
+  text: 'var(--app-text, var(--motor-text, rgba(255,255,255,0.9)))',
+  textMuted: 'var(--app-text-muted, var(--motor-text-muted, rgba(255,255,255,0.4)))',
+  badgeBg: 'var(--color-primary-muted, rgb(236,72,153))',
+  badgeText: 'var(--color-on-primary, #fff)',
 };
 
 export interface SelectionCardsProps {
@@ -88,7 +88,7 @@ export default function SelectionCards({
               style={{
                 background: isSelected ? t.surfaceSelected : t.surface,
                 borderColor: isSelected ? t.borderSelected : t.border,
-                boxShadow: isSelected ? '0 10px 15px -3px rgba(88,28,135,0.2)' : undefined,
+                boxShadow: isSelected ? 'var(--shadow-btn-hover, 0 10px 15px -3px rgba(88,28,135,0.2))' : undefined,
               }}
             >
               {opt.badge && (
@@ -135,12 +135,11 @@ export default function SelectionCards({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.025 }}
                 onClick={() => handleSelect(opt.id)}
-                className={`relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95] ${
-                  isSelected ? 'ring-1 ring-purple-400/30' : ''
-                }`}
+                className="relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-200 active:scale-[0.95]"
                 style={{
                   background: isSelected ? t.surfaceSelected : t.surface,
                   borderColor: isSelected ? t.borderSelected : t.border,
+                  boxShadow: isSelected ? `0 0 0 1px ${t.borderSelected}` : undefined,
                 }}
               >
                 <div
@@ -156,8 +155,8 @@ export default function SelectionCards({
                   <span className="text-[9px] text-center leading-tight" style={{ color: t.textMuted }}>{opt.description}</span>
                 )}
                 {isSelected && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-primary, #A855F7)' }}>
+                    <svg className="w-2.5 h-2.5" style={{ color: 'var(--color-on-primary, #fff)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   </motion.div>
@@ -216,7 +215,7 @@ export default function SelectionCards({
             style={{
               background: isSelected ? t.surfaceSelected : t.surface,
               borderColor: isSelected ? t.borderSelected : t.border,
-              boxShadow: isSelected ? '0 4px 6px -1px rgba(88,28,135,0.2)' : undefined,
+              boxShadow: isSelected ? 'var(--shadow-btn-hover, 0 4px 6px -1px rgba(88,28,135,0.2))' : undefined,
             }}
           >
             <div className="flex items-center gap-3">
@@ -240,15 +239,15 @@ export default function SelectionCards({
               </div>
               {opt.badge && (
                 <span
-                  className="text-[11px] px-2 py-0.5 rounded-full border border-purple-400/30"
-                  style={{ background: 'rgba(147,51,234,0.5)', color: '#fff' }}
+                  className="text-[11px] px-2 py-0.5 rounded-full"
+                  style={{ background: t.badgeBg, color: t.badgeText, border: `1px solid ${t.borderSelected}` }}
                 >
                   {opt.badge}
                 </span>
               )}
               {isSelected && (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <svg className="w-5 h-5" style={{ color: 'var(--color-primary, #C084FC)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 </motion.div>

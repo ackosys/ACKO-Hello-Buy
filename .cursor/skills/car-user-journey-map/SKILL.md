@@ -20,10 +20,12 @@ This document maps the **complete end-to-end user journey** for car insurance on
 7. [Quote & Plan Selection](#7-quote--plan-selection)
 8. [Plan Combination Routing](#8-plan-combination-routing)
 9. [Add-on Personalisation](#9-add-on-personalisation)
-10. [Owner Details & Pre-Payment](#10-owner-details--pre-payment)
-11. [Payment & Post-Purchase](#11-payment--post-purchase)
-12. [PWILO — Pick Up Where I Left Off](#12-pwilo--pick-up-where-i-left-off)
-13. [Step Reference Table](#13-step-reference-table)
+10. [Confirm Details](#10-confirm-details)
+11. [Review & Pay Now](#11-review--pay-now)
+12. [Owner Details & Pre-Payment](#12-owner-details--pre-payment)
+13. [Payment & Post-Purchase](#13-payment--post-purchase)
+14. [PWILO — Pick Up Where I Left Off](#14-pwilo--pick-up-where-i-left-off)
+15. [Step Reference Table](#15-step-reference-table)
 
 ---
 
@@ -65,12 +67,13 @@ flowchart TB
 
     QUOTE_CALC[Quote Calculation] --> PLAN_SELECT[Plan Selection]
     PLAN_SELECT --> ADDONS[Add-on Personalisation]
-    ADDONS --> OWNER_DETAILS[Owner Details]
+    ADDONS --> CONFIRM[Confirm Details]
+    CONFIRM --> REVIEW[Review & Pay Now]
+    REVIEW --> OWNER_DETAILS[Owner Details]
     OWNER_DETAILS --> LOGIN_MANDATORY{Logged in?}
-    LOGIN_MANDATORY -->|Yes| REVIEW[Premium Review]
+    LOGIN_MANDATORY -->|Yes| PAYMENT[Payment]
     LOGIN_MANDATORY -->|No| MANDATORY_LOGIN[Mandatory Login]
-    MANDATORY_LOGIN --> REVIEW
-    REVIEW --> PAYMENT[Payment]
+    MANDATORY_LOGIN --> PAYMENT
     PAYMENT --> POST_PURCHASE[Post-Purchase]
     POST_PURCHASE --> END([Journey Complete])
 ```
@@ -555,7 +558,182 @@ flowchart TB
 
 ---
 
-## 10. Owner Details & Pre-Payment
+## 10. Confirm Details
+
+This section follows the add-on selection screen. Its purpose is to reconfirm key details before the user proceeds to the review and payment screen. It covers three steps in sequence: policy expiry date, inspection requirement, and personal details.
+
+```mermaid
+flowchart TB
+    ADDONS_DONE["addons.complete<br/>'Add-ons confirmed'"] --> EXPIRY_CHECK{"Policy expiry<br/>date known?"}
+
+    EXPIRY_CHECK -->|"Pre-filled<br/>(fetched or entered earlier)"| SHOW_EXPIRY["confirm.policy_expiry<br/>Show pre-filled date<br/>Allow user to edit"]
+    EXPIRY_CHECK -->|"Unknown<br/>(user said 'I don't know'<br/>+ not auto-fetched)"| ASK_EXPIRY["confirm.policy_expiry_ask<br/>'We need your previous policy's<br/>expiry date to ensure continued<br/>coverage without any gap.'<br/>Widget: date_input (mandatory)"]
+
+    SHOW_EXPIRY --> EXPIRY_CONFIRMED["Expiry date confirmed"]
+    ASK_EXPIRY --> EXPIRY_CONFIRMED
+
+    EXPIRY_CONFIRMED --> INSPECT_CHECK{"Policy expired<br/>how long ago?"}
+
+    INSPECT_CHECK -->|"Not expired OR<br/>expired ≤ 10 days"| NO_INSPECT["confirm.no_inspection<br/>'No inspection needed'<br/>Fetch & show policy start date:<br/>'Your new policy starts on <date>'"]
+    INSPECT_CHECK -->|"Expired 10–90 days<br/>AND plan is Comp/ZD/OD"| INSPECT["confirm.inspection_required<br/>'Quick vehicle inspection needed'<br/>'Pick a date — takes < 10 min'<br/>Widget: inspection_slot_picker"]
+
+    NO_INSPECT --> PERSONAL
+    INSPECT --> PERSONAL
+
+    PERSONAL["confirm.personal_details<br/>Confirm name, email, phone"]
+    PERSONAL --> NAME_CHECK{"Name pre-filled?"}
+    NAME_CHECK -->|"Yes"| SHOW_NAME["Show pre-filled name<br/>'If buying for someone else,<br/>you can change after purchase.'<br/>Editable"]
+    NAME_CHECK -->|"No"| ASK_NAME["'Full name of the person<br/>making the payment<br/>(needed for KYC)'"]
+
+    SHOW_NAME --> EMAIL_ASK
+    ASK_NAME --> EMAIL_ASK
+
+    EMAIL_ASK["confirm.email<br/>'We'll send your policy documents<br/>and claim updates to this email.'<br/>Widget: text_input (email)"]
+
+    EMAIL_ASK --> PHONE_CHECK{"User logged in?"}
+    PHONE_CHECK -->|"Yes"| REVIEW_READY["→ Review Screen"]
+    PHONE_CHECK -->|"No"| ASK_PHONE["confirm.phone<br/>'Your policy will be mapped to<br/>the ACKO account linked to this number.'<br/>Widget: text_input (tel)"]
+    ASK_PHONE --> REVIEW_READY
+```
+
+### Step 1 — Policy Expiry Date
+
+**Pre-filled cases:**
+- If the policy expiry date was auto-fetched during the pre-quote stage, or the user manually entered it during pre-quote — display it pre-filled and allow the user to edit if needed.
+
+**Unknown / not available:**
+- If the user selected _"I don't know"_ during pre-quote AND the date could not be auto-fetched — ask the user to enter the policy expiry date before proceeding.
+- Explain why it is needed: _"We need your previous policy's expiry date to start your new policy on time and ensure your vehicle has continued coverage without any gap."_
+- This is a mandatory field — the user cannot proceed without entering it.
+
+### Step 2 — Inspection Requirement
+
+Once the expiry date is confirmed or entered, apply the following logic:
+
+**Case A — Policy not yet expired OR expired ≤ 10 days ago:**
+- No vehicle inspection required.
+- Fetch the new policy start date via API and display it to the user.
+- Explain the start date clearly: _"Your new policy will start on `<date>`. This ensures there is no break in your coverage."_
+
+**Case B — Policy expired between 10 and 90 days ago AND plan is Comprehensive / ZD / OD:**
+- Vehicle inspection is required before the policy can be issued.
+- Inform the user in a reassuring, low-friction way:
+  - _"Since your previous policy expired a while ago, we need to do a quick vehicle inspection before issuing your policy."_
+  - _"It's a super easy process — just pick a date and time slot, and our crew member will come to your location. The whole inspection takes less than 10 minutes."_
+- Present a date and time slot selector for the user to schedule the inspection.
+- Tone: position inspection as a simple, convenient step — not a blocker.
+
+### Step 3 — Personal Details
+
+Ask the user to confirm the following:
+
+**Name**
+- Pre-fill with the name auto-fetched during the pre-quote stage.
+- Inform the user: _"If you're buying this policy for someone else or need to change the name, you'll have the option to do so after purchase. At this stage, we need the name of the person making the payment so we can process the KYC."_
+- User can edit the name if needed.
+
+**Email address**
+- Required field — always ask if not already available.
+- Explain why: _"We'll send your policy documents and claim updates to this email address."_
+
+**Phone number**
+- Required only if the user is not logged in.
+- Explain why: _"Your policy will be mapped to the ACKO account linked to this phone number. You'll also receive claim and policy updates here."_
+
+Once the user confirms all three fields → proceed to the **Review Screen**.
+
+---
+
+## 11. Review & Pay Now
+
+This section follows the Confirm Details section. The user reviews everything before paying. The primary CTA on this screen is **"Pay Now"**.
+
+```mermaid
+flowchart TB
+    REVIEW_START["review.start<br/>'Review your plan before paying'"]
+
+    REVIEW_START --> COUPON_CHECK{"Eligible coupons<br/>available?"}
+    COUPON_CHECK -->|"Yes"| SHOW_COUPONS["review.coupons<br/>Widget: coupon_selector<br/>Show eligible coupons as cards<br/>+ manual code input field<br/>One coupon at a time"]
+    COUPON_CHECK -->|"No"| SUMMARY
+
+    SHOW_COUPONS --> COUPON_ACTION{"User action"}
+    COUPON_ACTION -->|"Apply coupon"| RECALC["Recalculate premium<br/>Show updated total"]
+    COUPON_ACTION -->|"Type code"| VALIDATE{"Code valid?"}
+    COUPON_ACTION -->|"Skip"| SUMMARY
+
+    VALIDATE -->|"Yes"| RECALC
+    VALIDATE -->|"No"| ERROR["'This coupon code is invalid<br/>or has expired.'"]
+    ERROR --> SHOW_COUPONS
+    RECALC --> SUMMARY
+
+    SUMMARY["review.summary<br/>Widget: review_summary"]
+
+    subgraph DETAILS ["Review Details"]
+        direction TB
+        D1["Car & Personal Details<br/>Make, model, variant, year, fuel<br/>Name, email, phone"]
+        D2["Coverage Details<br/>Plan name + variant<br/>All selected add-ons<br/>IDV value<br/>NCB percentage"]
+        D3["Premium Breakup<br/>Base premium<br/>+ Add-on premiums (itemised)<br/>− NCB discount<br/>− Coupon discount<br/>+ GST<br/>━━━━━━━━━━━━<br/>TOTAL PAYABLE"]
+        D4["Policy Start / Inspection<br/>(see below)"]
+    end
+
+    SUMMARY --> DETAILS
+
+    DETAILS --> START_NOTE{"Inspection<br/>required?"}
+    START_NOTE -->|"No"| SHOW_START["'Your policy starts on <date>.<br/>Vehicle covered from this date.'"]
+    START_NOTE -->|"Yes"| SHOW_INSPECT["'Policy issued after inspection<br/>on <scheduled date/time>.<br/>We'll send a reminder.'"]
+
+    SHOW_START --> PAY_CTA
+    SHOW_INSPECT --> PAY_CTA
+
+    PAY_CTA["💳 PAY NOW<br/>Primary CTA — always visible<br/>at bottom of screen"]
+    PAY_CTA --> GATEWAY(["→ Payment Gateway"])
+```
+
+### Step 1 — Coupon Application
+
+- If the user is eligible for one or more coupons, display them here before the premium summary.
+- Show each eligible coupon as a selectable card/chip with the discount value and any applicable condition.
+- Also provide a text input field so the user can manually type in a coupon code.
+- Only one coupon can be applied at a time.
+- Once a coupon is applied, recalculate and display the updated premium immediately.
+- If a typed code is invalid, show an inline error: _"This coupon code is invalid or has expired."_
+
+### Step 2 — Review Details
+
+Display a summary of everything the user has selected, grouped into the following sections:
+
+**Car & Personal Details**
+- Car make, model, variant, registration year, fuel type
+- Policyholder name, email, phone number
+
+**Coverage Details**
+| Detail | Value |
+|--------|-------|
+| Plan | Selected plan name and variant (e.g., ZD Comprehensive · Safe Driver) |
+| Add-ons | List of all selected add-ons |
+| IDV | Insured Declared Value of the vehicle |
+| NCB | No Claim Bonus percentage applied |
+
+**Premium Breakup**
+- Base premium
+- Add-on premiums (itemised per add-on)
+- NCB discount applied (shown as a deduction)
+- Coupon discount applied (shown as a deduction, if applicable)
+- GST
+- **Total payable amount** — prominently displayed
+
+**Policy Start Date / Inspection Note**
+- If no inspection is required: display the policy start date with a brief note — _"Your policy starts on `<date>`. Your vehicle will be covered from this date."_
+- If inspection is required: display a note — _"Your policy will be issued after your vehicle inspection on `<scheduled date and time>`. We'll send you a reminder before the slot."_
+
+### CTA
+
+- **"Pay Now"** — primary action button, always visible at the bottom of the screen.
+- Tapping Pay Now takes the user to the payment gateway.
+
+---
+
+## 12. Owner Details & Pre-Payment
 
 After add-ons, the system collects owner information needed for the policy.
 
@@ -597,7 +775,7 @@ flowchart TB
 
 ---
 
-## 11. Payment & Post-Purchase
+## 13. Payment & Post-Purchase
 
 ```mermaid
 flowchart TB
@@ -622,7 +800,7 @@ flowchart TB
 
 ---
 
-## 12. PWILO — Pick Up Where I Left Off
+## 14. PWILO — Pick Up Where I Left Off
 
 The journey state is automatically saved at key milestones. If the user leaves and returns, they can resume.
 
@@ -679,7 +857,7 @@ flowchart LR
 
 ---
 
-## 13. Step Reference Table
+## 15. Step Reference Table
 
 Complete list of all step IDs in the car journey, grouped by module.
 
@@ -751,7 +929,18 @@ Complete list of all step IDs in the car journey, grouped by module.
 | | `owner_details.gst_input` | `text_input` | Enter GST number |
 | | `owner_details.loan_check` | `selection_cards` | Car loan check |
 | | `owner_details.loan_provider` | `text_input` | Loan provider name |
-| **review** | `review.premium_breakdown` | `premium_breakdown` | Full premium breakdown |
+| **confirm** | `confirm.policy_expiry` | `date_input` | Pre-filled expiry date (editable) |
+| | `confirm.policy_expiry_ask` | `date_input` | Ask expiry date (if unknown) |
+| | `confirm.no_inspection` | `none` | No inspection needed — show policy start date |
+| | `confirm.inspection_required` | `inspection_slot_picker` | Schedule vehicle inspection |
+| | `confirm.personal_details` | `none` | Personal details intro |
+| | `confirm.name` | `text_input` | Confirm/edit owner name |
+| | `confirm.email` | `text_input` | Email address |
+| | `confirm.phone` | `text_input` | Phone (if not logged in) |
+| **review** | `review.coupons` | `coupon_selector` | Apply eligible coupons |
+| | `review.summary` | `review_summary` | Full review with premium breakup |
+| | `review.pay_now` | `pay_now_cta` | Pay Now primary CTA |
+| | `review.premium_breakdown` | `premium_breakdown` | Full premium breakdown |
 | **payment** | `payment.process` | `payment_gateway` | Payment processing |
 | | `payment.success` | `motor_celebration` | Payment success celebration |
 | **post_purchase** | `post_purchase.status_intro` | `none` | Policy preparation intro |

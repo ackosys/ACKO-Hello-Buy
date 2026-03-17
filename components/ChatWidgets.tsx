@@ -7,11 +7,45 @@ import { formatCurrency, getPlanDetails, NEARBY_LABS, FEATURE_EXPLANATIONS } fro
 import { useJourneyStore } from '../lib/store';
 import { useT } from '../lib/translations';
 import { assetPath } from '../lib/assetPath';
-import BaseSelectionCards from './ds/SelectionCards';
-import BaseMultiSelect from './ds/MultiSelect';
-import BaseNumberInput from './ds/NumberInput';
+import BaseSelectionCards, { type SelectionTheme } from './ds/SelectionCards';
+import BaseMultiSelect, { type MultiSelectTheme } from './ds/MultiSelect';
+import BaseNumberInput, { type InputTheme } from './ds/NumberInput';
 import BasePincodeInput from './ds/PincodeInput';
 import BaseTextInput from './ds/TextInput';
+
+const APP_SELECTION_THEME: SelectionTheme = {
+  surface: 'var(--app-surface, rgba(255,255,255,0.06))',
+  surfaceSelected: 'var(--app-surface-hover, rgba(255,255,255,0.15))',
+  surface2: 'var(--app-surface-2, rgba(255,255,255,0.10))',
+  border: 'var(--app-border, rgba(255,255,255,0.10))',
+  borderSelected: 'var(--color-primary-active)',
+  text: 'var(--app-text, rgba(255,255,255,0.9))',
+  textMuted: 'var(--app-text-muted, rgba(255,255,255,0.4))',
+};
+
+const APP_MULTI_THEME: MultiSelectTheme = {
+  surface: 'var(--app-surface, rgba(255,255,255,0.06))',
+  surfaceSelected: 'var(--app-surface-hover, rgba(255,255,255,0.15))',
+  border: 'var(--app-border, rgba(255,255,255,0.10))',
+  borderSelected: 'var(--color-primary-active)',
+  text: 'var(--app-text, rgba(255,255,255,0.9))',
+  checkBg: 'var(--color-primary)',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+};
+
+const APP_INPUT_THEME: InputTheme = {
+  inputBg: 'var(--app-input-bg, rgba(255,255,255,0.10))',
+  inputBorder: 'var(--app-input-border, rgba(255,255,255,0.20))',
+  inputBorderFocus: 'var(--color-primary)',
+  inputText: 'var(--app-input-text)',
+  inputPlaceholder: 'var(--app-input-placeholder, rgba(255,255,255,0.30))',
+  errorColor: 'var(--color-error-text)',
+  subTextColor: 'var(--app-text-subtle, rgba(255,255,255,0.40))',
+  buttonBg: 'var(--btn-primary-bg)',
+  buttonText: 'var(--btn-primary-text)',
+  buttonShadow: 'var(--btn-primary-shadow)',
+};
 
 /* ═══════════════════════════════════════════════════════
    SVG Icon System — replaces emojis with clean icons
@@ -51,11 +85,10 @@ const ICON_PATHS: Record<string, string> = {
 function OptionIcon({ icon, className = 'w-6 h-6' }: { icon: string; className?: string }) {
   const path = ICON_PATHS[icon];
   if (!path) {
-    // Fallback: if it's an emoji string (single char or short), render as text
     return <span className="text-2xl">{icon}</span>;
   }
   return (
-    <svg className={`${className} text-purple-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+    <svg className={className} style={{ color: 'var(--color-text-brand)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d={path} />
     </svg>
   );
@@ -89,103 +122,25 @@ function getDiseaseIcon(optionId: string): JSX.Element | null {
    Selection Cards — delegates to DS base component
    ═══════════════════════════════════════════════════════ */
 
+function healthRenderIcon(icon: string, className?: string) {
+  const diseaseIcon = getDiseaseIcon(icon);
+  if (diseaseIcon) return <div style={{ color: 'var(--color-primary-active)' }}>{diseaseIcon}</div>;
+  return <OptionIcon icon={icon} className={className || 'w-6 h-6'} />;
+}
+
 export function SelectionCards({ options, onSelect }: { options: Option[]; onSelect: (id: string) => void }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const useGrid = options.length <= 4 && options.every(o => o.icon);
+  const mappedOptions = options.map(o => ({
+    ...o,
+    icon: o.icon || o.id,
+  }));
 
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    setTimeout(() => onSelect(id), 250);
-  };
-
-  if (useGrid) {
-    return (
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        {options.map((opt, i) => {
-          const diseaseIcon = getDiseaseIcon(opt.id);
-          return (
-            <motion.button
-              key={opt.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              onClick={() => handleSelect(opt.id)}
-              className={`
-                relative flex flex-col items-center text-center p-5 rounded-2xl border transition-all duration-200 active:scale-[0.96] min-h-[120px] justify-center
-                ${selected === opt.id
-                  ? 'border-purple-400 bg-white/15 shadow-lg shadow-purple-900/20'
-                  : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-                }
-              `}
-            >
-              {opt.badge && (
-                <span className="absolute -top-2 -right-2 text-label-sm bg-pink-500 text-white px-2.5 py-0.5 rounded-full font-semibold shadow-sm">
-                  {opt.badge}
-                </span>
-              )}
-              <div className="mb-2 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                {diseaseIcon ? <div className="text-purple-300">{diseaseIcon}</div> : <OptionIcon icon={opt.icon!} className="w-6 h-6 !text-purple-300" />}
-              </div>
-              <span className={`text-label-md font-medium ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
-              {opt.description && (
-                <p className="text-caption text-white/40 mt-1">{opt.description}</p>
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // List layout for more options
   return (
-    <div className="grid grid-cols-1 gap-2.5 max-w-md">
-      {options.map((opt, i) => {
-        const diseaseIcon = getDiseaseIcon(opt.id);
-        return (
-          <motion.button
-            key={opt.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            onClick={() => handleSelect(opt.id)}
-            disabled={opt.disabled}
-            className={`
-              text-left px-4 py-3.5 rounded-xl border transition-all duration-200 active:scale-[0.97]
-              ${selected === opt.id
-                ? 'border-purple-400 bg-white/15 shadow-md shadow-purple-900/20'
-                : 'border-white/10 bg-white/6 hover:bg-white/12 hover:border-white/20'
-              }
-              ${opt.disabled ? 'opacity-40' : ''}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              {diseaseIcon ? (
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-purple-300">{diseaseIcon}</div>
-              ) : opt.icon ? (
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <OptionIcon icon={opt.icon} className="w-4.5 h-4.5 !text-purple-300" />
-                </div>
-              ) : null}
-              <div className="flex-1 min-w-0">
-                <span className={`text-label-md font-medium block ${selected === opt.id ? 'text-white' : 'text-white/90'}`}>{opt.label}</span>
-                {opt.description && <p className="text-caption text-white/40 mt-0.5">{opt.description}</p>}
-              </div>
-              {opt.badge && (
-                <span className="text-label-sm bg-purple-500/50 text-white px-2 py-0.5 rounded-full border border-purple-400/30">{opt.badge}</span>
-              )}
-              {selected === opt.id && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex-shrink-0">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-              )}
-            </div>
-          </motion.button>
-        );
-      })}
-    </div>
+    <BaseSelectionCards
+      options={mappedOptions}
+      onSelect={onSelect}
+      renderIcon={healthRenderIcon}
+      theme={APP_SELECTION_THEME}
+    />
   );
 }
 
@@ -273,6 +228,7 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
       selected={selected.map(s => s === 'children' && isChildrenSelected ? 'children' : s)}
       onToggle={toggle}
       confirmDisabled={showChildrenPicker}
+      theme={APP_MULTI_THEME}
     >
       {childrenPicker}
     </BaseMultiSelect>
@@ -286,7 +242,7 @@ export function MultiSelect({ options, onSelect }: { options: Option[]; onSelect
 export function NumberInput({ placeholder, subText, inputType = 'number', min, max, onSubmit }: {
   placeholder: string; subText?: string; inputType?: 'text' | 'number' | 'tel'; min?: number; max?: number; onSubmit: (value: string) => void;
 }) {
-  return <BaseNumberInput placeholder={placeholder} subText={subText} inputType={inputType} min={min} max={max} onSubmit={onSubmit} />;
+  return <BaseNumberInput placeholder={placeholder} subText={subText} inputType={inputType} min={min} max={max} onSubmit={onSubmit} theme={APP_INPUT_THEME} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -304,7 +260,7 @@ export function TextInput({
   maxLength?: number;
   onSubmit: (val: string) => void;
 }) {
-  return <BaseTextInput placeholder={placeholder} inputType={inputType as 'text' | 'number' | 'tel'} maxLength={maxLength} onSubmit={onSubmit} />;
+  return <BaseTextInput placeholder={placeholder} inputType={inputType as 'text' | 'number' | 'tel'} maxLength={maxLength} onSubmit={onSubmit} theme={APP_INPUT_THEME} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -312,7 +268,7 @@ export function TextInput({
    ═══════════════════════════════════════════════════════ */
 
 export function PincodeInput({ placeholder, onSubmit }: { placeholder: string; onSubmit: (value: string) => void }) {
-  return <BasePincodeInput placeholder={placeholder} onSubmit={onSubmit} />;
+  return <BasePincodeInput placeholder={placeholder} onSubmit={onSubmit} theme={APP_INPUT_THEME} />;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -371,10 +327,9 @@ export function PdfUpload({ onUpload }: { onUpload: () => void }) {
       {phase === 'idle' && (
         <div
           className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-            dragging
-              ? 'border-purple-500 bg-purple-50'
-              : 'border-onyx-300 bg-white hover:border-purple-400 hover:bg-purple-50/50'
+            dragging ? '' : 'border-onyx-300 bg-white hover:opacity-90'
           }`}
+          style={dragging ? { borderColor: 'var(--color-primary)', background: 'var(--color-primary-subtle)' } : undefined}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => {
@@ -391,7 +346,7 @@ export function PdfUpload({ onUpload }: { onUpload: () => void }) {
           }}
         >
           <div className="flex flex-col items-center gap-3">
-            <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-primary-subtle)' }}>
               <OptionIcon icon="upload" className="w-7 h-7" />
             </div>
             <div>
@@ -413,15 +368,16 @@ export function PdfUpload({ onUpload }: { onUpload: () => void }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-purple-50 border border-purple-200 rounded-2xl p-6"
+          className="border rounded-2xl p-6"
+          style={{ background: 'var(--color-primary-subtle)', borderColor: 'var(--color-primary-ring)' }}
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-purple-200 rounded-xl flex items-center justify-center flex-shrink-0">
-              <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--color-primary-ring)' }}>
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary-muted)' }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-label-md text-purple-800 font-semibold">{t.widgets.analysingPolicy}</p>
-              <p className="text-body-sm text-purple-600 truncate">{fileName}</p>
+              <p className="text-label-md font-semibold truncate" style={{ color: 'var(--color-primary-muted)' }}>{t.widgets.analysingPolicy}</p>
+              <p className="text-body-sm truncate" style={{ color: 'var(--color-text-brand)' }}>{fileName}</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -431,14 +387,15 @@ export function PdfUpload({ onUpload }: { onUpload: () => void }) {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.8 }}
-                className="flex items-center gap-2 text-body-sm text-purple-700"
+                className="flex items-center gap-2 text-body-sm"
+                style={{ color: 'var(--color-primary-muted)' }}
               >
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: i * 0.8 + 0.4 }}
                 >
-                  <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-primary)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 </motion.div>
@@ -453,16 +410,17 @@ export function PdfUpload({ onUpload }: { onUpload: () => void }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center gap-3"
+          className="border rounded-2xl p-5 flex items-center gap-3"
+          style={{ background: 'var(--color-success-subtle)', borderColor: 'var(--color-success-border)' }}
         >
-          <div className="w-10 h-10 bg-green-200 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--color-success-border)' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-success-text)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-label-md text-green-800 font-semibold">{t.widgets.policyAnalysed}</p>
-            <p className="text-body-sm text-green-600 truncate">{fileName}</p>
+            <p className="text-label-md font-semibold truncate" style={{ color: 'var(--color-success-text)' }}>{t.widgets.policyAnalysed}</p>
+            <p className="text-body-sm truncate" style={{ color: 'var(--color-success-text)' }}>{fileName}</p>
           </div>
         </motion.div>
       )}
@@ -587,7 +545,8 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 rounded-2xl p-5"
+        className="border rounded-2xl p-5"
+        style={{ background: 'linear-gradient(to bottom right, var(--color-error-subtle), var(--color-warning-subtle))', borderColor: 'var(--color-error-border)' }}
       >
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 flex-shrink-0">
@@ -598,14 +557,14 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
                 fill="none" stroke="#ef4444" strokeWidth="3" strokeDasharray={`${(gapCount / GAP_ANALYSIS_ITEMS.length) * 100}, 100`} />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-heading-sm text-red-700 font-bold">{gapCount}</span>
+              <span className="text-heading-sm font-bold" style={{ color: 'var(--color-error-text)' }}>{gapCount}</span>
             </div>
           </div>
           <div>
-            <p className="text-label-lg text-red-800 font-bold">
+            <p className="text-label-lg font-bold" style={{ color: 'var(--color-error-text)' }}>
               {t.widgets.coverageGapsFound(gapCount)}
             </p>
-            <p className="text-body-sm text-red-600 mt-0.5">
+            <p className="text-body-sm mt-0.5" style={{ color: 'var(--color-error-text)' }}>
               {t.widgets.gapCostWarning}
             </p>
           </div>
@@ -623,7 +582,7 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
         <div className="grid grid-cols-[1fr_1fr_1fr] bg-onyx-100 border-b border-onyx-200 px-4 py-3">
           <p className="text-label-sm text-onyx-500 font-medium">{t.widgets.feature}</p>
           <p className="text-label-sm text-onyx-500 font-medium text-center">{t.widgets.yourPlan}</p>
-          <p className="text-label-sm text-purple-600 font-semibold text-center">{t.widgets.acko}</p>
+          <p className="text-label-sm font-semibold text-center" style={{ color: 'var(--color-text-brand)' }}>{t.widgets.acko}</p>
         </div>
 
         {/* Rows */}
@@ -634,17 +593,15 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
               className="w-full grid grid-cols-[1fr_1fr_1fr] px-4 py-3.5 border-b border-onyx-100 hover:bg-onyx-50 transition-colors items-center text-left"
             >
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                  item.status === 'gap' ? 'bg-red-500' : item.status === 'warning' ? 'bg-amber-500' : 'bg-green-500'
-                }`} />
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                  background: item.status === 'gap' ? 'var(--color-error)' : item.status === 'warning' ? 'var(--color-warning)' : 'var(--color-success)'
+                }} />
                 <span className="text-label-sm text-onyx-800 font-medium">{item.label}</span>
               </div>
-              <p className={`text-label-sm text-center ${
-                item.status === 'gap' ? 'text-red-600' : item.status === 'warning' ? 'text-amber-600' : 'text-onyx-600'
-              }`}>
+              <p className={`text-label-sm text-center ${item.status === 'ok' ? 'text-onyx-600' : ''}`} style={item.status === 'ok' ? undefined : { color: item.status === 'gap' ? 'var(--color-error-text)' : 'var(--color-warning-text)' }}>
                 {item.yourPlan}
               </p>
-              <p className="text-label-sm text-purple-700 font-medium text-center">{item.acko}</p>
+              <p className="text-label-sm font-medium text-center" style={{ color: 'var(--color-primary-muted)' }}>{item.acko}</p>
             </button>
 
             <AnimatePresence>
@@ -656,11 +613,11 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className={`px-4 py-3 text-body-sm border-b ${
-                    item.status === 'gap' ? 'bg-red-50 text-red-700 border-red-100' :
-                    item.status === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                    'bg-green-50 text-green-700 border-green-100'
-                  }`}>
+                  <div className="px-4 py-3 text-body-sm border-b" style={{
+                    background: item.status === 'gap' ? 'var(--color-error-subtle)' : item.status === 'warning' ? 'var(--color-warning-subtle)' : 'var(--color-success-subtle)',
+                    color: item.status === 'gap' ? 'var(--color-error-text)' : item.status === 'warning' ? 'var(--color-warning-text)' : 'var(--color-success-text)',
+                    borderColor: item.status === 'gap' ? 'var(--color-error-border)' : item.status === 'warning' ? 'var(--color-warning-border)' : 'var(--color-success-border)'
+                  }}>
                     {item.explanation}
                   </div>
                 </motion.div>
@@ -675,29 +632,30 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45 }}
-        className="bg-purple-50 border border-purple-200 rounded-2xl p-5"
+        className="border rounded-2xl p-5"
+        style={{ background: 'var(--color-primary-subtle)', borderColor: 'var(--color-primary-ring)' }}
       >
-        <p className="text-label-md text-purple-800 font-semibold mb-2">{t.widgets.realWorldImpact}</p>
+        <p className="text-label-md font-semibold mb-2" style={{ color: 'var(--color-primary-muted)' }}>{t.widgets.realWorldImpact}</p>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--color-primary-ring)' }}>
               <OptionIcon icon="hospital" className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-label-sm text-purple-800 font-medium">{t.widgets.cardiacSurgery}</p>
-              <p className="text-body-sm text-purple-600">{t.widgets.totalBill}</p>
+              <p className="text-label-sm font-medium" style={{ color: 'var(--color-primary-muted)' }}>{t.widgets.cardiacSurgery}</p>
+              <p className="text-body-sm" style={{ color: 'var(--color-text-brand)' }}>{t.widgets.totalBill}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl p-3 border border-red-200">
+            <div className="bg-white rounded-xl p-3 border" style={{ borderColor: 'var(--color-error-border)' }}>
               <p className="text-caption text-onyx-500">{t.widgets.withCurrentPlan}</p>
-              <p className="text-heading-sm text-red-600 font-bold">₹4-7L</p>
-              <p className="text-caption text-red-500">{t.widgets.outOfPocket}</p>
+              <p className="text-heading-sm font-bold" style={{ color: 'var(--color-error-text)' }}>₹4-7L</p>
+              <p className="text-caption" style={{ color: 'var(--color-error-text)' }}>{t.widgets.outOfPocket}</p>
             </div>
-            <div className="bg-white rounded-xl p-3 border border-green-200">
+            <div className="bg-white rounded-xl p-3 border" style={{ borderColor: 'var(--color-success-border)' }}>
               <p className="text-caption text-onyx-500">{t.widgets.withAckoPlatinum}</p>
-              <p className="text-heading-sm text-green-600 font-bold">₹0</p>
-              <p className="text-caption text-green-500">{t.widgets.fullyCovered}</p>
+              <p className="text-heading-sm font-bold" style={{ color: 'var(--color-success-text)' }}>₹0</p>
+              <p className="text-caption" style={{ color: 'var(--color-success-text)' }}>{t.widgets.fullyCovered}</p>
             </div>
           </div>
         </div>
@@ -709,7 +667,8 @@ export function GapResultsWidget({ onContinue }: { onContinue: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
         onClick={onContinue}
-        className="w-full py-3.5 bg-purple-600 text-white rounded-xl text-label-lg font-semibold hover:bg-purple-700 transition-all active:scale-[0.97]"
+        className="w-full py-3.5 rounded-xl text-label-lg font-semibold hover:opacity-90 transition-all active:scale-[0.97]"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}
       >
         {t.widgets.findRightPlan}
       </motion.button>
@@ -776,9 +735,9 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
     <div className="w-full space-y-4">
       <div className="bg-white border border-onyx-200 rounded-2xl overflow-hidden shadow-sm">
         {/* Header */}
-        <div className="bg-purple-50 px-5 py-3 border-b border-purple-100">
-          <p className="text-label-md text-purple-800 font-semibold">{t.widgets.detailsFromPolicy}</p>
-          <p className="text-caption text-purple-600">{t.widgets.tapToEdit}</p>
+        <div className="px-5 py-3 border-b" style={{ background: 'var(--color-primary-subtle)', borderColor: 'var(--color-info-border)' }}>
+          <p className="text-label-md font-semibold" style={{ color: 'var(--color-primary-muted)' }}>{t.widgets.detailsFromPolicy}</p>
+          <p className="text-caption" style={{ color: 'var(--color-text-brand)' }}>{t.widgets.tapToEdit}</p>
         </div>
 
         {/* Name */}
@@ -797,11 +756,10 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
                 <button
                   key={opt.id}
                   onClick={() => toggleFamily(opt.id)}
-                  className={`px-3.5 py-2 rounded-xl text-label-sm font-medium transition-all border ${
-                    isSelected
-                      ? 'bg-purple-600 text-white border-purple-600'
-                      : 'bg-white text-onyx-600 border-onyx-300 hover:border-purple-300'
+                  className={`px-3.5 py-2 rounded-xl text-label-sm font-medium transition-all border hover:opacity-90 ${
+                    isSelected ? '' : 'bg-white text-onyx-600 border-onyx-300'
                   }`}
+                  style={isSelected ? { background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', borderColor: 'var(--color-primary-muted)' } : undefined}
                 >
                   {t.widgets[opt.labelKey]}
                 </button>
@@ -818,7 +776,7 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
               type="number"
               value={selfAge}
               onChange={e => setSelfAge(e.target.value)}
-              className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:border-purple-500 focus:outline-none transition-colors"
+              className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
             />
           </div>
           {hasOthers && (
@@ -828,7 +786,7 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
                 type="number"
                 value={elderAge}
                 onChange={e => setElderAge(e.target.value)}
-                className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:border-purple-500 focus:outline-none transition-colors"
+                className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
               />
             </div>
           )}
@@ -841,7 +799,7 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
             type="tel"
             value={pin}
             onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:border-purple-500 focus:outline-none transition-colors"
+            className="w-full px-3 py-2.5 border border-onyx-300 rounded-xl text-label-md text-onyx-800 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
             placeholder={t.widgets.enterPincode}
           />
         </div>
@@ -850,7 +808,8 @@ export function ConfirmDetailsWidget({ onConfirm }: { onConfirm: () => void }) {
       <button
         onClick={handleConfirm}
         disabled={selectedFamily.length === 0 || pin.length !== 6}
-        className="w-full py-3.5 bg-purple-600 text-white rounded-xl text-label-lg font-semibold hover:bg-purple-700 disabled:opacity-40 transition-all active:scale-[0.97]"
+        className="w-full py-3.5 rounded-xl text-label-lg font-semibold hover:opacity-90 disabled:opacity-40 transition-all active:scale-[0.97]"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}
       >
         {t.widgets.confirmAndContinue}
       </button>
@@ -901,16 +860,16 @@ export function HospitalList({ onContinue }: { onContinue: () => void }) {
                 <p className="text-body-sm font-medium text-white/90">{h.name}</p>
                 <p className="text-caption text-white/40">{h.type}</p>
               </div>
-              <span className="text-caption text-purple-300 flex-shrink-0">{h.distance}</span>
+              <span className="text-caption flex-shrink-0" style={{ color: 'var(--color-primary-active)' }}>{h.distance}</span>
             </motion.div>
           ))}
         </div>
-        <button onClick={() => setShowOverlay(true)} className="w-full py-2.5 text-label-md text-purple-300 font-medium hover:bg-white/5 transition-colors border-t border-white/5">
+        <button onClick={() => setShowOverlay(true)} className="w-full py-2.5 text-label-md font-medium hover:bg-white/5 transition-colors border-t border-white/5" style={{ color: 'var(--color-primary-active)' }}>
           View full list ({nearbyHospitals || HOSPITALS_NEARBY.length}+ hospitals) →
         </button>
       </div>
 
-      <button onClick={onContinue} className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
+      <button onClick={onContinue} className="mt-3 w-full py-3 rounded-xl text-label-lg font-semibold hover:opacity-90 transition-colors active:scale-[0.97]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>
         {t.common.continue}
       </button>
 
@@ -952,12 +911,12 @@ export function HospitalList({ onContinue }: { onContinue: () => void }) {
                       <p className="text-sm font-medium text-white/90">{h.name}</p>
                       <p className="text-xs text-white/40">{h.type}</p>
                     </div>
-                    <span className="text-xs text-purple-300 flex-shrink-0">{h.distance}</span>
+                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--color-primary-active)' }}>{h.distance}</span>
                   </div>
                 ))}
               </div>
               <div className="p-4 border-t border-white/10 flex-shrink-0">
-                <button onClick={() => setShowOverlay(false)} className="w-full py-3 bg-purple-700 text-white rounded-xl text-sm font-semibold hover:bg-purple-600 transition-colors">
+                <button onClick={() => setShowOverlay(false)} className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-colors" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>
                   Got it
                 </button>
               </div>
@@ -993,9 +952,10 @@ export function CalculationTheater({ onComplete }: { onComplete: () => void }) {
       {/* Animated orb */}
       <div className="flex justify-center mb-5">
         <motion.div
-          animate={{ scale: [1, 1.15, 1], boxShadow: ['0 0 20px rgba(139,92,246,0.3)', '0 0 40px rgba(139,92,246,0.6)', '0 0 20px rgba(139,92,246,0.3)'] }}
+          animate={{ scale: [1, 1.15, 1], boxShadow: ['0 0 20px color-mix(in srgb, var(--color-primary) 30%, transparent)', '0 0 40px color-mix(in srgb, var(--color-primary) 60%, transparent)', '0 0 20px color-mix(in srgb, var(--color-primary) 30%, transparent)'] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center"
+          className="w-16 h-16 rounded-full flex items-center justify-center"
+          style={{ background: 'linear-gradient(to bottom right, var(--color-primary), var(--btn-primary-bg))' }}
         >
           <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -1006,9 +966,9 @@ export function CalculationTheater({ onComplete }: { onComplete: () => void }) {
         {phases.map((p, i) => (
           <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: phase >= i ? 1 : 0.3, x: 0 }} transition={{ delay: i * 0.1 }}
             className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-              phase > i ? 'bg-green-500' : phase === i ? 'bg-purple-500' : 'bg-white/10'
-            }`}>
+            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{
+              background: phase > i ? 'var(--color-success)' : phase === i ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)'
+            }}>
               {phase > i ? (
                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
               ) : phase === i ? <div className="w-2 h-2 rounded-full bg-white animate-pulse" /> : null}
@@ -1035,7 +995,7 @@ function FeatureAccordionItem({ feature }: { feature: string }) {
         onClick={() => explanation && setOpen(!open)}
         className={`w-full flex items-start gap-2 py-2 text-left ${explanation ? 'cursor-pointer' : 'cursor-default'}`}
       >
-        <svg className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+        <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
         <span className="flex-1 text-body-sm text-onyx-700">{feature}</span>
         {explanation && (
           <svg className={`w-4 h-4 text-onyx-400 mt-0.5 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1092,9 +1052,9 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
               onClick={() => { setActiveTier(tier); setExpanded(false); }}
               className="flex-1 py-2.5 px-2 rounded-lg text-[13px] font-semibold transition-all duration-200"
               style={isActive ? {
-                background: 'var(--app-accent, #7C3AED)',
-                color: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(124,58,237,0.35)',
+                background: 'var(--app-accent, var(--btn-primary-bg))',
+                color: 'var(--btn-primary-text)',
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--color-primary) 35%, transparent)',
               } : {
                 background: 'transparent',
                 color: 'var(--app-tab-inactive, rgba(255,255,255,0.45))',
@@ -1114,8 +1074,8 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'var(--app-plan-card-bg, rgba(255,255,255,0.08))',
-          border: '1px solid var(--app-plan-card-border, rgba(168,85,247,0.35))',
-          boxShadow: 'var(--app-plan-card-shadow, 0 4px 24px rgba(168,85,247,0.12))',
+          border: '1px solid var(--app-plan-card-border, color-mix(in srgb, var(--color-primary) 35%, transparent))',
+          boxShadow: 'var(--app-plan-card-shadow, 0 4px 24px color-mix(in srgb, var(--color-primary) 12%, transparent))',
         }}
       >
         {/* Header */}
@@ -1129,9 +1089,9 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
               <span
                 className="text-[10px] px-2 py-0.5 rounded-full border whitespace-nowrap"
                 style={{
-                  background: 'var(--app-badge-bg, rgba(124,58,237,0.25))',
+                  background: 'var(--app-badge-bg, color-mix(in srgb, var(--color-primary) 25%, transparent))',
                   color: 'var(--app-badge-text, #C4B5FD)',
-                  borderColor: 'var(--app-badge-border, rgba(168,85,247,0.35))',
+                  borderColor: 'var(--app-badge-border, color-mix(in srgb, var(--color-primary) 35%, transparent))',
                 }}
               >
                 {plan.badge}
@@ -1205,7 +1165,7 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
       <button
         onClick={handleSelect}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--app-accent, var(--btn-primary-bg))', color: 'var(--btn-primary-text)' }}
       >
         {t.widgets.continueWith(plan.name)}
       </button>
@@ -1220,7 +1180,7 @@ export function PlanSwitcher({ onSelect }: { onSelect: (tier: string) => void })
 const USP_ITEMS = [
   {
     icon: (
-      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-success)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
       </svg>
     ),
@@ -1229,7 +1189,7 @@ const USP_ITEMS = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-text-brand)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21" />
       </svg>
     ),
@@ -1238,7 +1198,7 @@ const USP_ITEMS = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--btn-link-text)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
       </svg>
     ),
@@ -1247,7 +1207,7 @@ const USP_ITEMS = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-warning-text)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
@@ -1256,7 +1216,7 @@ const USP_ITEMS = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-info-text)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.746 3.746 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
       </svg>
     ),
@@ -1270,12 +1230,12 @@ export function UspCards({ onContinue }: { onContinue: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
       {/* Brand ambassador banner — clickable video (feedback #12) */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 cursor-pointer group ring-2 ring-white/10 hover:ring-purple-400/50 transition-all active:scale-[0.98]">
+      <div className="relative rounded-2xl overflow-hidden mb-4 cursor-pointer group ring-2 ring-white/10 hover:opacity-90 transition-all active:scale-[0.98]">
         <img src={assetPath('/brand-ambassador.png')} alt="Watch: How ACKO works" className="w-full h-36 object-cover object-top group-hover:scale-105 transition-transform duration-300" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent group-hover:from-black/60 transition-colors" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-            <svg className="w-6 h-6 text-purple-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-text-brand)' }}>
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
@@ -1308,7 +1268,8 @@ export function UspCards({ onContinue }: { onContinue: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         onClick={onContinue}
-        className="w-full py-3.5 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] flex items-center justify-center gap-2"
+        className="w-full py-3.5 rounded-xl text-label-lg font-semibold hover:opacity-90 transition-colors active:scale-[0.97] flex items-center justify-center gap-2"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}
       >
         {t.widgets.letsFindPlan}
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -1347,9 +1308,10 @@ export function FrequencySelect({ onSelect }: { onSelect: (freq: string) => void
     <div className="max-w-md grid grid-cols-2 gap-3">
       <button onClick={() => handleSelect('monthly')}
         className={`flex flex-col items-center p-5 rounded-2xl border transition-all min-h-[130px] justify-center ${
-          selected === 'monthly' ? 'border-purple-400 bg-white/15' : 'border-white/10 bg-white/6 hover:bg-white/10'
-        }`}>
-        <svg className="w-7 h-7 text-purple-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+          selected === 'monthly' ? 'bg-white/15' : 'border-white/10 bg-white/6 hover:bg-white/10'
+        }`}
+        style={selected === 'monthly' ? { borderColor: 'var(--color-primary)' } : undefined}>
+        <svg className="w-7 h-7 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-primary-active)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
         <span className="text-body-md font-medium text-white/90">{t.common.monthly}</span>
         <span className="text-heading-sm text-white mt-1">{formatCurrency(plan?.monthlyPremium || 0)}</span>
         <span className="text-caption text-white/40">{t.common.perMonth}</span>
@@ -1357,12 +1319,13 @@ export function FrequencySelect({ onSelect }: { onSelect: (freq: string) => void
 
       <button onClick={() => handleSelect('yearly')}
         className={`relative flex flex-col items-center p-5 rounded-2xl border transition-all min-h-[130px] justify-center ${
-          selected === 'yearly' ? 'border-purple-400 bg-white/15' : 'border-purple-400/30 bg-white/6 hover:bg-white/10'
-        }`}>
-        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-label-sm bg-green-500 text-white px-3 py-0.5 rounded-full font-semibold whitespace-nowrap shadow-sm">
+          selected === 'yearly' ? 'bg-white/15' : 'bg-white/6 hover:bg-white/10'
+        }`}
+        style={selected === 'yearly' ? { borderColor: 'var(--color-primary)' } : { borderColor: 'color-mix(in srgb, var(--color-primary) 30%, transparent)' }}>
+        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-label-sm text-white px-3 py-0.5 rounded-full font-semibold whitespace-nowrap shadow-sm" style={{ background: 'var(--color-success)' }}>
           {t.widgets.save(formatCurrency(savings))}
         </span>
-        <svg className="w-7 h-7 text-purple-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>
+        <svg className="w-7 h-7 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-primary-active)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>
         <span className="text-body-md font-medium text-white/90">{t.common.yearly}</span>
         <span className="text-heading-sm text-white mt-1">{formatCurrency(plan?.yearlyPremium || 0)}</span>
         <span className="text-caption text-white/40">{t.common.perYear}</span>
@@ -1415,8 +1378,8 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'var(--app-plan-card-bg, rgba(255,255,255,0.08))',
-          border: '1px solid var(--app-plan-card-border, rgba(168,85,247,0.35))',
-          boxShadow: 'var(--app-plan-card-shadow, 0 4px 24px rgba(168,85,247,0.12))',
+          border: '1px solid var(--app-plan-card-border, color-mix(in srgb, var(--color-primary) 35%, transparent))',
+          boxShadow: 'var(--app-plan-card-shadow, 0 4px 24px color-mix(in srgb, var(--color-primary) 12%, transparent))',
         }}
       >
         {/* Header strip */}
@@ -1427,7 +1390,7 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
             borderBottom: '1px solid var(--app-divider, rgba(255,255,255,0.08))',
           }}
         >
-          <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--app-accent, #7C3AED)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--app-accent, var(--color-primary))' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V19.5a2.25 2.25 0 002.25 2.25h.75" />
           </svg>
           <h4 className="text-[14px] font-semibold" style={{ color: 'var(--app-text, #FFFFFF)' }}>
@@ -1468,7 +1431,7 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
         >
           <span className="text-[13px] font-semibold" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.6))' }}>Premium</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-[20px] font-bold" style={{ color: 'var(--app-accent, #7C3AED)' }}>{formatCurrency(premium)}</span>
+            <span className="text-[20px] font-bold" style={{ color: 'var(--app-accent, var(--color-primary))' }}>{formatCurrency(premium)}</span>
             <span className="text-[12px]" style={{ color: 'var(--app-text-subtle, rgba(255,255,255,0.4))' }}>{freq}</span>
           </div>
         </div>
@@ -1477,7 +1440,7 @@ export function ReviewSummary({ onConfirm, onEditField }: { onConfirm: () => voi
       <button
         onClick={onConfirm}
         className="mt-4 w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--app-accent, var(--btn-primary-bg))', color: 'var(--btn-primary-text)' }}
       >
         {t.widgets.looksGood}
       </button>
@@ -1499,15 +1462,18 @@ interface MedicalSummaryEntry {
 }
 
 function statusBadge(status: MedicalStatus) {
-  const map: Record<MedicalStatus, { label: string; color: string; icon: string }> = {
-    clear:     { label: 'All clear',      color: 'bg-green-500/20 text-green-300 border-green-500/30',  icon: '✓' },
-    waiting:   { label: 'Waiting period', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30',  icon: '⏳' },
-    loading:   { label: 'Loading applied', color: 'bg-orange-500/20 text-orange-300 border-orange-500/30', icon: '⚠' },
-    exclusion: { label: 'Excluded',       color: 'bg-red-500/20 text-red-300 border-red-500/30',        icon: '✕' },
+  const map: Record<MedicalStatus, { label: string; icon: string; bg: string; text: string; border: string }> = {
+    clear:     { label: 'All clear',       icon: '✓',  bg: 'var(--color-success-subtle, rgba(22,163,74,0.15))',  text: 'var(--color-success-text, #4ADE80)',  border: 'var(--color-success-border, rgba(22,163,74,0.3))' },
+    waiting:   { label: 'Waiting period',  icon: '⏳', bg: 'var(--color-warning-subtle, rgba(245,158,11,0.15))', text: 'var(--color-warning-text, #FFA85C)',  border: 'var(--color-warning-border, rgba(245,158,11,0.3))' },
+    loading:   { label: 'Loading applied', icon: '⚠',  bg: 'var(--color-warning-subtle, rgba(234,88,12,0.15))', text: 'var(--color-warning-text, #FFA85C)',  border: 'var(--color-warning-border, rgba(234,88,12,0.3))' },
+    exclusion: { label: 'Excluded',        icon: '✕',  bg: 'var(--color-error-subtle, rgba(239,68,68,0.15))',   text: 'var(--color-error-text, #F87171)',    border: 'var(--color-error-border, rgba(239,68,68,0.3))' },
   };
   const s = map[status];
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${s.color}`}>
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}
+    >
       {s.icon} {s.label}
     </span>
   );
@@ -1544,7 +1510,7 @@ export function HealthSummaryCard({ onConfirm }: { onConfirm: () => void }) {
                   <p className="text-xs text-white/50 mt-0.5">{entry.condition}</p>
                 )}
                 {entry.detail && (
-                  <p className="text-xs text-amber-300/70 mt-1">{entry.detail}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-warning-text)' }}>{entry.detail}</p>
                 )}
               </div>
               <div className="flex-shrink-0">{statusBadge(entry.status)}</div>
@@ -1553,7 +1519,8 @@ export function HealthSummaryCard({ onConfirm }: { onConfirm: () => void }) {
         </div>
       </div>
       <button onClick={onConfirm}
-        className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97]">
+        className="w-full py-3 rounded-xl text-label-lg font-semibold hover:opacity-90 transition-colors active:scale-[0.97]"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>
         Confirm &amp; Continue
       </button>
     </div>
@@ -1584,7 +1551,7 @@ export function ConsentWidget({
   const tcLink = resolvedLinks[0];
   const renderInlineConsent = () => {
     if (!consentText || !tcLink) {
-      return <span className="text-body-sm text-white/70">{t.widgets.confirmInfo} <a href={tcLink?.url ?? '#'} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink?.label ?? t.widgets.termsAndConditions}</a>.</span>;
+      return <span className="text-body-sm text-white/70">{t.widgets.confirmInfo} <a href={tcLink?.url ?? '#'} target="_blank" rel="noopener noreferrer" className="hover:text-white underline" style={{ color: 'var(--color-primary-active)' }}>{tcLink?.label ?? t.widgets.termsAndConditions}</a>.</span>;
     }
     // Split consent text around the document label and inject the hyperlink
     const parts = consentText.split(tcLink.label);
@@ -1592,7 +1559,7 @@ export function ConsentWidget({
       return (
         <span className="text-body-sm text-white/70">
           {parts[0]}
-          <a href={tcLink.url} target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">{tcLink.label}</a>
+          <a href={tcLink.url} target="_blank" rel="noopener noreferrer" className="hover:text-white underline" style={{ color: 'var(--color-primary-active)' }}>{tcLink.label}</a>
           {parts[1]}
         </span>
       );
@@ -1603,11 +1570,12 @@ export function ConsentWidget({
   return (
     <div className="max-w-md space-y-3">
       <label className="flex items-start gap-3 cursor-pointer bg-white/5 rounded-xl p-4 border border-white/10">
-        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 accent-purple-500 flex-shrink-0" />
+        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-5 h-5 flex-shrink-0" style={{ accentColor: 'var(--color-primary)' }} />
         {renderInlineConsent()}
       </label>
       <button onClick={onConfirm} disabled={!agreed}
-        className="w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
+        className="w-full py-3 rounded-xl text-label-lg font-semibold hover:opacity-90 disabled:opacity-40 transition-all active:scale-[0.97]"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>
         {t.widgets.confirmAndProceed}
       </button>
     </div>
@@ -1717,7 +1685,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
             <div
               key={i}
               className="h-1 rounded-full flex-1 transition-all duration-300"
-              style={{ background: i < step ? 'var(--app-accent, #7C3AED)' : i === step ? 'var(--app-accent, #7C3AED)' : 'rgba(255,255,255,0.12)' }}
+              style={{ background: i < step || i === step ? 'var(--app-accent, var(--btn-primary-bg))' : 'rgba(255,255,255,0.12)' }}
             />
           ))}
           <span className="text-[11px] ml-1 flex-shrink-0" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.4))' }}>
@@ -1779,7 +1747,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
                   border: '1.5px solid var(--app-input-border, rgba(255,255,255,0.12))',
                   color: 'var(--app-text, #FFFFFF)',
                 }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, #7C3AED)'; }}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, var(--color-primary))'; }}
                 onBlur={e => { e.currentTarget.style.borderColor = 'var(--app-input-border, rgba(255,255,255,0.12))'; }}
               />
             </div>
@@ -1804,7 +1772,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
                       border: '1.5px solid var(--app-input-border, rgba(255,255,255,0.12))',
                       color: 'var(--app-text, #FFFFFF)',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, #7C3AED)'; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, var(--color-primary))'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--app-input-border, rgba(255,255,255,0.12))'; }}
                   />
                   <p className="text-[10px] text-center mt-1" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.35))' }}>Day</p>
@@ -1823,7 +1791,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
                       border: '1.5px solid var(--app-input-border, rgba(255,255,255,0.12))',
                       color: 'var(--app-text, #FFFFFF)',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, #7C3AED)'; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, var(--color-primary))'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--app-input-border, rgba(255,255,255,0.12))'; }}
                   />
                   <p className="text-[10px] text-center mt-1" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.35))' }}>Month</p>
@@ -1842,7 +1810,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
                       border: '1.5px solid var(--app-input-border, rgba(255,255,255,0.12))',
                       color: 'var(--app-text, #FFFFFF)',
                     }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, #7C3AED)'; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--app-accent, var(--color-primary))'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = 'var(--app-input-border, rgba(255,255,255,0.12))'; }}
                   />
                   <p className="text-[10px] text-center mt-1" style={{ color: 'var(--app-text-muted, rgba(255,255,255,0.35))' }}>Year</p>
@@ -1858,7 +1826,7 @@ export function DobCollectionWidget({ onConfirm }: { onConfirm: (response: strin
         onClick={handleNext}
         disabled={!currentValid}
         className="mt-4 w-full py-3 rounded-xl text-[15px] font-semibold disabled:opacity-40 transition-all active:scale-[0.97]"
-        style={{ background: 'var(--app-accent, #7C3AED)', color: '#FFFFFF' }}
+        style={{ background: 'var(--app-accent, var(--btn-primary-bg))', color: 'var(--btn-primary-text)' }}
       >
         {isLast ? t.widgets.calculatePremium : t.common.continue}
       </button>
@@ -1914,7 +1882,7 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
       <div className="px-5 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2b3a67 0%, #1a1f36 100%)' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-            <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-primary)' }}>
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
@@ -1941,8 +1909,8 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
                     onClick={() => setSelectedMethod(m.id)}
                     className="w-full flex items-center gap-3.5 p-3.5 rounded-xl transition-all text-left"
                     style={{
-                      background: selectedMethod === m.id ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${selectedMethod === m.id ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                      background: selectedMethod === m.id ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${selectedMethod === m.id ? 'color-mix(in srgb, var(--color-primary) 50%, transparent)' : 'rgba(255,255,255,0.08)'}`,
                     }}
                   >
                     <span className="text-[20px]">{m.icon}</span>
@@ -1950,7 +1918,10 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
                       <p className="text-[14px] font-semibold text-white">{m.label}</p>
                       <p className="text-[11px] text-white/40">{m.desc}</p>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedMethod === m.id ? 'border-purple-400 bg-purple-400' : 'border-white/20'}`}>
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors" style={{
+                      borderColor: selectedMethod === m.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)',
+                      background: selectedMethod === m.id ? 'var(--color-primary)' : 'transparent'
+                    }}>
                       {selectedMethod === m.id && (
                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       )}
@@ -1963,7 +1934,7 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
                 onClick={handlePay}
                 disabled={!selectedMethod}
                 className="w-full mt-5 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-30"
-                style={{ background: selectedMethod ? 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' : 'rgba(167,139,250,0.4)' }}
+                style={{ background: selectedMethod ? 'linear-gradient(135deg, var(--color-primary), var(--btn-primary-bg))' : 'color-mix(in srgb, var(--color-primary) 40%, transparent)' }}
               >
                 Pay {formatCurrency(premium)}{freqLabel}
               </button>
@@ -1977,7 +1948,7 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
 
           {stage === 'processing' && (
             <motion.div key="processing" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-8">
-              <div className="w-14 h-14 rounded-full border-[3px] border-white/10 border-t-purple-400 animate-spin mb-5" />
+              <div className="w-14 h-14 rounded-full border-[3px] border-white/10 animate-spin mb-5" style={{ borderTopColor: 'var(--color-primary)' }} />
               <p className="text-[15px] font-semibold text-white mb-1">Processing Payment</p>
               <p className="text-[12px] text-white/40">Please do not close this screen...</p>
             </motion.div>
@@ -1989,13 +1960,14 @@ export function PaymentWidget({ onSuccess }: { onSuccess: () => void }) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ background: 'var(--color-success-subtle)' }}
               >
-                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success-text)' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </motion.div>
-              <p className="text-[16px] font-bold text-green-400 mb-1">Payment Successful!</p>
+              <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--color-success-text)' }}>Payment Successful!</p>
               <p className="text-[12px] text-white/40">{formatCurrency(premium)}{freqLabel} paid via {methods.find(m => m.id === selectedMethod)?.label}</p>
             </motion.div>
           )}
@@ -2044,7 +2016,7 @@ export function LabScheduleWidget({ onComplete }: { onComplete: () => void }) {
       {/* Visual banner */}
       <div className="relative rounded-2xl overflow-hidden">
         <img src="https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=600&h=140&fit=crop" alt="Lab test" className="w-full h-24 object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-purple-600/60 flex items-center px-4">
+        <div className="absolute inset-0 flex items-center px-4" style={{ background: 'linear-gradient(to right, color-mix(in srgb, var(--btn-primary-bg) 80%, transparent), color-mix(in srgb, var(--color-primary) 60%, transparent))' }}>
           <div>
             <p className="text-white font-semibold text-sm">{t.widgets.scheduleTest}</p>
             <p className="text-white/70 text-xs">{t.widgets.allCostsCovered}</p>
@@ -2058,8 +2030,9 @@ export function LabScheduleWidget({ onComplete }: { onComplete: () => void }) {
           {dates.map(d => (
             <button key={d.value} onClick={() => setSelectedDate(d.value)}
               className={`flex-shrink-0 px-3 py-2.5 rounded-xl border text-label-md transition-all ${
-                selectedDate === d.value ? 'border-purple-400 bg-white/15 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
-              }`}>{d.label}</button>
+                selectedDate === d.value ? 'bg-white/15 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'
+              }`}
+              style={selectedDate === d.value ? { borderColor: 'var(--color-primary)' } : undefined}>{d.label}</button>
           ))}
         </div>
       </div>
@@ -2069,12 +2042,13 @@ export function LabScheduleWidget({ onComplete }: { onComplete: () => void }) {
           {timeSlots.map(s => (
             <button key={s.id} onClick={() => setSelectedTime(s.id)}
               className={`p-3 rounded-xl border text-center transition-all ${
-                selectedTime === s.id ? 'border-purple-400 bg-white/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
-              }`}>
+                selectedTime === s.id ? 'bg-white/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}
+              style={selectedTime === s.id ? { borderColor: 'var(--color-primary)' } : undefined}>
               <p className="text-lg mb-0.5">{s.icon}</p>
               <p className="text-body-sm font-medium text-white/90">{s.label}</p>
               <p className="text-caption text-white/40">{s.time}</p>
-              {s.note && <p className="text-[10px] text-green-400 mt-0.5">{s.note}</p>}
+              {s.note && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-success-text)' }}>{s.note}</p>}
             </button>
           ))}
         </div>
@@ -2085,8 +2059,9 @@ export function LabScheduleWidget({ onComplete }: { onComplete: () => void }) {
           {NEARBY_LABS.map(lab => (
             <button key={lab.id} onClick={() => setSelectedLab(lab.id)}
               className={`w-full text-left p-3 rounded-xl border transition-all flex items-center gap-3 ${
-                selectedLab === lab.id ? 'border-purple-400 bg-white/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
-              }`}>
+                selectedLab === lab.id ? 'bg-white/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}
+              style={selectedLab === lab.id ? { borderColor: 'var(--color-primary)' } : undefined}>
               <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
                 <img src={LAB_IMAGES[lab.id] || 'https://images.unsplash.com/photo-1579154204601-01588f351e67?w=120&h=80&fit=crop'} alt={lab.name} className="w-full h-full object-cover" />
               </div>
@@ -2094,13 +2069,14 @@ export function LabScheduleWidget({ onComplete }: { onComplete: () => void }) {
                 <p className="text-body-sm font-medium text-white/90">{lab.name}</p>
                 <p className="text-caption text-white/40">{lab.distance}</p>
               </div>
-              <span className="text-caption text-amber-300 flex items-center gap-0.5 flex-shrink-0"><svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>{lab.rating}</span>
+              <span className="text-caption flex items-center gap-0.5 flex-shrink-0" style={{ color: 'var(--color-warning-text)' }}><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-warning-text)' }}><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>{lab.rating}</span>
             </button>
           ))}
         </div>
       </div>
       <button onClick={onComplete} disabled={!selectedDate || !selectedTime || !selectedLab}
-        className="w-full py-3.5 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold disabled:opacity-40 transition-all active:scale-[0.97]">
+        className="w-full py-3.5 rounded-xl text-label-lg font-semibold hover:opacity-90 disabled:opacity-40 transition-all active:scale-[0.97]"
+        style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>
         {t.widgets.confirmBooking}
       </button>
     </motion.div>
@@ -2122,7 +2098,7 @@ export function Celebration() {
         transition={{ duration: 2, repeat: Infinity }}
         className="mb-5"
       >
-        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-900/30">
+        <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(to bottom right, var(--color-success-text), var(--color-success))', boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
           <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
       </motion.div>
@@ -2130,7 +2106,7 @@ export function Celebration() {
       <p className="text-body-md text-white/60 mb-6">{t.widgets.healthJourneyInMotion}</p>
       <div className="flex gap-3">
         <button className="flex-1 py-3 border border-white/20 text-white/90 rounded-xl text-label-md font-medium hover:bg-white/10 transition-colors">{t.widgets.viewDashboard}</button>
-        <button className="flex-1 py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-md font-medium transition-colors">{t.widgets.downloadApp}</button>
+        <button className="flex-1 py-3 rounded-xl text-label-md font-medium hover:opacity-90 transition-colors" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}>{t.widgets.downloadApp}</button>
       </div>
     </motion.div>
   );

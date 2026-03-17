@@ -45,9 +45,9 @@ const DEFAULT_THEME: ChatBubbleTheme = {
   botBubbleClass: 'chat-bubble-bot',
   editBtnBg: 'var(--app-surface, var(--motor-surface))',
   editBtnBorder: 'var(--app-border-strong, var(--motor-border-strong))',
-  editIconColor: 'text-purple-300',
-  cursorColor: 'bg-purple-400',
-  typingDotColor: 'bg-purple-400',
+  editIconColor: 'var(--color-primary-active, #BDB8FA)',
+  cursorColor: 'var(--color-primary, #7A62F0)',
+  typingDotColor: 'var(--color-primary, #7A62F0)',
 };
 
 export interface BaseChatMessageProps {
@@ -115,7 +115,7 @@ export default function ChatMessage({ message, onEdit, onPlanInfo, animate = fal
               style={{ background: t.editBtnBg, border: `1px solid ${t.editBtnBorder}` }}
               title="Edit this answer"
             >
-              <svg className={`w-3 h-3 ${t.editIconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" style={{ color: t.editIconColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </motion.button>
@@ -176,7 +176,7 @@ function BotMessage({ message, animate, theme: t, avatar }: { message: ChatMessa
             <p key={i} className={`text-[15px] leading-relaxed ${i > 0 ? 'mt-2' : ''}`} style={{ color: t.botText }}>
               {words.join(' ')}
               {isTypingOut && i === visibleParagraphs.length - 1 && (
-                <span className={`inline-block w-[2px] h-[1em] align-middle ml-[2px] rounded-full ${t.cursorColor} animate-pulse`} />
+                <span className="inline-block w-[2px] h-[1em] align-middle ml-[2px] rounded-full animate-pulse" style={{ backgroundColor: t.cursorColor }} />
               )}
             </p>
           ))}
@@ -205,9 +205,9 @@ export function TypingIndicator({ theme: themeOverrides, avatar }: TypingIndicat
         className={`flex items-center gap-1.5 ${t.botBubbleClass || ''}`}
         style={{ background: t.botBubbleBg, border: `1px solid ${t.botBubbleBorder}`, padding: '12px 16px', ...t.botBubbleStyle }}
       >
-        <span className={`w-2 h-2 ${t.typingDotColor} rounded-full animate-typing`} style={{ animationDelay: '0ms' }} />
-        <span className={`w-2 h-2 ${t.typingDotColor} rounded-full animate-typing`} style={{ animationDelay: '200ms' }} />
-        <span className={`w-2 h-2 ${t.typingDotColor} rounded-full animate-typing`} style={{ animationDelay: '400ms' }} />
+        <span className="w-2 h-2 rounded-full animate-typing" style={{ backgroundColor: t.typingDotColor, animationDelay: '0ms' }} />
+        <span className="w-2 h-2 rounded-full animate-typing" style={{ backgroundColor: t.typingDotColor, animationDelay: '200ms' }} />
+        <span className="w-2 h-2 rounded-full animate-typing" style={{ backgroundColor: t.typingDotColor, animationDelay: '400ms' }} />
       </div>
     </motion.div>
   );

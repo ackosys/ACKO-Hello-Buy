@@ -24,14 +24,14 @@ export interface MultiSelectTheme {
 }
 
 const DEFAULT_THEME: MultiSelectTheme = {
-  surface: 'rgba(255,255,255,0.06)',
-  surfaceSelected: 'rgba(255,255,255,0.15)',
-  border: 'rgba(255,255,255,0.10)',
+  surface: 'var(--app-surface, var(--motor-surface, rgba(255,255,255,0.06)))',
+  surfaceSelected: 'var(--app-surface-hover, var(--motor-surface-hover, rgba(255,255,255,0.15)))',
+  border: 'var(--app-border, var(--motor-border, rgba(255,255,255,0.10)))',
   borderSelected: 'rgb(192,132,252)',
-  text: 'rgba(255,255,255,0.9)',
+  text: 'var(--app-text, var(--motor-text, rgba(255,255,255,0.9)))',
   checkBg: 'rgb(168,85,247)',
-  buttonBg: 'rgb(109,40,217)',
-  buttonText: '#fff',
+  buttonBg: 'var(--btn-primary-bg, rgb(109,40,217))',
+  buttonText: 'var(--btn-primary-text, #fff)',
 };
 
 export interface MultiSelectProps {

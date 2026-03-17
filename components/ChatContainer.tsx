@@ -85,7 +85,8 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
       {gateStep === 'phone' ? (
         <>
           <div
-            className="w-full flex items-center rounded-xl overflow-hidden bg-white/10 border border-white/20 focus-within:border-purple-400 focus-within:bg-white/15 transition-colors backdrop-blur-sm"
+            className="w-full flex items-center rounded-xl overflow-hidden transition-colors backdrop-blur-sm"
+            style={{ background: 'var(--app-input-bg, rgba(255,255,255,0.1))', border: '1px solid var(--app-input-border, rgba(255,255,255,0.2))' }}
           >
             <span className="pl-4 pr-2 text-[15px] font-medium shrink-0 text-white/50">+91</span>
             <div className="w-px h-5 shrink-0 bg-white/20" />
@@ -106,7 +107,8 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
           <button
             onClick={handlePhoneSubmit}
             disabled={!phoneCanSubmit}
-            className="mt-3 w-full py-3 bg-purple-700 text-white hover:bg-purple-600 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+            className="mt-3 w-full py-3 rounded-xl text-label-lg font-semibold transition-colors active:scale-[0.97] disabled:opacity-40"
+            style={{ background: 'var(--btn-primary-bg, #7C3AED)', color: 'var(--btn-primary-text, #fff)' }}
           >
             {t.chat.loginSendOtp}
           </button>
@@ -142,14 +144,14 @@ function HealthLoginGate({ onSuccess, onSkip }: { onSuccess: (phone: string) => 
                 className="w-[60px] h-[52px] text-center text-[20px] font-semibold rounded-xl outline-none transition-all backdrop-blur-sm"
                 style={{
                   background: 'rgba(255,255,255,0.1)',
-                  border: otpError ? '2px solid #ef4444' : d ? '2px solid #7c3aed' : '1px solid rgba(255,255,255,0.2)',
+                  border: otpError ? `2px solid var(--color-error, #ef4444)` : d ? `2px solid var(--color-primary, #7c3aed)` : `1px solid var(--app-input-border, rgba(255,255,255,0.2))`,
                   color: 'white',
                 }}
               />
             ))}
           </motion.div>
           {otpError ? (
-            <p className="text-caption text-center mt-2" style={{ color: '#ef4444' }}>{t.chat.loginOtpIncorrect}</p>
+            <p className="text-caption text-center mt-2" style={{ color: 'var(--color-error-text, #ef4444)' }}>{t.chat.loginOtpIncorrect}</p>
           ) : (
             <p className="text-caption text-white/40 text-center mt-2">{t.chat.loginOtpHint}</p>
           )}
@@ -643,7 +645,7 @@ export default function ChatContainer() {
             >
               <div className="text-center">
                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" style={{ color: 'var(--color-primary-active, #BDB8FA)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </div>
@@ -660,7 +662,8 @@ export default function ChatContainer() {
                   </button>
                   <button
                     onClick={confirmEdit}
-                    className="flex-1 py-2.5 bg-purple-700 text-white rounded-xl text-label-md font-medium hover:bg-purple-600 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl text-label-md font-medium transition-colors"
+                    style={{ background: 'var(--btn-primary-bg, #7C3AED)', color: 'var(--btn-primary-text, #fff)' }}
                   >
                     {t.chat.editAnswer}
                   </button>

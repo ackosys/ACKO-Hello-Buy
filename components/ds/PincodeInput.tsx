@@ -5,14 +5,14 @@ import type { InputTheme } from './NumberInput';
 import { useT } from '../../lib/translations';
 
 const DEFAULT_THEME: InputTheme = {
-  inputBg: 'rgba(255,255,255,0.10)',
-  inputBorder: 'rgba(255,255,255,0.20)',
+  inputBg: 'var(--app-input-bg, var(--motor-input-bg, rgba(255,255,255,0.10)))',
+  inputBorder: 'var(--app-input-border, var(--motor-input-border, rgba(255,255,255,0.20)))',
   inputBorderFocus: 'rgb(192,132,252)',
-  inputText: '#fff',
-  inputPlaceholder: 'rgba(255,255,255,0.30)',
+  inputText: 'var(--app-input-text, var(--motor-input-text, #fff))',
+  inputPlaceholder: 'var(--app-input-placeholder, var(--motor-input-placeholder, rgba(255,255,255,0.30)))',
   errorColor: 'rgb(248,113,113)',
-  buttonBg: 'rgb(109,40,217)',
-  buttonText: '#fff',
+  buttonBg: 'var(--btn-primary-bg, rgb(109,40,217))',
+  buttonText: 'var(--btn-primary-text, #fff)',
 };
 
 export interface PincodeInputProps {

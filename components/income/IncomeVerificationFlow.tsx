@@ -146,17 +146,17 @@ export function useIncomeFlow(onComplete: () => void, options?: UseIncomeFlowOpt
       addBotMessage(
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-success-subtle)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success-text)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             </div>
             <div>
               <p className="text-white font-semibold text-sm">PF Income Verified</p>
-              <p className="text-purple-200/70 text-xs">Successfully verified via EPFO</p>
+              <p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Successfully verified via EPFO</p>
             </div>
           </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
+          <div className="rounded-xl p-3 space-y-1.5" style={{ background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)' }}>
             {[{ label: 'UAN', value: '10012345678' }, { label: 'Employer', value: 'Verified ✓' }, { label: 'Member status', value: 'Active' }].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-xs"><span className="text-purple-200/70">{label}</span><span className="text-white">{value}</span></div>
+              <div key={label} className="flex justify-between text-xs"><span style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>{label}</span><span className="text-white">{value}</span></div>
             ))}
           </div>
         </div>
@@ -168,17 +168,17 @@ export function useIncomeFlow(onComplete: () => void, options?: UseIncomeFlowOpt
       addBotMessage(
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-success-subtle)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success-text)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             </div>
             <div>
               <p className="text-white font-semibold text-sm">Income Verified</p>
-              <p className="text-purple-200/70 text-xs">Verified via Account Aggregator</p>
+              <p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Verified via Account Aggregator</p>
             </div>
           </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
+          <div className="rounded-xl p-3 space-y-1.5" style={{ background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)' }}>
             {[{ label: 'Method', value: 'Account Aggregator' }, { label: 'Data source', value: 'Bank statements (6 months)' }, { label: 'Status', value: 'Verified ✓' }].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-xs"><span className="text-purple-200/70">{label}</span><span className="text-white">{value}</span></div>
+              <div key={label} className="flex justify-between text-xs"><span style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>{label}</span><span className="text-white">{value}</span></div>
             ))}
           </div>
         </div>
@@ -190,17 +190,17 @@ export function useIncomeFlow(onComplete: () => void, options?: UseIncomeFlowOpt
       addBotMessage(
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-success-subtle)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success-text)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             </div>
             <div>
               <p className="text-white font-semibold text-sm">GST Verified</p>
-              <p className="text-purple-200/70 text-xs">Business income verified via GSTIN</p>
+              <p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Business income verified via GSTIN</p>
             </div>
           </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 space-y-1.5">
+          <div className="rounded-xl p-3 space-y-1.5" style={{ background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)' }}>
             {[{ label: 'GSTIN', value: gstNumber }, { label: 'Ownership', value: `${ownershipPct}%` }, { label: 'Status', value: 'Active · Verified ✓' }].map(({ label, value }) => (
-              <div key={label} className="flex justify-between text-xs"><span className="text-purple-200/70">{label}</span><span className="text-white">{value}</span></div>
+              <div key={label} className="flex justify-between text-xs"><span style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>{label}</span><span className="text-white">{value}</span></div>
             ))}
           </div>
         </div>
@@ -216,16 +216,16 @@ export function useIncomeFlow(onComplete: () => void, options?: UseIncomeFlowOpt
       addBotMessage(
         <div className="space-y-4">
           <div className="flex flex-col items-center py-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mb-3">
-              <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3" style={{ background: 'var(--color-success-subtle)' }}>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success-text)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             </div>
             <h3 className="text-lg font-bold text-white mb-1">Income verified!</h3>
-            <p className="text-purple-200/70 text-sm">Financial details captured. Next up: medical evaluation.</p>
+            <p className="text-sm" style={{ color: 'var(--color-primary-active)', opacity: 0.7 }}>Financial details captured. Next up: medical evaluation.</p>
           </div>
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 space-y-2">
+          <div className="rounded-xl p-3 space-y-2" style={{ background: 'var(--color-primary-subtle)', border: '1px solid var(--color-info-border)' }}>
             <p className="text-white font-semibold text-sm">What&apos;s next</p>
             {[{ icon: '📹', text: '15–20 min video call with a doctor (VMER)' }, { icon: '📋', text: 'Review and confirm your health responses' }, { icon: '🏠', text: 'Home tests may be requested if applicable' }].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-2.5"><span>{icon}</span><p className="text-purple-200/90 text-xs">{text}</p></div>
+              <div key={text} className="flex items-center gap-2.5"><span>{icon}</span><p className="text-xs" style={{ color: 'var(--color-primary-active)', opacity: 0.9 }}>{text}</p></div>
             ))}
           </div>
         </div>
@@ -423,7 +423,7 @@ export function IncomeInlineMessages({ messages }: { messages: IncomeMessage[] }
    Input widget — white bg cards for dark bottom sheet
    ────────────────────────────────────────────── */
 const CARD = 'bg-white rounded-xl border border-gray-100 p-4 shadow-sm';
-const BTN_PRIMARY = 'w-full py-3.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all';
+const BTN_PRIMARY = 'w-full py-3.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all';
 const BTN_SECONDARY = 'w-full py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 active:scale-[0.98] transition-all';
 
 export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
@@ -449,7 +449,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
           { id: 'business' as const, icon: '🏪', label: 'Business owner', desc: 'GST registered' },
           { id: 'self' as const, icon: '💼', label: 'Self-employed', desc: 'Freelancer / consultant' },
         ].map(({ id, icon, label, desc }) => (
-          <button key={id} onClick={() => actions.selectOccupation(id)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/50 text-left transition-all">
+          <button key={id} onClick={() => actions.selectOccupation(id)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-[var(--color-primary-subtle)] text-left transition-all">
             <span className="text-xl">{icon}</span>
             <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-800">{label}</p><p className="text-xs text-gray-400">{desc}</p></div>
             <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
@@ -464,14 +464,14 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
     return (
       <div className={`${CARD} space-y-2`}>
         {[
-          { id: 'epfo' as const, badge: 'Instant', badgeColor: 'bg-emerald-50 text-emerald-600', icon: '📊', title: 'EPFO / Provident Fund', desc: 'OTP to EPFO-registered mobile' },
+          { id: 'epfo' as const, badge: 'Instant', badgeColor: 'success', icon: '📊', title: 'EPFO / Provident Fund', desc: 'OTP to EPFO-registered mobile' },
           { id: 'aa' as const, badge: 'Instant', badgeColor: 'bg-blue-50 text-blue-600', icon: '🏦', title: 'Account Aggregator', desc: 'Share bank statements via RBI' },
-          { id: 'upload' as const, badge: '24–48 hrs', badgeColor: 'bg-orange-50 text-orange-600', icon: '📄', title: 'Upload salary slips', desc: 'Last 3 months' },
+          { id: 'upload' as const, badge: '24–48 hrs', badgeColor: 'warning', icon: '📄', title: 'Upload salary slips', desc: 'Last 3 months' },
         ].map(({ id, badge, badgeColor, icon, title, desc }) => (
-          <button key={id} onClick={() => actions.selectSalariedMethod(id)} className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/30 text-left transition-all">
+          <button key={id} onClick={() => actions.selectSalariedMethod(id)} className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:bg-[var(--color-primary-subtle)] text-left transition-all">
             <span className="text-xl">{icon}</span>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap"><p className="text-sm font-semibold text-gray-800">{title}</p><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}>{badge}</span></div>
+              <div className="flex items-center gap-2 flex-wrap"><p className="text-sm font-semibold text-gray-800">{title}</p><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeColor.startsWith('bg-') ? badgeColor : ''}`} style={badgeColor === 'success' ? { background: 'var(--color-success-subtle)', color: 'var(--color-success)' } : badgeColor === 'warning' ? { background: 'var(--color-warning-subtle)', color: 'var(--color-warning)' } : undefined}>{badge}</span></div>
               <p className="text-xs text-gray-400">{desc}</p>
             </div>
             <svg className="w-4 h-4 text-gray-300 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
@@ -486,7 +486,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
     return (
       <div className={`${CARD} space-y-3`}>
         <p className="text-sm font-semibold text-gray-800">EPFO-registered mobile</p>
-        <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-100">
+        <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:border-[var(--color-primary)] focus-within:ring-[var(--color-primary-subtle)]">
           <span className="px-3 py-3 text-sm text-gray-500 border-r border-gray-100 bg-gray-50">+91</span>
           <input type="tel" inputMode="numeric" maxLength={10} value={state.mobile}
             onChange={(e) => actions.setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -494,7 +494,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
             className="flex-1 px-3 py-3 text-sm text-gray-800 bg-transparent outline-none placeholder:text-gray-300" />
         </div>
         <p className="text-[10px] text-gray-400">Demo: 9999999999 = timeout</p>
-        <button disabled={state.mobile.length < 10} onClick={actions.handleEpfoSendOtp} className={BTN_PRIMARY}>Send OTP</button>
+        <button disabled={state.mobile.length < 10} onClick={actions.handleEpfoSendOtp} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Send OTP</button>
       </div>
     );
   }
@@ -510,15 +510,15 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
             <input key={i} ref={(el) => { digitRefs.current[i] = el; }} type="tel" inputMode="numeric" maxLength={1} value={state.otp[i] || ''}
               onChange={(e) => handleOtpChange(i, e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Backspace' && !state.otp[i] && i > 0) digitRefs.current[i - 1]?.focus(); }}
-              className="w-11 h-12 text-center text-lg font-bold text-gray-800 border border-gray-200 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-gray-50 outline-none" />
+              className="w-11 h-12 text-center text-lg font-bold text-gray-800 border border-gray-200 rounded-xl focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-subtle)] bg-gray-50 outline-none" />
           ))}
         </div>
         <div className="flex justify-between text-xs text-gray-400">
-          {state.otpTimer > 0 ? `Resend in ${state.otpTimer}s` : <button onClick={() => { actions.setOtp(['', '', '', '', '', '']); }} className="text-purple-600 font-medium">Resend OTP</button>}
+          {state.otpTimer > 0 ? `Resend in ${state.otpTimer}s` : <button onClick={() => { actions.setOtp(['', '', '', '', '', '']); }} className="font-medium" style={{ color: 'var(--color-text-brand)' }}>Resend OTP</button>}
           <span>Attempts: {state.otpAttempts}/3</span>
         </div>
         <p className="text-[10px] text-gray-400 text-center">Demo: 000000 = failure</p>
-        <button disabled={otpVal.length < 6} onClick={actions.handleEpfoVerifyOtp} className={BTN_PRIMARY}>Verify OTP</button>
+        <button disabled={otpVal.length < 6} onClick={actions.handleEpfoVerifyOtp} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Verify OTP</button>
       </div>
     );
   }
@@ -530,7 +530,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
         <p className="text-sm font-semibold text-gray-800 text-center">Verification failed</p>
         <p className="text-xs text-gray-500 text-center">{state.otpAttempts >= 3 ? 'Too many attempts.' : 'Incorrect OTP.'}</p>
         <div className="space-y-2">
-          {state.otpAttempts < 3 && <button onClick={actions.handleEpfoRetry} className={BTN_PRIMARY}>Try again</button>}
+          {state.otpAttempts < 3 && <button onClick={actions.handleEpfoRetry} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Try again</button>}
           <button onClick={actions.handleEpfoAlternate} className={BTN_SECONDARY}>Use another method</button>
         </div>
       </div>
@@ -544,8 +544,8 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
         <p className="text-sm font-semibold text-gray-800 text-center">Taking a bit longer…</p>
         <p className="text-xs text-gray-500 text-center">We&apos;ll notify you via Email & WhatsApp once done.</p>
         <div className="space-y-2">
-          <button onClick={actions.handleEpfoTimeoutContinue} className={BTN_PRIMARY}>Back to Pending Tasks</button>
-          <button onClick={actions.handleEpfoAlternate} className="text-sm text-gray-400 hover:text-purple-600">Try another method</button>
+          <button onClick={actions.handleEpfoTimeoutContinue} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Back to Pending Tasks</button>
+          <button onClick={actions.handleEpfoAlternate} className="text-sm text-gray-400">Try another method</button>
         </div>
       </div>
     );
@@ -561,7 +561,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
           <p>• Bank statements (last 6 months)</p>
           <p>• Read-only — no payment access</p>
         </div>
-        <button onClick={actions.handleAaConsent} className={BTN_PRIMARY}>I consent — proceed</button>
+        <button onClick={actions.handleAaConsent} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>I consent — proceed</button>
       </div>
     );
   }
@@ -574,13 +574,14 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
         <div className="grid grid-cols-2 gap-2">
           {BANKS.map(({ id, name, abbr }) => (
             <button key={id} onClick={() => actions.setSelectedBank(id)}
-              className={`p-3 rounded-xl border text-left transition-all ${state.selectedBank === id ? 'border-purple-400 bg-purple-50' : 'border-gray-100 hover:border-purple-200 bg-gray-50'}`}>
+              className={`p-3 rounded-xl border text-left transition-all ${state.selectedBank === id ? 'hover:opacity-90' : 'border-gray-100 hover:opacity-80 bg-gray-50'}`}
+              style={state.selectedBank === id ? { borderColor: 'var(--color-primary)', background: 'var(--color-primary-subtle)' } : { borderColor: 'var(--color-info-border)' }}>
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mb-1 shadow-sm"><span className="text-[9px] font-bold text-gray-600">{abbr}</span></div>
               <p className="text-[11px] font-medium text-gray-700 leading-tight">{name}</p>
             </button>
           ))}
         </div>
-        <button disabled={!state.selectedBank} onClick={actions.handleAaProceed} className={BTN_PRIMARY}>Proceed to bank</button>
+        <button disabled={!state.selectedBank} onClick={actions.handleAaProceed} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Proceed to bank</button>
       </div>
     );
   }
@@ -591,7 +592,7 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
       <div className={`${CARD} space-y-3`}>
         <p className="text-sm font-semibold text-gray-800 text-center">Couldn&apos;t connect to bank</p>
         <div className="space-y-2">
-          <button onClick={actions.handleAaRetry} className={BTN_PRIMARY}>Try again</button>
+          <button onClick={actions.handleAaRetry} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Try again</button>
           <button onClick={actions.handleAaAlternate} className={BTN_SECONDARY}>Use another method</button>
         </div>
       </div>
@@ -608,16 +609,16 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
         <p className="text-xs text-gray-500">Last 3 months. PDF, PNG, JPEG. Max 10 MB each.</p>
         <div className="space-y-2">
           {months.map((m, i) => (
-            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${state.uploadedDocs[`sal_${i}`] ? 'border-emerald-200 bg-emerald-50' : 'border-gray-100 bg-gray-50'}`}>
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${state.uploadedDocs[`sal_${i}`] ? 'bg-emerald-100' : 'bg-white shadow-sm'}`}>
-                {state.uploadedDocs[`sal_${i}`] ? <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
+            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${state.uploadedDocs[`sal_${i}`] ? '' : 'border-gray-100 bg-gray-50'}`} style={state.uploadedDocs[`sal_${i}`] ? { borderColor: 'var(--color-success-border)', background: 'var(--color-success-subtle)' } : undefined}>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${state.uploadedDocs[`sal_${i}`] ? '' : 'bg-white shadow-sm'}`} style={state.uploadedDocs[`sal_${i}`] ? { background: 'var(--color-success-subtle)' } : undefined}>
+                {state.uploadedDocs[`sal_${i}`] ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{ color: 'var(--color-success)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>}
               </div>
               <div className="flex-1"><p className="text-xs font-medium text-gray-700">{m}</p><p className="text-[10px] text-gray-400">{state.uploadedDocs[`sal_${i}`] ? 'Uploaded ✓' : 'Not uploaded'}</p></div>
-              <button onClick={() => actions.toggleDoc(`sal_${i}`)} className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold ${state.uploadedDocs[`sal_${i}`] ? 'bg-red-50 text-red-400' : 'bg-purple-600 text-white'}`}>{state.uploadedDocs[`sal_${i}`] ? 'Remove' : 'Upload'}</button>
+              <button onClick={() => actions.toggleDoc(`sal_${i}`)} className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold ${state.uploadedDocs[`sal_${i}`] ? '' : 'text-white'}`} style={state.uploadedDocs[`sal_${i}`] ? { background: 'var(--color-error-subtle)', color: 'var(--color-error-text)' } : { background: 'var(--btn-primary-bg)' }}>{state.uploadedDocs[`sal_${i}`] ? 'Remove' : 'Upload'}</button>
             </div>
           ))}
         </div>
-        <button disabled={!allUploaded} onClick={actions.handleDocSubmit} className={BTN_PRIMARY}>Submit for review</button>
+        <button disabled={!allUploaded} onClick={actions.handleDocSubmit} className={BTN_PRIMARY} style={{ background: 'var(--btn-primary-bg)' }}>Submit for review</button>
       </div>
     );
   }
@@ -627,10 +628,10 @@ export function IncomeInputWidget({ state, actions }: UseIncomeFlowReturn) {
     return (
       <div className={`${CARD} space-y-2`}>
         {[
-          { id: 'gst' as const, badge: 'Instant', badgeColor: 'bg-emerald-50 text-emerald-600', icon: '🧾', title: 'GST Verification', desc: 'Auto-verify via GSTIN' },
-          { id: 'upload' as const, badge: '24–48 hrs', badgeColor: 'bg-orange-50 text-orange-600', icon: '📂', title: 'Upload documents', desc: 'ITR, Form 16A, or P&L' },
+          { id: 'gst' as const, badge: 'Instant', badgeColor: 'success', icon: '🧾', title: 'GST Verification', desc: 'Auto-verify via GSTIN' },
+          { id: 'upload' as const, badge: '24–48 hrs', badgeColor: 'warning', icon: '📂', title: 'Upload documents', desc: 'ITR, Form 16A, or P&L' },
         ].map(({ id, badge, badgeColor, icon, title, desc }) => (
-          <button key={id} onClick={() => actions.selectBusinessMethod(id)} className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50/30 text-left transition-all">
+          <button key={id} onClick={() => actions.selectBusinessMethod(id)} className="w-full flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:bg-[var(--color-primary-subtle)] text-left transition-all">
             <span className="text-xl">{icon}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2"><p className="text-sm font-semibold text-gray-800">{title}</p><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}>{badge}</span></div>

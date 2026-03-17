@@ -346,14 +346,14 @@ function ScheduledCard({ slot, bookingId }: { slot: SlotSelection; bookingId: st
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success-subtle)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-success-text)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         </div>
         <p className="text-sm font-semibold text-white">Call Scheduled!</p>
       </div>
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-white/90">
+      <div className="rounded-xl p-3 text-xs text-white/90" style={{ background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)' }}>
         <p><strong>{slot.dateLabel}</strong> · {slot.time}</p>
         <p className="text-white/60 mt-1">Booking ID: {bookingId}</p>
       </div>
@@ -365,14 +365,14 @@ function PpmcConfirmedCard({ slot, ppBookingId }: { slot: SlotSelection; ppBooki
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success-subtle)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-success-text)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         </div>
         <p className="text-sm font-semibold text-white">Home Test Booked!</p>
       </div>
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-white/90">
+      <div className="rounded-xl p-3 text-xs text-white/90" style={{ background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)' }}>
         <p><strong>{slot.dateLabel}</strong> · {slot.time}</p>
         <p className="text-white/60 mt-1">Booking ID: {ppBookingId}</p>
       </div>
@@ -384,8 +384,8 @@ function CompleteCard() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success-subtle)' }}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} style={{ color: 'var(--color-success-text)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         </div>
@@ -457,13 +457,14 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
     <div className="bg-white rounded-2xl p-4 shadow-lg text-gray-900">
       {state.stage === 'intro' && (
         <div className="space-y-3">
-          <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-            <p className="text-xs font-semibold text-purple-900">VMER — Video Medical Evaluation</p>
-            <p className="text-xs text-purple-700 mt-0.5">15–20 min video call with a doctor</p>
+          <div className="rounded-xl p-3 border" style={{ background: 'var(--color-primary-subtle)', borderColor: 'var(--color-info-border)' }}>
+            <p className="text-xs font-semibold" style={{ color: 'var(--color-primary-muted)' }}>VMER — Video Medical Evaluation</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--color-primary-muted)' }}>15–20 min video call with a doctor</p>
           </div>
           <button
             onClick={actions.handleCheckAvailability}
-            className="w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]"
+            className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90"
+            style={{ background: 'var(--btn-primary-bg)' }}
           >
             Check Doctor Availability
           </button>
@@ -473,8 +474,8 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
       {state.stage === 'availability_now' && (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success-subtle)' }}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-success)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
               </svg>
             </div>
@@ -483,7 +484,7 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
               <p className="text-xs text-gray-500">Call starts in {fmtCountdown(state.joinCountdown)}</p>
             </div>
           </div>
-          <button onClick={actions.handleJoinNow} className="w-full py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]">
+          <button onClick={actions.handleJoinNow} className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90" style={{ background: 'var(--color-success)' }}>
             Join Call Now
           </button>
           <button onClick={actions.handleScheduleLater} className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium">
@@ -508,7 +509,7 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
                         disabled={conflict}
                         onClick={() => !conflict && actions.handleSlotSelect({ dateLabel: d.full, dateIndex: d.idx, time: t })}
                         className={`py-1.5 rounded-lg text-[10px] font-medium border transition-all ${
-                          conflict ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed' : 'border-gray-200 hover:border-purple-400 hover:bg-purple-50 text-gray-700'
+                          conflict ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed' : 'border-gray-200 hover:opacity-80 text-gray-700'
                         }`}
                       >
                         {t}
@@ -524,11 +525,11 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
 
       {state.stage === 'scheduled' && state.bookedSlot && (
         <div className="space-y-3">
-          <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-            <p className="text-sm font-bold text-purple-900">Call Scheduled</p>
-            <p className="text-xs text-purple-700">{state.bookedSlot.dateLabel}, {state.bookedSlot.time}</p>
+          <div className="rounded-xl p-3 border" style={{ background: 'var(--color-primary-subtle)', borderColor: 'var(--color-info-border)' }}>
+            <p className="text-sm font-bold" style={{ color: 'var(--color-primary-muted)' }}>Call Scheduled</p>
+            <p className="text-xs" style={{ color: 'var(--color-primary-muted)' }}>{state.bookedSlot.dateLabel}, {state.bookedSlot.time}</p>
           </div>
-          <button onClick={actions.handleContinueToCall} className="w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]">
+          <button onClick={actions.handleContinueToCall} className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90" style={{ background: 'var(--btn-primary-bg)' }}>
             Continue to Call
           </button>
         </div>
@@ -537,8 +538,8 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
       {state.stage === 'call_active' && (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--color-primary-subtle)' }}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} style={{ color: 'var(--color-text-brand)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
             </div>
@@ -601,11 +602,11 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
 
       {state.stage === 'ppmc_intro' && (
         <div className="space-y-3">
-          <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
-            <p className="text-xs font-bold text-amber-900">Additional home tests needed</p>
-            <p className="text-[10px] text-amber-700 mt-0.5">Technician will visit. Fast 12 hrs before.</p>
+          <div className="rounded-xl p-3 border" style={{ background: 'var(--color-warning-subtle)', borderColor: 'var(--color-warning-border)' }}>
+            <p className="text-xs font-bold" style={{ color: 'var(--color-warning-text)' }}>Additional home tests needed</p>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-warning-text)' }}>Technician will visit. Fast 12 hrs before.</p>
           </div>
-          <button onClick={actions.handleScheduleHomeTest} className="w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]">
+          <button onClick={actions.handleScheduleHomeTest} className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90" style={{ background: 'var(--btn-primary-bg)' }}>
             Schedule Home Test
           </button>
           <button onClick={actions.handleSkipPpmc} className="w-full py-2 text-center text-xs text-gray-500">
@@ -622,8 +623,9 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
               key={addr.id}
               onClick={() => actions.setSelectedAddress(addr.id)}
               className={`w-full flex items-start gap-2 px-3 py-2.5 rounded-xl border text-left ${
-                state.selectedAddress === addr.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+                state.selectedAddress === addr.id ? '' : 'border-gray-200'
               }`}
+              style={state.selectedAddress === addr.id ? { borderColor: 'var(--color-primary)', background: 'var(--color-primary-subtle)' } : undefined}
             >
               <span className="text-sm">{addr.id === 'home' ? '🏠' : '🏢'}</span>
               <div className="flex-1 min-w-0">
@@ -634,7 +636,8 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
           ))}
           <button
             onClick={actions.handlePpmcAddressContinue}
-            className="w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]"
+            className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90"
+            style={{ background: 'var(--btn-primary-bg)' }}
           >
             Continue
           </button>
@@ -653,7 +656,7 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
                     <button
                       key={`${d.idx}-${t}`}
                       onClick={() => actions.handleSlotSelect({ dateLabel: d.full, dateIndex: d.idx, time: t }, true)}
-                      className="py-1.5 rounded-lg text-[10px] font-medium border border-gray-200 hover:border-purple-400 hover:bg-purple-50 text-gray-700"
+                      className="py-1.5 rounded-lg text-[10px] font-medium border border-gray-200 hover:opacity-80 text-gray-700"
                     >
                       {t}
                     </button>
@@ -675,15 +678,18 @@ export function MedicalInputWidget({ state, actions }: UseMedicalFlowReturn) {
                 onClick={() => actions.setUploadedDocs((p) => ({ ...p, [cond]: !p[cond] }))}
                 className={`w-full py-2 rounded-lg text-[10px] font-medium border ${
                   state.uploadedDocs[cond]
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                    : 'border-dashed border-purple-300 text-purple-600'
+                    ? ''
+                    : 'border-dashed'
                 }`}
+                style={state.uploadedDocs[cond]
+                  ? { borderColor: 'var(--color-success-border)', background: 'var(--color-success-subtle)', color: 'var(--color-success-text)' }
+                  : { borderColor: 'var(--color-primary-ring)', color: 'var(--color-text-brand)' }}
               >
                 {state.uploadedDocs[cond] ? '✓ Uploaded' : 'Upload (PDF, PNG, JPEG)'}
               </button>
             </div>
           ))}
-          <button onClick={actions.handleSubmitDocs} className="w-full py-3 bg-purple-600 text-white rounded-xl text-sm font-semibold active:scale-[0.98]">
+          <button onClick={actions.handleSubmitDocs} className="w-full py-3 text-white rounded-xl text-sm font-semibold active:scale-[0.98] hover:opacity-90" style={{ background: 'var(--btn-primary-bg)' }}>
             Submit Documents
           </button>
         </div>
@@ -710,8 +716,9 @@ function YesNoRow({
             key={String(opt)}
             onClick={() => onChange(opt)}
             className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border ${
-              value === opt ? (opt ? 'border-purple-500 bg-purple-600 text-white' : 'border-gray-500 bg-gray-600 text-white') : 'border-gray-200 text-gray-600'
+              value === opt ? (opt ? 'text-white' : 'border-gray-500 bg-gray-600 text-white') : 'border-gray-200 text-gray-600'
             }`}
+            style={value === opt && opt ? { borderColor: 'var(--color-primary)', background: 'var(--btn-primary-bg)' } : undefined}
           >
             {opt ? 'Yes' : 'No'}
           </button>

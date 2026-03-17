@@ -79,10 +79,10 @@ const PRODUCT_CONFIG: Record<ProductKey, {
   },
 };
 
-const URGENCY_COLORS: Record<string, string> = {
-  high:   'bg-red-500/20 text-red-300 border-red-500/30',
-  medium: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  low:    'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+const URGENCY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  high:   { bg: 'var(--color-error-subtle, rgba(239,68,68,0.2))', text: 'var(--color-error-text, #FCA5A5)', border: 'var(--color-error-border, rgba(239,68,68,0.3))' },
+  medium: { bg: 'var(--color-warning-subtle, rgba(245,158,11,0.2))', text: 'var(--color-warning-text, #FCD34D)', border: 'var(--color-warning-border, rgba(245,158,11,0.3))' },
+  low:    { bg: 'var(--color-success-subtle, rgba(16,185,129,0.2))', text: 'var(--color-success-text, #6EE7B7)', border: 'var(--color-success-border, rgba(16,185,129,0.3))' },
 };
 
 function relativeTime(iso: string, t: ReturnType<typeof useT>): string {
@@ -153,7 +153,14 @@ function DropOffCard({ snap, onDismiss, onClick, isOnly }: CardProps) {
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: config.accentColor }}>
               {productLabels[snap.product]}
             </span>
-            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${URGENCY_COLORS[display.urgency]}`}>
+            <span
+              className="text-[9px] font-medium px-1.5 py-0.5 rounded-full"
+              style={{
+                background: URGENCY_STYLES[display.urgency]?.bg,
+                color: URGENCY_STYLES[display.urgency]?.text,
+                border: `1px solid ${URGENCY_STYLES[display.urgency]?.border}`,
+              }}
+            >
               {display.badge}
             </span>
           </div>
@@ -317,8 +324,8 @@ export default function DropOffBanner() {
         <div className="px-6 mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--color-warning, #FBBF24)' }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--color-warning, #FBBF24)' }} />
             </span>
             <p className="text-[11px] font-bold text-white/80 tracking-wider uppercase">
               Continue where you left off
