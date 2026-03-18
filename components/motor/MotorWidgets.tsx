@@ -1805,8 +1805,8 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
               />
             )}
 
-            {/* Third Party Plan */}
-            {!isBrandNew && thirdPartyPlan && (
+            {/* Third Party Plan — hidden for brand-new cars (bundled TP), shown for brand-new bikes */}
+            {(!isBrandNew || vType === 'bike') && thirdPartyPlan && (
               <PlanCard
                 plan={thirdPartyPlan}
                 title="Third Party"
@@ -1830,7 +1830,7 @@ export function PlanSelector({ onSelect }: { onSelect: (selection: any) => void 
                 plan={odLowest}
                 title="Own Damage"
                 subtitle={odPlans.length > 1 ? `${odPlans.length} options starting from` : undefined}
-                badge="For cars with active TP"
+                badge={`For ${vType}s with active TP`}
                 badgeVariant="amber"
                 price={formatPrice(odLowest.totalPrice)}
                 description={`Your Third Party policy is already active. You only need to renew your Own Damage cover.`}
@@ -3031,13 +3031,14 @@ export function PlanRecommendation({ onSelect }: { onSelect: (response: any) => 
 
 // Out of Pocket Addons Widget
 export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) => void }) {
-  const { updateState, selectedAddOns = [], selectedPlan } = useMotorStore();
+  const { updateState, selectedAddOns = [], selectedPlan, vehicleType } = useMotorStore();
+  const vType = vehicleType === 'bike' ? 'bike' : 'car';
   const [selectedItems, setSelectedItems] = useState<Map<string, { id: string; variantId?: string; price: number }>>(new Map());
   const [showVariantModal, setShowVariantModal] = useState<{ addon: any; show: boolean }>({ addon: null, show: false });
   const tw = useT().motorWidgets;
 
   const state = useMotorStore.getState() as MotorJourneyState;
-  const addons = getMotorAddOns('car', state).filter((a: any) => a.category === 'out_of_pocket');
+  const addons = getMotorAddOns(vType, state).filter((a: any) => a.category === 'out_of_pocket');
 
   const isSelected = (addonId: string) => selectedItems.has(addonId);
 
@@ -3092,8 +3093,10 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
         <div className="mb-4">
-          <h3 className="text-[16px] font-bold text-white mb-1">{tw.cutDownOOP}</h3>
-          <p className="text-[12px] text-white/50">{tw.planRecommended}</p>
+          <h3 className="text-[16px] font-bold text-white mb-1">
+            {vType === 'bike' ? 'Add-ons that protect your bike' : tw.cutDownOOP}
+          </h3>
+          {vType !== 'bike' && <p className="text-[12px] text-white/50">{tw.planRecommended}</p>}
         </div>
 
         {addons.map((addon: any, index: number) => {
@@ -3188,7 +3191,9 @@ export function OutOfPocketAddons({ onContinue }: { onContinue: (addons: any[]) 
           <button onClick={handleSkip} className="flex-1 py-3 px-4 bg-white/10 border border-white/20 rounded-xl text-[14px] font-semibold text-white hover:bg-white/15 transition-colors">{tw.continueWithoutAddons}</button>
           <button onClick={handleContinue} className="flex-1 py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors active:scale-[0.98]" style={{ background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', boxShadow: 'var(--btn-primary-shadow)' }}>{tw.continueBtn}</button>
         </div>
-        <p className="text-[11px] text-white/40 text-center mt-2">Next: Additional covers to reduce medical expenses</p>
+        <p className="text-[11px] text-white/40 text-center mt-2">
+          {vType === 'bike' ? 'Next: Add-ons that protect your family' : 'Next: Additional covers to reduce medical expenses'}
+        </p>
       </motion.div>
 
       <AnimatePresence>
@@ -3368,23 +3373,33 @@ export function ProtectEveryoneAddons({ onContinue }: { onContinue: (addons: any
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
         <div className="mb-4">
-          <h3 className="text-[16px] font-bold text-white mb-1">Protect everyone in your {vType}</h3>
+          <h3 className="text-[16px] font-bold text-white mb-1">
+            {vType === 'bike' ? 'Add-ons that protect your family' : `Protect everyone in your ${vType}`}
+          </h3>
         </div>
 
-        <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forYou}</p>
-          {addons.filter((a: any) => a.id === 'personal_accident').map((a, i) => renderAddonCard(a, i))}
-        </div>
+        {vType === 'bike' ? (
+          <>
+            {addons.map((a, i) => renderAddonCard(a, i))}
+          </>
+        ) : (
+          <>
+            <div className="mb-4 space-y-3">
+              <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forYou}</p>
+              {addons.filter((a: any) => a.id === 'personal_accident').map((a, i) => renderAddonCard(a, i))}
+            </div>
 
-        <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forLovedOnes}</p>
-          {addons.filter((a: any) => a.id === 'passenger_protection').map((a, i) => renderAddonCard(a, i))}
-        </div>
+            <div className="mb-4 space-y-3">
+              <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forLovedOnes}</p>
+              {addons.filter((a: any) => a.id === 'passenger_protection').map((a, i) => renderAddonCard(a, i))}
+            </div>
 
-        <div className="mb-4 space-y-3">
-          <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forDriver}</p>
-          {addons.filter((a: any) => a.id === 'paid_driver').map((a, i) => renderAddonCard(a, i))}
-        </div>
+            <div className="mb-4 space-y-3">
+              <p className="text-[13px] font-semibold text-white/70 mb-3">{tw.forDriver}</p>
+              {addons.filter((a: any) => a.id === 'paid_driver').map((a, i) => renderAddonCard(a, i))}
+            </div>
+          </>
+        )}
 
         <motion.div
           key={`total-${totals.totalAddons}`}

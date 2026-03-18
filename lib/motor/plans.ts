@@ -582,7 +582,6 @@ export function getBikeAddOns(
 ): MotorAddOn[] {
   const isNewBike = state.vehicleEntryType === 'brand_new';
   
-  // Category 1: Add-ons that protect your family
   const familyAddOns: MotorAddOn[] = [
     {
       id: 'personal_accident_bike',
@@ -590,7 +589,6 @@ export function getBikeAddOns(
       description: 'Pays up to ₹15 lakh if the bike owner is permanently disabled or dies in an accident.',
       price: 399,
       category: 'protect_everyone',
-      popular: true,
     },
     {
       id: 'pillion_rider',
@@ -608,7 +606,6 @@ export function getBikeAddOns(
     },
   ];
 
-  // Category 2: Add-ons that protect your bike
   const bikeAddOns: MotorAddOn[] = [
     {
       id: 'engine_protect_bike',
@@ -616,7 +613,6 @@ export function getBikeAddOns(
       description: 'Covers damage to your bike\'s engine due to water ingression, oil leakage, or hydrostatic lock — damage not covered under a standard policy.',
       price: 299,
       category: 'out_of_pocket',
-      popular: true,
     },
     {
       id: 'consumables_cover_bike',
@@ -631,11 +627,9 @@ export function getBikeAddOns(
       description: 'Pays the full cost of parts replaced during a claim with no depreciation deducted — minimises your out-of-pocket expenses.',
       price: 499,
       category: 'out_of_pocket',
-      recommended: true,
     },
   ];
 
-  // Add Return to Invoice for new bikes only
   if (isNewBike) {
     bikeAddOns.push({
       id: 'return_to_invoice_bike',
@@ -643,8 +637,6 @@ export function getBikeAddOns(
       description: 'Receive the complete invoice value (including registration charges and road tax) or the current on-road price, whichever is lower, if your bike is stolen or damaged beyond repair.',
       price: 599,
       category: 'out_of_pocket',
-      recommended: true,
-      popular: true,
     });
   }
 
