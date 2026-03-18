@@ -525,10 +525,133 @@ export function getRecommendedAddOns(state: MotorJourneyState): string[] {
 
 /* ── Add-ons ── */
 
+/* ═══════════════════════════════════════════════
+   BIKE-SPECIFIC PLAN ROUTING LOGIC
+   Based on bike planning logic documentation
+   ═══════════════════════════════════════════════ */
+
+export function getBikePlanEligibility(state: MotorJourneyState): {
+  canOfferOD: boolean;
+  planTypes: ('comprehensive' | 'third_party' | 'od')[];
+  isNewBike: boolean;
+} {
+  const vehicleAge = state.vehicleData.registrationYear 
+    ? new Date().getFullYear() - state.vehicleData.registrationYear 
+    : 0;
+  
+  const isNewBike = state.vehicleEntryType === 'brand_new';
+  const hasActiveTpPolicy = state.hasActiveTpPolicy;
+
+  if (isNewBike) {
+    // Journey 2: New bike buyers get fixed tenure plans
+    return {
+      canOfferOD: false,
+      planTypes: ['comprehensive', 'third_party'], // Special 5-year TP structure
+      isNewBike: true,
+    };
+  }
+
+  // Journey 1: Existing bike owners
+  if (vehicleAge < 5 && hasActiveTpPolicy) {
+    // Can offer OD-only since TP is already covered
+    return {
+      canOfferOD: true,
+      planTypes: ['comprehensive', 'od'],
+      isNewBike: false,
+    };
+  }
+
+  // Standard case: offer comprehensive and third party
+  return {
+    canOfferOD: false,
+    planTypes: ['comprehensive', 'third_party'],
+    isNewBike: false,
+  };
+}
+
+export function getBikeAddOns(
+  state: MotorJourneyState
+): MotorAddOn[] {
+  const isNewBike = state.vehicleEntryType === 'brand_new';
+  
+  // Category 1: Add-ons that protect your family
+  const familyAddOns: MotorAddOn[] = [
+    {
+      id: 'personal_accident_bike',
+      name: 'Personal Accident Cover',
+      description: 'Pays up to ₹15 lakh if the bike owner is permanently disabled or dies in an accident.',
+      price: 399,
+      category: 'protect_everyone',
+      popular: true,
+    },
+    {
+      id: 'pillion_rider',
+      name: 'Pillion Rider Cover',
+      description: 'Pays up to ₹2 lakh if your co-passenger is permanently disabled or dies in an accident.',
+      price: 199,
+      category: 'protect_everyone',
+    },
+    {
+      id: 'helmet_protect',
+      name: 'Helmet Protect',
+      description: 'Get up to ₹1,000 for helmet damage or theft, if your bike is also involved in the same incident.',
+      price: 99,
+      category: 'protect_everyone',
+    },
+  ];
+
+  // Category 2: Add-ons that protect your bike
+  const bikeAddOns: MotorAddOn[] = [
+    {
+      id: 'engine_protect_bike',
+      name: 'Engine Protect',
+      description: 'Covers damage to your bike\'s engine due to water ingression, oil leakage, or hydrostatic lock — damage not covered under a standard policy.',
+      price: 299,
+      category: 'out_of_pocket',
+      popular: true,
+    },
+    {
+      id: 'consumables_cover_bike',
+      name: 'Consumables Cover',
+      description: 'Covers the cost of consumables like nuts, bolts, brake oil, engine oil etc. that get replaced during repairs.',
+      price: 199,
+      category: 'out_of_pocket',
+    },
+    {
+      id: 'zero_depreciation_bike',
+      name: 'Zero Depreciation',
+      description: 'Pays the full cost of parts replaced during a claim with no depreciation deducted — minimises your out-of-pocket expenses.',
+      price: 499,
+      category: 'out_of_pocket',
+      recommended: true,
+    },
+  ];
+
+  // Add Return to Invoice for new bikes only
+  if (isNewBike) {
+    bikeAddOns.push({
+      id: 'return_to_invoice_bike',
+      name: 'Return to Invoice',
+      description: 'Receive the complete invoice value (including registration charges and road tax) or the current on-road price, whichever is lower, if your bike is stolen or damaged beyond repair.',
+      price: 599,
+      category: 'out_of_pocket',
+      recommended: true,
+      popular: true,
+    });
+  }
+
+  return [...familyAddOns, ...bikeAddOns];
+}
+
 export function getMotorAddOns(
   vehicleType: 'car' | 'bike' = 'car',
   state?: MotorJourneyState
 ): MotorAddOn[] {
+  // Use bike-specific add-ons for bikes
+  if (vehicleType === 'bike' && state) {
+    return getBikeAddOns(state);
+  }
+  
   const ncb = state?.previousPolicy?.ncbPercentage || 0;
   const hasPaidDriver = state?.hasPaidDriver ?? false;
   const hasAccessories = state?.hasAftermarketAccessories ?? false;

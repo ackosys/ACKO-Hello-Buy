@@ -69,8 +69,10 @@ const registrationHasNumber: MotorConversationStep = {
   processResponse: (response) => ({
     vehicleEntryType: response === 'yes' ? 'existing' : 'brand_new',
   }),
-  getNextStep: (response) => {
+  getNextStep: (response, state) => {
     if (response === 'yes') return 'registration.enter_number';
+    // For new bikes, route to enhanced Journey 2 flow
+    if (state.vehicleType === 'bike') return 'new_bike.welcome';
     return 'manual_entry.congratulations';
   },
 };
@@ -567,6 +569,94 @@ const POPULAR_BIKES = [
   { id: 'suzuki_access', label: 'Suzuki Access 125', description: '125cc Scooter', logoUrl: '/logos/Suzuki.svg' },
 ];
 
+/* ═══════════════════════════════════════════════
+   NEW BIKE BUYER JOURNEY — Enhanced for bike planning logic
+   ═══════════════════════════════════════════════ */
+
+/* Journey 2: New Bike Welcome */
+const newBikeWelcome: MotorConversationStep = {
+  id: 'new_bike.welcome',
+  module: 'manual_entry',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'brand_new',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    return {
+      botMessages: [
+        `Exciting! A brand new bike! 🏍️`,
+        `We can save you up to 75% on bike insurance with our comprehensive coverage.`
+      ],
+      options: [
+        { id: 'continue', label: 'Let\'s get started', icon: 'arrow_right' },
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'new_bike.select_make',
+};
+
+/* Journey 2: Select Bike Make */
+const newBikeSelectMake: MotorConversationStep = {
+  id: 'new_bike.select_make',
+  module: 'manual_entry',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'brand_new',
+  widgetType: 'brand_selector',
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    return {
+      botMessages: [`Which make is your bike?`],
+      subText: 'Select your bike manufacturer',
+    };
+  },
+  processResponse: (response) => ({
+    vehicleData: { make: response as string, model: '', variant: '', fuelType: '', registrationYear: new Date().getFullYear(), registrationMonth: '', hasCngKit: null, isCommercialVehicle: null },
+  }),
+  getNextStep: () => 'new_bike.select_model',
+};
+
+/* Journey 2: Select Bike Model */
+const newBikeSelectModel: MotorConversationStep = {
+  id: 'new_bike.select_model',
+  module: 'manual_entry',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'brand_new',
+  widgetType: 'model_selector',
+  getScript: (state) => {
+    const t = getT(state.language).motorScripts;
+    return {
+      botMessages: [`Which model?`],
+      subText: `Select your ${state.vehicleData.make} model`,
+    };
+  },
+  processResponse: (response, state) => ({
+    vehicleData: { ...state.vehicleData, model: response as string },
+  }),
+  getNextStep: (_, state) => {
+    // Check if user is logged in to determine if we need phone number
+    const userProfile = useUserProfileStore.getState();
+    return userProfile.phone ? 'quote.calculating' : 'new_bike.phone_number';
+  },
+};
+
+/* Journey 2: Phone Number (if not logged in) */
+const newBikePhoneNumber: MotorConversationStep = {
+  id: 'new_bike.phone_number',
+  module: 'manual_entry',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'brand_new',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    return {
+      botMessages: [`Your phone number?`],
+      subText: 'For quote calculation and policy linking',
+      placeholder: '+91 98765 43210',
+      inputType: 'tel',
+    };
+  },
+  processResponse: (response) => ({
+    ownerMobile: response as string,
+  }),
+  getNextStep: () => 'quote.calculating',
+};
+
 /* Step 1: Popular vehicle suggestions (car or bike) */
 const brandNewPopularCars: MotorConversationStep = {
   id: 'brand_new.popular_cars',
@@ -606,8 +696,12 @@ const brandNewPopularCars: MotorConversationStep = {
       },
     };
   },
-  getNextStep: (response) => {
-    if (response === 'other') return 'manual_entry.select_brand';
+  getNextStep: (response, state) => {
+    if (response === 'other') {
+      // For new bikes, go to enhanced new bike flow
+      if (state.vehicleType === 'bike') return 'new_bike.select_make';
+      return 'manual_entry.select_brand';
+    }
     return 'manual_entry.select_fuel';
   },
 };
@@ -2147,6 +2241,313 @@ const ackoDriveBrowseVariant: MotorConversationStep = {
    STEP REGISTRY
    ═══════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════
+   BIKE-SPECIFIC ADD-ON STEPS
+   Following bike planning logic with proper categorization  
+   ═══════════════════════════════════════════════ */
+
+/* Bike: Add-ons Introduction */
+const bikeAddonsIntro: MotorConversationStep = {
+  id: 'addons.intro',
+  module: 'addons',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    return {
+      botMessages: [`Enhance your bike insurance with add-ons.`],
+      subText: 'Select additional protection for you and your bike',
+      options: [
+        { id: 'continue', label: 'Show me add-ons', icon: 'shield' },
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'addons.family_protection',
+};
+
+/* Bike: Family Protection Add-ons */
+const bikeFamilyProtection: MotorConversationStep = {
+  id: 'addons.family_protection',
+  module: 'addons',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'addon_selector',
+  getScript: (state) => {
+    return {
+      botMessages: [`Add-ons that protect your family`],
+      subText: 'Coverage for you and your passengers',
+      options: [
+        { 
+          id: 'personal_accident', 
+          label: 'Personal Accident Cover', 
+          description: 'Pays up to ₹15 lakh if the bike owner is permanently disabled or dies in an accident.',
+          price: 'From ₹399/yr',
+          icon: 'person_shield' 
+        },
+        { 
+          id: 'pillion_rider', 
+          label: 'Pillion Rider Cover', 
+          description: 'Pays up to ₹2 lakh if your co-passenger is permanently disabled or dies in an accident.',
+          price: 'From ₹199/yr',
+          icon: 'people_shield' 
+        },
+        { 
+          id: 'helmet_protect', 
+          label: 'Helmet Protect', 
+          description: 'Get up to ₹1,000 for helmet damage or theft, if your bike is also involved in the same incident.',
+          price: 'From ₹99/yr',
+          icon: 'helmet' 
+        },
+      ],
+    };
+  },
+  processResponse: (response) => ({
+    selectedAddOns: Array.isArray(response) ? response : [response],
+  }),
+  getNextStep: () => 'addons.bike_protection',
+};
+
+/* Bike: Bike Protection Add-ons */
+const bikeBikeProtection: MotorConversationStep = {
+  id: 'addons.bike_protection',
+  module: 'addons',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'addon_selector',
+  getScript: (state) => {
+    const isNewBike = state.vehicleEntryType === 'brand_new';
+    const standardAddons = [
+      { 
+        id: 'engine_protect', 
+        label: 'Engine Protect', 
+        description: 'Covers damage to your bike\'s engine due to water ingression, oil leakage, or hydrostatic lock — damage not covered under a standard policy.',
+        price: 'From ₹299/yr',
+        icon: 'engine' 
+      },
+      { 
+        id: 'consumables_cover', 
+        label: 'Consumables Cover', 
+        description: 'Covers the cost of consumables like nuts, bolts, brake oil, engine oil etc. that get replaced during repairs.',
+        price: 'From ₹199/yr',
+        icon: 'tools' 
+      },
+      { 
+        id: 'zero_depreciation', 
+        label: 'Zero Depreciation', 
+        description: 'Pays the full cost of parts replaced during a claim with no depreciation deducted — minimises your out-of-pocket expenses.',
+        price: 'From ₹499/yr',
+        icon: 'zero_dep' 
+      },
+    ];
+
+    const newBikeAddons = [
+      ...standardAddons,
+      { 
+        id: 'return_to_invoice', 
+        label: 'Return to Invoice', 
+        description: 'Receive the complete invoice value (including registration charges and road tax) or the current on-road price, whichever is lower, if your bike is stolen or damaged beyond repair.',
+        price: 'From ₹599/yr',
+        icon: 'invoice',
+        badge: 'New bike special'
+      },
+    ];
+
+    return {
+      botMessages: [`Add-ons that protect your bike`],
+      subText: isNewBike ? 'Coverage for your bike + special new bike protection' : 'Coverage for your bike',
+      options: isNewBike ? newBikeAddons : standardAddons,
+    };
+  },
+  processResponse: (response, state) => ({
+    selectedAddOns: [...(state.selectedAddOns || []), ...(Array.isArray(response) ? response : [response])],
+  }),
+  getNextStep: () => 'addons.bike_complete',
+};
+
+/* Bike: Add-ons Complete */
+const bikeAddonsComplete: MotorConversationStep = {
+  id: 'addons.bike_complete',
+  module: 'addons',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    const addonCount = state.selectedAddOns?.length || 0;
+    return {
+      botMessages: [
+        `${addonCount} add-ons selected.`,
+        `Let's build your final premium.`
+      ],
+      options: [
+        { id: 'continue', label: 'Proceed to confirm details', icon: 'arrow_right' },
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'confirm_details.intro',
+};
+
+/* ═══════════════════════════════════════════════
+   BIKE-SPECIFIC CONFIRM DETAILS STEPS
+   Following bike planning logic patterns
+   ═══════════════════════════════════════════════ */
+
+/* Bike: Confirm Details Introduction */
+const bikeConfirmDetailsIntro: MotorConversationStep = {
+  id: 'confirm_details.intro',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    return {
+      botMessages: [
+        `Almost there. A few details to finalize your policy.`
+      ],
+      options: [
+        { id: 'continue', label: 'Let\'s do it', icon: 'arrow_right' },
+      ],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: (_, state) => {
+    // Journey 1 (existing bike) needs policy expiry date
+    if (state.vehicleEntryType === 'existing') {
+      return 'confirm_details.policy_expiry';
+    }
+    // Journey 2 (new bike) skips policy questions
+    return 'confirm_details.name';
+  },
+};
+
+/* Bike: Policy Expiry Date (Journey 1 only) */
+const bikeConfirmPolicyExpiry: MotorConversationStep = {
+  id: 'confirm_details.policy_expiry',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'existing',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    return {
+      botMessages: [
+        `When does your previous policy expire?`,
+        `We need your previous policy's expiry date to start your new policy on time and ensure your bike has continued coverage without any gap.`
+      ],
+      placeholder: 'DD/MM/YYYY',
+      inputType: 'text',
+    };
+  },
+  processResponse: (response) => ({
+    previousPolicy: { expiryDate: response as string, insurer: '', policyType: 'not_sure', ncbPercentage: 0, hadClaims: null },
+  }),
+  getNextStep: () => 'confirm_details.policy_type',
+};
+
+/* Bike: Previous Policy Type (Journey 1 only) */
+const bikeConfirmPolicyType: MotorConversationStep = {
+  id: 'confirm_details.policy_type',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike' && state.vehicleEntryType === 'existing',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    return {
+      botMessages: [`What type of plan did you have previously?`],
+      subText: 'This helps determine coverage continuity',
+      options: [
+        { id: 'comprehensive', label: 'Comprehensive', description: 'Own damage + third party', icon: 'comprehensive' },
+        { id: 'third_party', label: 'Third Party', description: 'Legal minimum coverage', icon: 'third_party' },
+      ],
+    };
+  },
+  processResponse: (response, state) => ({
+    previousPolicy: { ...state.previousPolicy, policyType: response as any },
+  }),
+  getNextStep: () => 'confirm_details.name',
+};
+
+/* Bike: Full Name */
+const bikeConfirmName: MotorConversationStep = {
+  id: 'confirm_details.name',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    const userProfile = useUserProfileStore.getState();
+    return {
+      botMessages: [`Your full name?`],
+      subText: 'Policyholder name as per official documents',
+      placeholder: 'Full Name',
+      defaultValue: userProfile.name || '',
+      inputType: 'text',
+    };
+  },
+  processResponse: (response) => ({
+    ownerName: response as string,
+  }),
+  getNextStep: () => 'confirm_details.email',
+};
+
+/* Bike: Email Address */
+const bikeConfirmEmail: MotorConversationStep = {
+  id: 'confirm_details.email',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    const userProfile = useUserProfileStore.getState();
+    return {
+      botMessages: [`Your email address?`],
+      subText: 'Policy documents and claim updates will be sent here',
+      placeholder: 'you@email.com',
+      defaultValue: userProfile.email || '',
+      inputType: 'text',
+    };
+  },
+  processResponse: (response) => ({
+    ownerEmail: response as string,
+  }),
+  getNextStep: () => 'confirm_details.pincode',
+};
+
+/* Bike: Pincode */
+const bikeConfirmPincode: MotorConversationStep = {
+  id: 'confirm_details.pincode',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    return {
+      botMessages: [`Your pincode?`],
+      subText: 'For pricing and zone-based underwriting',
+      placeholder: '560001',
+      inputType: 'tel',
+    };
+  },
+  processResponse: (response) => ({
+    pincode: response as string,
+  }),
+  getNextStep: (_, state) => {
+    // Check if user is logged in
+    const userProfile = useUserProfileStore.getState();
+    return userProfile.phone ? 'review.premium_breakdown' : 'confirm_details.phone';
+  },
+};
+
+/* Bike: Phone Number (if not logged in) */
+const bikeConfirmPhone: MotorConversationStep = {
+  id: 'confirm_details.phone',
+  module: 'owner_details',
+  condition: (state) => state.vehicleType === 'bike',
+  widgetType: 'text_input',
+  getScript: (state) => {
+    return {
+      botMessages: [`Your phone number?`],
+      subText: 'Policy will be linked to this number',
+      placeholder: '+91 98765 43210',
+      inputType: 'tel',
+    };
+  },
+  processResponse: (response) => ({
+    ownerMobile: response as string,
+  }),
+  getNextStep: () => 'review.premium_breakdown',
+};
+
 const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'vehicle_type.select': vehicleTypeSelect,
   'registration.has_number': registrationHasNumber,
@@ -2166,6 +2567,12 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'manual_entry.select_fuel': manualEntrySelectFuel,
   'manual_entry.select_variant': manualEntrySelectVariant,
   'manual_entry.select_year': manualEntrySelectYear,
+  // New bike journey (Journey 2)
+  'new_bike.welcome': newBikeWelcome,
+  'new_bike.select_make': newBikeSelectMake,
+  'new_bike.select_model': newBikeSelectModel,
+  'new_bike.phone_number': newBikePhoneNumber,
+  // Brand new cars (existing)
   'brand_new.popular_cars': brandNewPopularCars,
   'brand_new.commercial_check': brandNewCommercialCheck,
   'brand_new.delivery_date': brandNewDeliveryDate,
@@ -2173,6 +2580,18 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'brand_new.pincode': brandNewPincode,
   'brand_new.summary': brandNewSummary,
   'brand_new.view_prices': brandNewViewPrices,
+  // Bike-specific add-ons
+  'addons.intro': bikeAddonsIntro,
+  'addons.family_protection': bikeFamilyProtection,
+  'addons.bike_protection': bikeBikeProtection,
+  // Bike-specific confirm details
+  'confirm_details.intro': bikeConfirmDetailsIntro,
+  'confirm_details.policy_expiry': bikeConfirmPolicyExpiry,
+  'confirm_details.policy_type': bikeConfirmPolicyType,
+  'confirm_details.name': bikeConfirmName,
+  'confirm_details.email': bikeConfirmEmail,
+  'confirm_details.pincode': bikeConfirmPincode,
+  'confirm_details.phone': bikeConfirmPhone,
   'login.phone_gate': loginPhoneGate,
   'login.phone_gate_prequote': loginPhoneGatePrequote,
   'login.phone_gate_before_plans': loginPhoneGateBeforePlans,
@@ -2229,6 +2648,8 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'addons.out_of_pocket': addonsOutOfPocket,
   'addons.protect_everyone': addonsProtectEveryone,
   'addons.complete': addonsComplete,
+  // Bike add-ons complete
+  'addons.bike_complete': bikeAddonsComplete,
   'review.premium_breakdown': reviewPremiumBreakdown,
   'payment.process': paymentProcess,
   'payment.success': paymentSuccess,
