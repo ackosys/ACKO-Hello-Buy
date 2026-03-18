@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bike User Journey Map — Two-Wheeler Insurance</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f13; color: #e0e0e0; padding: 40px 60px; }
+    h1 { font-size: 32px; margin-bottom: 8px; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 48px; font-size: 15px; }
+    h2 { font-size: 22px; margin: 48px 0 8px; color: #c4b5fd; border-bottom: 1px solid #2a2a35; padding-bottom: 12px; }
+    h3 { font-size: 17px; margin: 32px 0 8px; color: #a5b4fc; }
+    p, li { font-size: 14px; line-height: 1.7; color: #bbb; }
+    ul { margin: 8px 0 16px 24px; }
+    .diagram-container { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 32px; margin: 20px 0 40px; overflow-x: auto; }
+    .diagram-container .mermaid { display: flex; justify-content: center; }
+    .toc { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 24px 32px; margin: 0 0 40px; }
+    .toc a { color: #a5b4fc; text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+    .toc ol { margin-left: 20px; }
+    .toc li { margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 13px; }
+    th { background: #1e1e2e; color: #c4b5fd; text-align: left; padding: 10px 14px; border: 1px solid #2a2a3a; }
+    td { padding: 8px 14px; border: 1px solid #2a2a3a; color: #bbb; }
+    tr:nth-child(even) td { background: #16161e; }
+    code { background: #2a2a3a; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #e0e0e0; }
+    .note { background: #1e1b2e; border-left: 3px solid #7c3aed; padding: 12px 16px; margin: 12px 0; border-radius: 0 8px 8px 0; font-size: 13px; }
+
+    /* ── Mode toggle ── */
+    .mode-toggle {
+      position: fixed; top: 24px; right: 32px;
+      display: flex; background: #1a1a24; border: 1px solid #2a2a3a;
+      border-radius: 999px; padding: 4px; gap: 2px; z-index: 100;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+    .mode-toggle button {
+      padding: 7px 20px; border: none; border-radius: 999px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: transparent; color: #666; transition: all 0.18s;
+      font-family: inherit;
+    }
+    .mode-toggle button.active { background: #7c3aed; color: #fff; }
+    .mode-toggle button:hover:not(.active) { color: #e0e0e0; background: rgba(255,255,255,0.07); }
+    .mode-badge {
+      display: inline-block; font-size: 12px; padding: 2px 10px;
+      border-radius: 999px; margin-left: 10px; vertical-align: middle;
+    }
+    .mode-badge.dev { background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .mode-badge.simple { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+
+    /* ── Show / hide by mode ── */
+    /* Default (no data-mode yet): show everything so mermaid can render all diagrams */
+    .dev-diagram, .simple-diagram, .dev-only, .simple-only, .dev-section, .simple-section { display: block; }
+
+    [data-mode="dev"]    .simple-diagram,
+    [data-mode="dev"]    .simple-only,
+    [data-mode="dev"]    .simple-section { display: none; }
+
+    [data-mode="simple"] .dev-diagram,
+    [data-mode="simple"] .dev-only,
+    [data-mode="simple"] .dev-section { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="mode-toggle">
+  <button class="mode-btn" data-mode="dev">Developer</button>
+  <button class="mode-btn" data-mode="simple">Stakeholder</button>
+</div>
+
+<h1>Bike User Journey Map — Two-Wheeler Insurance</h1>
+<p class="subtitle">
+  Complete end-to-end flowcharts for the ACKO conversational bike insurance buy platform
+  <span class="mode-badge dev dev-only">Developer view — step IDs &amp; widget names visible</span>
+  <span class="mode-badge simple simple-only">Stakeholder view — plain language, no implementation details</span>
+</p>
+
+<div class="toc">
+  <strong style="color:#fff">Table of Contents</strong>
+  <ol>
+    <li><a href="#s1">Master Journey Overview</a></li>
+    <li><a href="#s2">Entry &amp; Vehicle Type Selection</a></li>
+    <li><a href="#s3">Preliminary Checks &amp; Validations</a></li>
+    <li><a href="#s4">Journey 1 — Existing Bike Owner (Renewal/Switch)</a></li>
+    <li><a href="#s5">Journey 2 — New Bike Buyer</a></li>
+    <li><a href="#s6">Data Collection &amp; Verification</a></li>
+    <li><a href="#s7">Login Logic — Skippable &amp; Mandatory Gates</a></li>
+    <li><a href="#s8">Quote &amp; Plan Selection</a></li>
+    <li><a href="#s9">Plan Type Routing (Comprehensive/OD/TP)</a></li>
+    <li><a href="#s10">Add-on Personalisation</a></li>
+    <li><a href="#s11">Confirm Details</a></li>
+    <li><a href="#s12">Review &amp; Payment</a></li>
+    <li><a href="#s13">Post-Purchase &amp; Policy Issuance</a></li>
+    <li><a href="#s14">PWILO — Pick Up Where I Left Off</a></li>
+    <li><a href="#s15">Journey Phase Summary</a></li>
+    <li><a href="#s16">Step Reference Table</a></li>
+  </ol>
+</div>
+
+<h2 id="s1">1. Master Journey Overview</h2>
+
+<p class="dev-only">Highest-level view of the entire bike insurance journey. Both existing owner and new buyer flows converge at plan selection after different data collection phases.</p>
+<p class="simple-only">Complete bike insurance purchase process from start to finish, covering both existing bike owners and new bike buyers.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    START(["🏠 User lands on Homepage"]) --> HOME_ACTION{"User action"}
+    HOME_ACTION -->|"Clicks 'Bike Insurance'"| BIKE_PAGE["Bike Insurance Page Loads"]
+    HOME_ACTION -->|"PWILO card 'Continue'"| RESUME["Resume from Snapshot"]
+
+    BIKE_PAGE --> INIT{"Initialisation"}
+    INIT -->|"Default entry"| REG_CHOICE["Registration choice"]
+    INIT -->|"Resume + snapshot"| RESTORE_SNAP["Restore Snapshot State"]
+
+    RESUME --> RESTORE_SNAP
+    RESTORE_SNAP --> RESTORED_STEP["Jump to saved step"]
+
+    REG_CHOICE --> FORK{"Has registration or new bike?"}
+    FORK -->|"Enter registration number"| JOURNEY_1["🔄 Journey 1: Existing Owner"]
+    FORK -->|"New bike purchase"| JOURNEY_2["🆕 Journey 2: New Buyer"]
+
+    JOURNEY_1 --> PRELIM["Preliminary Checks"]
+    PRELIM --> DATA_COLLECT["Data Collection & Verification"]
+    
+    JOURNEY_2 --> NEW_DATA["New Bike Data Collection"]
+    
+    DATA_COLLECT --> LOGIN_CHECK{"Logged in?"}
+    NEW_DATA --> LOGIN_CHECK
+
+    LOGIN_CHECK -->|"Yes"| QUOTE_CALC
+    LOGIN_CHECK -->|"No"| OPTIONAL_LOGIN["🔓 Optional Login Gate"]
+    OPTIONAL_LOGIN --> QUOTE_CALC
+
+    QUOTE_CALC["📊 Quote Calculation"] --> PLAN_SELECT["📋 Plan Selection"]
+    PLAN_SELECT --> ADDONS["🛡️ Add-on Selection"]
+    ADDONS --> CONFIRM["✅ Confirm Details"]
+    CONFIRM --> LOGIN_MANDATORY{"Logged in?"}
+    LOGIN_MANDATORY -->|"Yes"| REVIEW
+    LOGIN_MANDATORY -->|"No"| MANDATORY_LOGIN["🔒 Mandatory Login"]
+    MANDATORY_LOGIN --> REVIEW
+    REVIEW["💰 Premium Review"] --> PAYMENT["💳 Payment"]
+    PAYMENT --> POST_PURCHASE["✅ Post-Purchase"]
+    POST_PURCHASE --> END(["🎉 Journey Complete"])
+
+    style JOURNEY_1 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style JOURNEY_2 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style QUOTE_CALC fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PLAN_SELECT fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+    style END fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    START(["🏠 User starts on homepage"]) --> ACTION{"Choose path"}
+    ACTION -->|"Has existing bike"| EXISTING["Existing Bike Path"]
+    ACTION -->|"Buying new bike"| NEW_BIKE["New Bike Path"]
+    ACTION -->|"Continue previous session"| RESUME["Resume Previous Session"]
+
+    EXISTING --> VERIFY["Verify bike details"]
+    NEW_BIKE --> COLLECT["Collect bike information"]
+    RESUME --> CONTINUE["Continue where left off"]
+    
+    VERIFY --> QUOTE["Get personalized quote"]
+    COLLECT --> QUOTE
+    CONTINUE --> QUOTE
+
+    QUOTE --> PLANS["Choose insurance plan"]
+    PLANS --> EXTRAS["Select additional coverage"]
+    EXTRAS --> DETAILS["Confirm personal details"]
+    DETAILS --> REVIEW["Review and pay"]
+    REVIEW --> PAYMENT["Complete payment"]
+    PAYMENT --> DONE(["🎉 Bike insured successfully"])
+
+    style EXISTING fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style NEW_BIKE fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style QUOTE fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PLANS fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style PAYMENT fill:#1b4332,stroke:#22c55e,color:#fff
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s2">2. Entry & Vehicle Type Selection</h2>
+
+<p class="dev-only">The journey begins when the user selects "Bike Insurance" from the homepage. Users can either enter an existing registration number or indicate they're buying a new bike.</p>
+<p class="simple-only">First step where users choose whether they have an existing bike to insure or are purchasing a new one.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    HP(["🏠 Homepage"]) --> BIKE_CLICK["User clicks 'Bike Insurance'"]
+    BIKE_CLICK --> BIKE_INIT["Bike Page useEffect runs"]
+    BIKE_INIT --> RESET["resetJourney — clear all state"]
+    RESET --> WELCOME["bike.welcome\n'Looking for bike insurance?'"]
+
+    WELCOME --> CHOICE{"User selects"}
+    CHOICE -->|"Enter registration number"| REG_FLOW["→ Journey 1: Existing Owner"]
+    CHOICE -->|"New bike purchase"| NEW_FLOW["→ Journey 2: New Buyer"]
+
+    style HP fill:#1b4332,stroke:#22c55e,color:#fff
+    style REG_FLOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style NEW_FLOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    HP(["🏠 Homepage"]) --> BIKE["Select 'Bike Insurance'"]
+    BIKE --> WELCOME["Welcome screen"]
+
+    WELCOME --> CHOICE{"What's your situation?"}
+    CHOICE -->|"I have an existing bike"| EXISTING["Enter bike registration"]
+    CHOICE -->|"I'm buying a new bike"| NEW["New bike details"]
+
+    style HP fill:#1b4332,stroke:#22c55e,color:#fff
+    style EXISTING fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style NEW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s3">3. Preliminary Checks & Validations</h2>
+
+<p class="dev-only">When a user enters a registration number, these checks are performed before proceeding to data collection.</p>
+<p class="simple-only">System checks for existing policies and validates the registration number before proceeding.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    REG_INPUT["registration.enter_number\nWidget: vehicle_reg_input\nValidation: uppercase, no spaces"]
+    REG_INPUT --> FETCH["registration.loading\nWidget: progressive_loader\n'Fetching details for KA01AB1234...'"]
+
+    FETCH --> RESULT{"IIB lookup result"}
+
+    RESULT -->|"Success"| PRELIM["Run preliminary checks"]
+    RESULT -->|"Failure"| MANUAL["manual_entry.start\n'Let's enter details manually'"]
+
+    PRELIM --> PRELIM_R{"Prelim check result"}
+
+    PRELIM_R -->|"✅ clear"| VERIFY["registration.found\nWidget: vehicle_details_card\nShow auto-fetched fields"]
+    PRELIM_R -->|"insured_same_user"| P_SAME["'Already insured with ACKO'\n→ View policy / Edit reg"]
+    PRELIM_R -->|"insured_different_user"| P_DIFF["'Policy belongs to xxxx5511'\n→ Buying bike / Login other / Edit reg"]
+    PRELIM_R -->|"car_number_entered"| P_CAR["'This is a car registration'\n→ Continue with car / Edit reg"]
+    PRELIM_R -->|"payment_pending"| P_PAY["'Payment done, pending steps'\n→ Complete steps / Edit reg"]
+
+    P_SAME -->|"Edit reg"| REG_INPUT
+    P_DIFF -->|"Buying bike"| VERIFY
+    P_DIFF -->|"Edit reg"| REG_INPUT
+    P_CAR -->|"Continue with car"| CAR_REDIRECT["→ Redirect to car journey"]
+    P_CAR -->|"Edit reg"| REG_INPUT
+    P_PAY -->|"Complete steps"| PENDING_FLOW["→ KYC/Inspection flow"]
+    P_PAY -->|"Edit reg"| REG_INPUT
+
+    VERIFY --> CONFIRM{"User confirms?"}
+    CONFIRM -->|"✅ Confirm"| DATA_COLLECTION["→ Data Collection"]
+    CONFIRM -->|"Edit reg"| REG_INPUT
+
+    MANUAL --> BRAND["manual_entry.select_brand"]
+    BRAND --> MODEL["manual_entry.select_model"]
+    MODEL --> DATA_COLLECTION
+
+    style VERIFY fill:#1b4332,stroke:#22c55e,color:#fff
+    style DATA_COLLECTION fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    INPUT["Enter registration number"] --> LOOKUP["Look up bike details"]
+
+    LOOKUP --> CHECK{"Check existing policies"}
+
+    CHECK -->|"No issues found"| SHOW["Show bike details for confirmation"]
+    CHECK -->|"Already insured with ACKO"| EXISTING["Offer to view existing policy"]
+    CHECK -->|"Insured with different account"| DIFFERENT["Options to buy or login"]
+    CHECK -->|"Car registration entered"| REDIRECT["Redirect to car insurance"]
+    CHECK -->|"Payment pending"| PENDING["Complete pending steps"]
+    CHECK -->|"Details not found"| MANUAL["Enter details manually"]
+
+    SHOW --> CONFIRMED["User confirms details"]
+    EXISTING --> RESOLVED["Issue resolved"]
+    DIFFERENT --> RESOLVED
+    REDIRECT --> RESOLVED
+    PENDING --> RESOLVED
+    MANUAL --> CONFIRMED
+
+    CONFIRMED --> CONTINUE["Continue to next step"]
+    RESOLVED --> CONTINUE
+
+    style SHOW fill:#1b4332,stroke:#22c55e,color:#fff
+    style CONTINUE fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s4">4. Journey 1 — Existing Bike Owner (Renewal/Switch)</h2>
+
+<p class="dev-only">Handles users who own an existing bike and want to renew their expiring policy or switch to ACKO.</p>
+<p class="simple-only">Process for people who already own a bike and want to renew or switch their insurance.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    START["Data Collection Phase"] --> FETCHED{"IIB data available?"}
+    
+    FETCHED -->|"Make + Model + Expiry"| ALL_FETCHED["Show verify card with:\n• Make & Model\n• Policy expiry date"]
+    FETCHED -->|"Make + Model only"| PARTIAL_1["Show verify card with:\n• Make & Model\nAsk: Policy expiry date"]
+    FETCHED -->|"Expiry only"| PARTIAL_2["Show verify card with:\n• Policy expiry date\nAsk: Make & Model"]
+    FETCHED -->|"Nothing fetched"| NOTHING["Ask all manually:\n• Make\n• Model\n• Policy expiry date"]
+
+    ALL_FETCHED --> PHONE_CHECK
+    PARTIAL_1 --> PHONE_CHECK
+    PARTIAL_2 --> PHONE_CHECK
+    NOTHING --> PHONE_CHECK
+
+    PHONE_CHECK{"User logged in?"} -->|"No"| ASK_PHONE["Ask: Phone number"]
+    PHONE_CHECK -->|"Yes"| QUOTE_REQUEST
+
+    ASK_PHONE --> QUOTE_REQUEST["Request quote from backend"]
+    QUOTE_REQUEST --> PLANS{"Plans available?"}
+    
+    PLANS -->|"❌ No plans"| BLOCKED["blocked_user\n'Unable to offer plans'\nDEAD END"]
+    PLANS -->|"✅ Plans available"| PLAN_ROUTING["→ Plan Selection Routing"]
+
+    style BLOCKED fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style PLAN_ROUTING fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    START["Existing bike owner process"] --> AUTO{"Can we get bike details automatically?"}
+    
+    AUTO -->|"Yes - complete info"| VERIFY["Verify bike and policy details"]
+    AUTO -->|"Yes - partial info"| ASK_MISSING["Ask for missing information"]
+    AUTO -->|"No - manual entry"| MANUAL["Enter all details manually"]
+
+    VERIFY --> LOGIN_CHECK
+    ASK_MISSING --> LOGIN_CHECK  
+    MANUAL --> LOGIN_CHECK
+
+    LOGIN_CHECK{"Are you logged in?"} -->|"No"| PHONE["Enter phone number"]
+    LOGIN_CHECK -->|"Yes"| GET_QUOTE
+
+    PHONE --> GET_QUOTE["Get personalized quote"]
+    GET_QUOTE --> AVAILABLE{"Insurance available?"}
+    
+    AVAILABLE -->|"Yes"| CHOOSE["Choose your plan"]
+    AVAILABLE -->|"No"| SORRY["Sorry, no plans available"]
+
+    style SORRY fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style CHOOSE fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s5">5. Journey 2 — New Bike Buyer</h2>
+
+<p class="dev-only">Handles users purchasing a brand new bike who need first-time insurance coverage.</p>
+<p class="simple-only">Process for people buying a new bike who need insurance for the first time.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    START["New Bike Journey"] --> WELCOME["new_bike.welcome\n'Exciting! A brand new bike!'"]
+    WELCOME --> MAKE["new_bike.select_make\nWidget: brand_selector\n'Which make is your bike?'"]
+    MAKE --> MODEL["new_bike.select_model\nWidget: model_selector\n'Which model?'"]
+    MODEL --> PHONE_CHECK{"User logged in?"}
+
+    PHONE_CHECK -->|"No"| ASK_PHONE["new_bike.phone_number\nWidget: text_input\n'Your phone number?'"]
+    PHONE_CHECK -->|"Yes"| QUOTE_REQUEST
+
+    ASK_PHONE --> QUOTE_REQUEST["Request quote from backend"]
+    QUOTE_REQUEST --> PLANS{"Plans available?"}
+    
+    PLANS -->|"❌ No plans"| BLOCKED["blocked_user\n'Unable to offer plans'\nDEAD END"]
+    PLANS -->|"✅ Plans available"| NEW_PLAN_SELECT["→ New Bike Plan Selection"]
+
+    style BLOCKED fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style NEW_PLAN_SELECT fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    START["New bike buyer process"] --> EXCITED["Congratulations on your new bike!"]
+    EXCITED --> MAKE["Select bike brand"]
+    MAKE --> MODEL["Select bike model"]
+    MODEL --> LOGIN_CHECK{"Are you logged in?"}
+
+    LOGIN_CHECK -->|"No"| PHONE["Enter phone number"]
+    LOGIN_CHECK -->|"Yes"| GET_QUOTE
+
+    PHONE --> GET_QUOTE["Get new bike quote"]
+    GET_QUOTE --> AVAILABLE{"Insurance available?"}
+    
+    AVAILABLE -->|"Yes"| NEW_PLANS["Choose from new bike plans"]
+    AVAILABLE -->|"No"| SORRY["Sorry, no plans available"]
+
+    style SORRY fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style NEW_PLANS fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s6">6. Data Collection & Verification</h2>
+
+<p class="dev-only">Detailed view of how the system handles the all-or-nothing framework for auto-fetched vs manually entered data.</p>
+<p class="simple-only">How the system gathers and confirms your bike information through different methods.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph IIB_FETCH ["IIB Auto-Fetch Scenarios"]
+        T1["Scenario 1: Make+Model+Expiry ✓\nUser logged in ✓"]
+        T2["Scenario 2: Make+Model+Expiry ✓\nUser logged out"]
+        T3["Scenario 3: Make+Model ✓\nExpiry ❌, User logged in"]
+        T4["Scenario 4: Make+Model ✓\nExpiry ❌, User logged out"]
+        T5["Scenario 5: Expiry ✓\nMake+Model ❌, User logged in"]
+        T6["Scenario 6: Expiry ✓\nMake+Model ❌, User logged out"]
+        T7["Scenario 7: All ❌\nUser logged in"]
+        T8["Scenario 8: All ❌\nUser logged out"]
+    end
+
+    T1 --> V1["Verify: Make·Model·Expiry\nAsk: (nothing)"]
+    T2 --> V2["Verify: Make·Model·Expiry\nAsk: Phone"]
+    T3 --> V3["Verify: Make·Model\nAsk: Expiry"]
+    T4 --> V4["Verify: Make·Model\nAsk: Expiry·Phone"]
+    T5 --> V5["Verify: Expiry\nAsk: Make·Model"]
+    T6 --> V6["Verify: Expiry\nAsk: Make·Model·Phone"]
+    T7 --> V7["Verify: (none)\nAsk: Make·Model·Expiry"]
+    T8 --> V8["Verify: (none)\nAsk: Make·Model·Expiry·Phone"]
+
+    V1 --> COMPLETE["All data collected → Quote request"]
+    V2 --> COMPLETE
+    V3 --> COMPLETE
+    V4 --> COMPLETE
+    V5 --> COMPLETE
+    V6 --> COMPLETE
+    V7 --> COMPLETE
+    V8 --> COMPLETE
+
+    style COMPLETE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph AUTO ["Information We Can Find Automatically"]
+        A1["Complete bike info + policy expiry"]
+        A2["Bike info only"]
+        A3["Policy expiry only"]
+        A4["Nothing found automatically"]
+    end
+
+    A1 --> VERIFY["Confirm all details are correct"]
+    A2 --> ASK1["Ask for missing policy information"]
+    A3 --> ASK2["Ask for bike make and model"]
+    A4 --> ASK3["Ask for all information manually"]
+
+    VERIFY --> CHECK["Check if you need to login"]
+    ASK1 --> CHECK
+    ASK2 --> CHECK  
+    ASK3 --> CHECK
+
+    CHECK --> READY["Ready to get your quote"]
+
+    style READY fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s7">7. Login Logic — Skippable & Mandatory Gates</h2>
+
+<div class="dev-section">
+<h3>Skippable Login Gate</h3>
+<p>Optional login during the process for personalization and progress saving.</p>
+</div>
+<div class="simple-section">
+<h3>Optional Account Login</h3>
+<p>Login is optional during the process but helps with personalized quotes and saving progress.</p>
+</div>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    TRIGGER["🔓 Skippable Gate triggered\n• During data collection\n• After basic details"]
+    TRIGGER --> CHECK{"User logged in?"}
+    CHECK -->|"✅ Yes"| AUTO["Gate auto-skipped\nProceed to next step"]
+    CHECK -->|"❌ No"| SHOW["Show login_gate_skippable\n'Verify phone for personalised plans'\n'Lets us save your progress'"]
+    SHOW --> ACTION{"User action"}
+    ACTION -->|"Enter phone + OTP"| LOGIN["✅ Login successful"]
+    ACTION -->|"'Skip for now'"| SKIPPED["Login skipped\nContinue without login"]
+    LOGIN --> NEXT["Proceed to next step"]
+    SKIPPED --> NEXT
+
+    style SHOW fill:#1e3a5f,stroke:#3b82f6,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    OFFER["Would you like to create an account?"] --> CHOICE{"Your choice"}
+    CHOICE -->|"Yes, I'll login"| LOGIN["Enter phone number and verify"]
+    CHOICE -->|"Skip for now"| SKIP["Continue without account"]
+    
+    LOGIN --> BENEFITS["Get personalized quotes and save progress"]
+    SKIP --> CONTINUE["Continue with basic quotes"]
+    
+    BENEFITS --> NEXT["Proceed to next step"]
+    CONTINUE --> NEXT
+
+    style OFFER fill:#1e3a5f,stroke:#3b82f6,color:#fff
+</div>
+</div>
+</div>
+
+<div class="dev-section">
+<h3>Mandatory Login Gate</h3>
+<p>Required login before payment or final confirmation.</p>
+</div>
+<div class="simple-section">
+<h3>Required Account Creation</h3>
+<p>Account creation is required before completing your purchase.</p>
+</div>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    TRIGGER["🔒 Mandatory Gate triggered\n• Before confirm details\n• Before payment"]
+    TRIGGER --> CHECK{"User logged in?"}
+    CHECK -->|"✅ Yes"| AUTO["Gate auto-skipped"]
+    CHECK -->|"❌ No"| SHOW["Show login_gate_mandatory\n'We need your phone to continue'\nNo skip button"]
+    SHOW --> OTP["User enters phone + OTP\n(must complete)"]
+    OTP --> DONE["✅ Login successful → proceed"]
+    AUTO --> DONE
+
+    style SHOW fill:#5c1a1a,stroke:#ef4444,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    REQUIRED["Account required to complete purchase"] --> LOGIN["Enter phone number and verify with OTP"]
+    LOGIN --> SUCCESS["Account created successfully"]
+    SUCCESS --> CONTINUE["Continue to complete your purchase"]
+
+    style REQUIRED fill:#5c1a1a,stroke:#ef4444,color:#fff
+    style CONTINUE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s8">8. Quote & Plan Selection</h2>
+
+<p class="dev-only">After data collection, the system calculates quotes and presents plan options based on bike eligibility.</p>
+<p class="simple-only">System calculates personalized insurance quotes and shows available plan options.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    CALC["quote.calculating\nWidget: plan_calculator\n'Fetching personalised quotes...'\nStages: Analysing → IDV → Plans"]
+    CALC --> READY["quote.plans_ready\n'Best plans for your bike'"]
+    READY --> ELIGIBILITY{"Bike eligibility?"}
+
+    ELIGIBILITY -->|"< 5 years old + active TP"| OD_ELIGIBLE["Plans: Comprehensive + OD\n(TP already covered)"]
+    ELIGIBILITY -->|"All other cases"| STANDARD["Plans: Comprehensive + Third Party"]
+    ELIGIBILITY -->|"New bike buyer"| NEW_BIKE["Plans: Comprehensive + TP 5-year\n(Fixed structure)"]
+
+    OD_ELIGIBLE --> DISPLAY_PLANS["Display plan cards with:\n• Starting prices\n• Key benefits\n• Recommended tag"]
+    STANDARD --> DISPLAY_PLANS
+    NEW_BIKE --> DISPLAY_PLANS
+
+    DISPLAY_PLANS --> USER_SELECT{"User selects plan"}
+
+    USER_SELECT -->|"Comprehensive"| COMP_FLOW["→ Comprehensive Flow"]
+    USER_SELECT -->|"Own Damage"| OD_FLOW["→ OD Flow"]  
+    USER_SELECT -->|"Third Party"| TP_FLOW["→ Third Party Flow"]
+
+    style DISPLAY_PLANS fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style COMP_FLOW fill:#1b4332,stroke:#22c55e,color:#fff
+    style OD_FLOW fill:#1b4332,stroke:#22c55e,color:#fff
+    style TP_FLOW fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    CALC["Calculating your personalized quotes..."] --> READY["Your bike insurance plans are ready"]
+    READY --> CHECK_BIKE{"What type of bike coverage do you need?"}
+
+    CHECK_BIKE -->|"Comprehensive protection"| FULL["Full coverage plans available"]
+    CHECK_BIKE -->|"Basic legal coverage"| BASIC["Third party plans available"]
+    CHECK_BIKE -->|"New bike (special rates)"| NEW["New bike specific plans"]
+
+    FULL --> SHOW["Show plan options with prices and benefits"]
+    BASIC --> SHOW
+    NEW --> SHOW
+
+    SHOW --> SELECT{"Choose your preferred plan"}
+    SELECT --> TENURE["Select coverage duration"]
+
+    style SHOW fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style TENURE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s9">9. Plan Type Routing (Comprehensive/OD/TP)</h2>
+
+<p class="dev-only">Different tenure selection flows based on the selected plan type.</p>
+<p class="simple-only">Choose the duration of your insurance coverage based on your selected plan.</p>
+
+<div class="dev-section">
+<h3>Journey 1 Plans (Existing Owner)</h3>
+</div>
+<div class="simple-section">
+<h3>Coverage Duration for Existing Bike Owners</h3>
+</div>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph COMPREHENSIVE ["Comprehensive Plan"]
+        COMP_SELECT["User selects Comprehensive"] --> COMP_TENURE["Select tenure:\n1 Year · 2 Years · 3 Years"]
+        COMP_TENURE --> COMP_NUDGE["Nudge towards 3 years:\n'Save ₹XXX with 3-year plan'\n'Best value' tag on 3-year"]
+        COMP_NUDGE --> COMP_DONE["Comprehensive plan selected"]
+    end
+
+    subgraph OD_ONLY ["Own Damage Plan"]  
+        OD_SELECT["User selects Own Damage"] --> OD_TENURE["Select tenure:\n1 Year · 2 Years · 3 Years"]
+        OD_TENURE --> OD_NUDGE["Nudge towards 3 years:\nShow annual savings"]
+        OD_NUDGE --> OD_DONE["OD plan selected"]
+    end
+
+    subgraph TP_ONLY ["Third Party Plan"]
+        TP_SELECT["User selects Third Party"] --> TP_TENURE["Select tenure:\n1 Year · 2 Years · 3 Years"]
+        TP_TENURE --> TP_NUDGE["Nudge towards 3 years:\nShow cost benefits"]
+        TP_NUDGE --> TP_DONE["TP plan selected"]
+    end
+
+    COMP_DONE --> ADDONS["→ Add-on Selection"]
+    OD_DONE --> ADDONS
+    TP_DONE --> ADDONS
+
+    style ADDONS fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph PLANS ["Coverage Options"]
+        COMP["Complete Protection\nCovers bike damage + legal liability"]
+        OD["Own Damage Only\nCovers bike damage only"]  
+        TP["Legal Coverage Only\nMinimum required by law"]
+    end
+
+    COMP --> DURATION["Choose coverage duration"]
+    OD --> DURATION
+    TP --> DURATION
+
+    DURATION --> OPTIONS["1 Year · 2 Years · 3 Years"]
+    OPTIONS --> SAVINGS["💡 3-year plan offers maximum savings"]
+    SAVINGS --> SELECTED["Duration selected"]
+
+    SELECTED --> EXTRAS["Add extra protection options"]
+
+    style SAVINGS fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style EXTRAS fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<div class="dev-section">
+<h3>Journey 2 Plans (New Bike)</h3>
+</div>
+<div class="simple-section">
+<h3>Special Plans for New Bikes</h3>
+</div>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    NEW_SELECT["New bike plan selection"] --> NEW_PLANS{"Plan choice"}
+    
+    NEW_PLANS -->|"Third Party 5-Year"| TP5["Fixed: 5-year TP coverage only\nNo tenure selection needed"]
+    NEW_PLANS -->|"Comprehensive"| COMP5["Fixed: 5-year TP + 1-year OD\nNo tenure selection needed"]
+    
+    TP5 --> NEW_ADDONS["→ Add-on Selection\n(+ Return to Invoice)"]
+    COMP5 --> NEW_ADDONS
+
+    style NEW_ADDONS fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    NEW["New bike special plans"] --> OPTIONS{"Choose your coverage"}
+    
+    OPTIONS -->|"Basic legal coverage"| BASIC["5-year legal protection\n(Required by law)"]
+    OPTIONS -->|"Complete protection"| COMPLETE["5-year legal + 1-year bike damage\n(Recommended)"]
+    
+    BASIC --> FIXED["Coverage duration is pre-set for new bikes"]
+    COMPLETE --> FIXED
+    
+    FIXED --> EXTRAS["Add special new bike protections"]
+
+    style COMPLETE fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style EXTRAS fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s10">10. Add-on Personalisation</h2>
+
+<p class="dev-only">Two-wheeler add-ons are grouped into family protection and bike protection categories.</p>
+<p class="simple-only">Additional protection options to enhance your basic insurance coverage.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    INTRO["addons.intro\n'Enhance your coverage with add-ons'"]
+    INTRO --> CATEGORIES["Display two categories"]
+
+    CATEGORIES --> FAMILY["Category 1: Add-ons that protect your family\n• Personal Accident Cover\n• Pillion Rider Cover\n• Helmet Protect"]
+    
+    CATEGORIES --> BIKE["Category 2: Add-ons that protect your bike\n• Engine Protect\n• Consumables Cover\n• Zero Depreciation"]
+
+    FAMILY --> JOURNEY_CHECK{"Journey type?"}
+    BIKE --> JOURNEY_CHECK
+
+    JOURNEY_CHECK -->|"Journey 1 (Existing)"| STANDARD_ADDONS["Show standard bike add-ons"]
+    JOURNEY_CHECK -->|"Journey 2 (New bike)"| ENHANCED_ADDONS["Show bike add-ons + Return to Invoice"]
+
+    STANDARD_ADDONS --> SELECTION["User selects desired add-ons\nNo recommendations - free choice"]
+    ENHANCED_ADDONS --> SELECTION
+
+    SELECTION --> COMPLETE["addons.complete\n'X add-ons selected'\n→ Proceed to confirm details"]
+
+    style COMPLETE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    INTRO["Enhance your insurance with add-ons"] --> CATEGORIES["Two types of extra protection"]
+
+    CATEGORIES --> FAMILY["👨‍👩‍👧‍👦 Family Protection\n• Personal accident coverage\n• Pillion rider protection\n• Helmet damage coverage"]
+    
+    CATEGORIES --> BIKE["🏍️ Bike Protection\n• Engine damage coverage\n• Parts and consumables\n• Zero depreciation coverage"]
+
+    FAMILY --> NEW_CHECK{"Buying a new bike?"}
+    BIKE --> NEW_CHECK
+
+    NEW_CHECK -->|"Yes"| SPECIAL["Standard add-ons + Return to Invoice protection"]
+    NEW_CHECK -->|"No"| STANDARD["Standard add-ons available"]
+
+    SPECIAL --> CHOOSE["Select the add-ons you want"]
+    STANDARD --> CHOOSE
+
+    CHOOSE --> DONE["Add-ons selected"]
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s11">11. Confirm Details</h2>
+
+<p class="dev-only">Collection and reconfirmation of key details before proceeding to payment review.</p>
+<p class="simple-only">Confirm your personal information and policy details before finalizing your purchase.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    START["confirm_details.intro\n'Almost there. A few details to finalize your policy'"]
+    
+    START --> Q1["Question 1: Policy Expiry Date\n(Journey 1 only)\nPre-fill if available from IIB"]
+    
+    Q1 --> JOURNEY_CHECK{"Journey type?"}
+    START --> JOURNEY_CHECK
+
+    JOURNEY_CHECK -->|"Journey 1 (Existing)"| Q2["Question 2: Previous Policy Type\n'What type of plan did you have previously?'\nOptions: Comprehensive / Third Party"]
+    JOURNEY_CHECK -->|"Journey 2 (New bike)"| Q3["Skip policy questions\nGo directly to personal details"]
+
+    Q2 --> Q3["Question 3: Full Name\n'Policyholder name'\nPre-fill from profile if available"]
+    
+    Q3 --> Q4["Question 4: Email Address\n'Policy documents will be sent here'"]
+    
+    Q4 --> Q5["Question 5: Pincode\n'For pricing and zone-based underwriting'"]
+    
+    Q5 --> LOGIN_CHECK{"User logged in?"}
+    
+    LOGIN_CHECK -->|"No"| Q6["Question 6: Phone Number\n'Policy will be linked to this number'"]
+    LOGIN_CHECK -->|"Yes"| COMPLETE
+    
+    Q6 --> COMPLETE["All details confirmed\n→ Proceed to Review Screen"]
+
+    style COMPLETE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    START["Almost done! Let's confirm your details"]
+    
+    START --> EXISTING_CHECK{"Do you have an existing bike policy?"}
+
+    EXISTING_CHECK -->|"Yes"| POLICY["When does your current policy expire?"]
+    EXISTING_CHECK -->|"No (new bike)"| PERSONAL["Enter your personal information"]
+
+    POLICY --> POLICY_TYPE["What type of policy did you have?"]
+    POLICY_TYPE --> PERSONAL
+
+    PERSONAL --> NAME["Your full name"]
+    NAME --> EMAIL["Your email address"]
+    EMAIL --> LOCATION["Your pincode"]
+    
+    LOCATION --> LOGIN_CHECK{"Are you logged in?"}
+    
+    LOGIN_CHECK -->|"No"| PHONE["Your phone number"]
+    LOGIN_CHECK -->|"Yes"| DONE
+    
+    PHONE --> DONE["All details confirmed"]
+
+    style DONE fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s12">12. Review & Payment</h2>
+
+<p class="dev-only">Final review screen where users see complete breakdown before payment.</p>
+<p class="simple-only">Review all your selections and complete the payment to activate your bike insurance.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    START["review.intro\n'Review your policy before payment'"]
+    
+    START --> COUPONS{"Eligible coupons?"}
+    
+    COUPONS -->|"Yes"| SHOW_COUPONS["Display eligible coupons\n• Show as selectable cards\n• Manual coupon code input\n• Only one coupon at a time"]
+    COUPONS -->|"No"| SUMMARY
+    
+    SHOW_COUPONS --> APPLY{"Coupon applied?"}
+    APPLY -->|"Yes"| RECALC["Recalculate premium\nShow updated total"]
+    APPLY -->|"No"| SUMMARY
+    RECALC --> SUMMARY
+
+    SUMMARY --> BIKE_DETAILS["Bike & Personal Details\n• Make, model, registration year\n• Name, email, pincode, phone"]
+    
+    BIKE_DETAILS --> COVERAGE["Coverage Details\n• Plan type & tenure\n• Selected add-ons\n• IDV value\n• NCB percentage"]
+    
+    COVERAGE --> PREMIUM["Premium Breakup\n• Base premium\n• Add-on premiums (itemized)\n• NCB discount (if applicable)\n• Coupon discount (if applied)\n• GST\n• Total payable amount"]
+    
+    PREMIUM --> POLICY_START["Policy Start Date\n'Your policy starts on <date>'\n'Your bike will be covered from this date'"]
+    
+    POLICY_START --> CTA["💳 Pay Now Button\n→ Payment Gateway"]
+
+    style CTA fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    START["Review your bike insurance policy"]
+    
+    START --> DISCOUNTS{"Any available discounts?"}
+    
+    DISCOUNTS -->|"Yes"| APPLY_DISCOUNT["Apply discount coupons if available"]
+    DISCOUNTS -->|"No"| SUMMARY
+    
+    APPLY_DISCOUNT --> SUMMARY["Review all your selections"]
+
+    SUMMARY --> BIKE_INFO["✓ Bike and personal information"]
+    BIKE_INFO --> COVERAGE_INFO["✓ Coverage and add-ons selected"]
+    COVERAGE_INFO --> PRICE_BREAKDOWN["✓ Complete price breakdown"]
+    
+    PRICE_BREAKDOWN --> START_DATE["✓ Policy effective date"]
+    START_DATE --> PAY["Complete payment to activate insurance"]
+
+    style PAY fill:#1b4332,stroke:#22c55e,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s13">13. Post-Purchase & Policy Issuance</h2>
+
+<p class="dev-only">After successful payment, guide user through policy issuance and next steps.</p>
+<p class="simple-only">Congratulations! Your bike is now insured. Complete any remaining steps to activate your policy.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    PAY_SUCCESS["payment.success\nWidget: bike_celebration\n'Congratulations! Bike insured!'\nPolicy number generated"]
+
+    PAY_SUCCESS --> STATUS["post_purchase.status_intro\n'Policy being prepared'"]
+    STATUS --> TRACKER["post_purchase.policy_tracker\nWidget: policy_tracker\nShow preparation progress"]
+
+    TRACKER --> KYC_CHECK{"KYC required?"}
+    KYC_CHECK -->|"Yes"| KYC["post_purchase.kyc_prompt\n'Complete KYC within 4 days'\nStart now / Later"]
+    KYC_CHECK -->|"No"| NPS
+
+    KYC --> NPS["post_purchase.nps\nWidget: nps_feedback\n'How was your experience?'"]
+
+    NPS --> APP["post_purchase.app_download\nWidget: app_download_cta\n'Download ACKO app for claims'"]
+
+    APP --> END_SCR["post_purchase.end\n'You're all set!'"]
+
+    END_SCR --> END_CHOICE{"User action"}
+    END_CHOICE -->|"Home"| HP(["🏠 Homepage"])
+    END_CHOICE -->|"Insure another bike"| NEW(["🔄 New journey"])
+
+    style PAY_SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+    style HP fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style NEW fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    SUCCESS["🎉 Payment successful! Your bike is insured!"]
+
+    SUCCESS --> PREPARING["Preparing your policy documents"]
+    PREPARING --> PROGRESS["Track preparation progress"]
+
+    PROGRESS --> KYC_NEEDED{"KYC verification needed?"}
+    KYC_NEEDED -->|"Yes"| VERIFY["Complete identity verification within 4 days"]
+    KYC_NEEDED -->|"No"| FEEDBACK
+
+    VERIFY --> FEEDBACK["Rate your experience with us"]
+    FEEDBACK --> APP_DOWNLOAD["Download ACKO app for easy claims"]
+
+    APP_DOWNLOAD --> COMPLETE["🎉 All done! Your bike is fully covered"]
+
+    COMPLETE --> OPTIONS{"What would you like to do next?"}
+    OPTIONS -->|"Go to homepage"| HOME(["🏠 Return to homepage"])
+    OPTIONS -->|"Insure another bike"| ANOTHER(["🔄 Start new bike insurance"])
+
+    style SUCCESS fill:#1b4332,stroke:#22c55e,color:#fff
+    style COMPLETE fill:#1b4332,stroke:#22c55e,color:#fff
+    style HOME fill:#2d1b69,stroke:#7c3aed,color:#fff
+    style ANOTHER fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s14">14. PWILO — Pick Up Where I Left Off</h2>
+
+<p class="dev-only">Journey state auto-save and resume functionality for bike insurance purchase.</p>
+<p class="simple-only">System automatically saves your progress so you can continue where you left off.</p>
+
+<div class="diagram-container">
+<div class="dev-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph SAVE ["💾 Auto-Save Points"]
+        S1["registration.found"]
+        S2["manual_entry.select_brand"]
+        S3["new_bike.select_make"]
+        S4["confirm_details.intro"]
+        S5["quote.calculating"]
+        S6["quote.plans_ready"]
+        S7["addons.complete"]
+        S8["review.intro"]
+    end
+
+    subgraph CLEAR ["🗑️ Cleared Points"]
+        C1["payment.success → cleared"]
+        C2["post_purchase.end → cleared"]
+    end
+
+    subgraph RESUME ["🏠 Homepage PWILO"]
+        HP["Homepage loads"] --> CHECK{"Bike snapshots exist?"}
+        CHECK -->|"Yes"| CARDS["Show PWILO cards\n• Bike make/model\n• Journey type\n• Drop-off text\n• 'Continue' button"]
+        CHECK -->|"No"| NONE["No bike PWILO section"]
+
+        CARDS --> CLICK{"User clicks"}
+        CLICK -->|"Continue"| URL["/bike?resume=1&journeyId=xxx"]
+        CLICK -->|"Start new"| FRESH["/bike"]
+    end
+</div>
+</div>
+<div class="simple-diagram">
+<div class="mermaid">
+flowchart TB
+    subgraph SAVING ["Automatic Progress Saving"]
+        S1["When you enter bike details"]
+        S2["When you get quotes"]
+        S3["When you select plans"]
+        S4["When you choose add-ons"]
+        S5["Before payment"]
+    end
+
+    subgraph RESUMING ["Resume Your Journey"]
+        HP["Visit homepage"] --> CHECK{"Previous session found?"}
+        CHECK -->|"Yes"| SHOW["Show 'Continue where you left off' card"]
+        CHECK -->|"No"| START["Start fresh bike insurance"]
+
+        SHOW --> CHOICE{"Your choice"}
+        CHOICE -->|"Continue"| RESUME["Pick up where you stopped"]
+        CHOICE -->|"Start over"| START
+    end
+
+    SAVING --> RESUMING
+    RESUME --> PROGRESS["Continue from your last step"]
+    START --> FRESH["Begin new bike insurance journey"]
+
+    style PROGRESS fill:#1b4332,stroke:#22c55e,color:#fff
+    style FRESH fill:#2d1b69,stroke:#7c3aed,color:#fff
+</div>
+</div>
+</div>
+
+<h2 id="s15" class="simple-only">15. Journey Phase Summary</h2>
+<h2 id="s15" class="dev-only">15. Journey Phase Summary</h2>
+
+<div class="simple-only">
+<p><strong>For stakeholders and business users</strong></p>
+
+<table>
+<tr><th>Phase</th><th>Journey 1 (Existing Owner)</th><th>Journey 2 (New Buyer)</th><th>Key Actions</th></tr>
+<tr><td><strong>Entry</strong></td><td>Enter registration number</td><td>Select "New bike purchase"</td><td>Bike identification</td></tr>
+<tr><td><strong>Validation</strong></td><td>Check for existing policies</td><td>Skip validation checks</td><td>Avoid duplicate coverage</td></tr>
+<tr><td><strong>Data Collection</strong></td><td>Auto-fetch + manual questions for missing fields</td><td>Manual entry of make/model only</td><td>Complete bike profile</td></tr>
+<tr><td><strong>Login</strong></td><td>Optional login for personalization</td><td>Optional login for personalization</td><td>Account linking</td></tr>
+<tr><td><strong>Quote Generation</strong></td><td>Request plans based on complete profile</td><td>Request new bike plans</td><td>Calculate premiums</td></tr>
+<tr><td><strong>Plan Selection</strong></td><td>Choose from Comprehensive/OD/TP with tenure</td><td>Choose from fixed-tenure options</td><td>Coverage decision</td></tr>
+<tr><td><strong>Add-ons</strong></td><td>Select from standard bike add-ons</td><td>Select from enhanced add-ons + RTI</td><td>Extra protection</td></tr>
+<tr><td><strong>Confirmation</strong></td><td>Confirm policy + personal details</td><td>Confirm personal details only</td><td>Final verification</td></tr>
+<tr><td><strong>Review</strong></td><td>Complete premium breakdown with NCB</td><td>Simplified breakdown for new bike</td><td>Payment preparation</td></tr>
+<tr><td><strong>Payment</strong></td><td>Complete transaction</td><td>Complete transaction</td><td>Policy activation</td></tr>
+<tr><td><strong>Post-Purchase</strong></td><td>Policy issuance + KYC if needed</td><td>Policy issuance + KYC if needed</td><td>Service completion</td></tr>
+</table>
+</div>
+
+<div class="dev-section">
+<h2 id="s16">16. Step Reference Table</h2>
+
+<table>
+<tr><th>Module</th><th>Step ID</th><th>Widget Type</th><th>Purpose</th><th>Journey</th></tr>
+<tr><td><strong>registration</strong></td><td>registration.enter_number</td><td>vehicle_reg_input</td><td>Enter bike registration</td><td>J1</td></tr>
+<tr><td></td><td>registration.loading</td><td>progressive_loader</td><td>Fetch bike details from IIB</td><td>J1</td></tr>
+<tr><td></td><td>registration.found</td><td>vehicle_details_card</td><td>Show verify card</td><td>J1</td></tr>
+<tr><td><strong>prelim</strong></td><td>prelim.insured_same_user</td><td>selection_cards</td><td>Already insured (same user)</td><td>J1</td></tr>
+<tr><td></td><td>prelim.insured_different_user</td><td>selection_cards</td><td>Already insured (different user)</td><td>J1</td></tr>
+<tr><td></td><td>prelim.car_number_entered</td><td>selection_cards</td><td>Car registration entered</td><td>J1</td></tr>
+<tr><td></td><td>prelim.payment_pending</td><td>selection_cards</td><td>Payment done, steps pending</td><td>J1</td></tr>
+<tr><td><strong>manual_entry</strong></td><td>manual_entry.start</td><td>none</td><td>IIB fetch failed</td><td>J1</td></tr>
+<tr><td></td><td>manual_entry.select_brand</td><td>brand_selector</td><td>Bike make</td><td>J1</td></tr>
+<tr><td></td><td>manual_entry.select_model</td><td>model_selector</td><td>Bike model</td><td>J1</td></tr>
+<tr><td><strong>new_bike</strong></td><td>new_bike.welcome</td><td>none</td><td>New bike excitement</td><td>J2</td></tr>
+<tr><td></td><td>new_bike.select_make</td><td>brand_selector</td><td>Bike make</td><td>J2</td></tr>
+<tr><td></td><td>new_bike.select_model</td><td>model_selector</td><td>Bike model</td><td>J2</td></tr>
+<tr><td></td><td>new_bike.phone_number</td><td>text_input</td><td>Mobile number</td><td>J2</td></tr>
+<tr><td><strong>quote</strong></td><td>quote.calculating</td><td>plan_calculator</td><td>Calculate plans</td><td>Both</td></tr>
+<tr><td></td><td>quote.plans_ready</td><td>none</td><td>Plans found</td><td>Both</td></tr>
+<tr><td></td><td>quote.plan_selection</td><td>plan_selector</td><td>Plan cards</td><td>Both</td></tr>
+<tr><td></td><td>quote.tenure_selection</td><td>tenure_selector</td><td>Tenure choice</td><td>J1 only</td></tr>
+<tr><td><strong>addons</strong></td><td>addons.intro</td><td>none</td><td>Add-on introduction</td><td>Both</td></tr>
+<tr><td></td><td>addons.family_protection</td><td>family_addon_cards</td><td>Family add-ons</td><td>Both</td></tr>
+<tr><td></td><td>addons.bike_protection</td><td>bike_addon_cards</td><td>Bike add-ons</td><td>Both</td></tr>
+<tr><td></td><td>addons.complete</td><td>none</td><td>Add-on summary</td><td>Both</td></tr>
+<tr><td><strong>confirm_details</strong></td><td>confirm_details.intro</td><td>none</td><td>Details confirmation intro</td><td>Both</td></tr>
+<tr><td></td><td>confirm_details.policy_expiry</td><td>text_input</td><td>Previous policy expiry</td><td>J1 only</td></tr>
+<tr><td></td><td>confirm_details.policy_type</td><td>selection_cards</td><td>Previous policy type</td><td>J1 only</td></tr>
+<tr><td></td><td>confirm_details.name</td><td>text_input</td><td>Policyholder name</td><td>Both</td></tr>
+<tr><td></td><td>confirm_details.email</td><td>text_input</td><td>Email address</td><td>Both</td></tr>
+<tr><td></td><td>confirm_details.pincode</td><td>text_input</td><td>Pincode</td><td>Both</td></tr>
+<tr><td></td><td>confirm_details.phone</td><td>text_input</td><td>Phone number</td><td>Both</td></tr>
+<tr><td><strong>login</strong></td><td>login.optional_gate</td><td>login_gate_skippable</td><td>Skippable login</td><td>Both</td></tr>
+<tr><td></td><td>login.mandatory_gate</td><td>login_gate_mandatory</td><td>Mandatory login</td><td>Both</td></tr>
+<tr><td><strong>review</strong></td><td>review.intro</td><td>none</td><td>Review introduction</td><td>Both</td></tr>
+<tr><td></td><td>review.coupons</td><td>coupon_selector</td><td>Available coupons</td><td>Both</td></tr>
+<tr><td></td><td>review.summary</td><td>premium_breakdown</td><td>Premium breakdown</td><td>Both</td></tr>
+<tr><td></td><td>review.pay_now</td><td>payment_gateway</td><td>Payment CTA</td><td>Both</td></tr>
+<tr><td><strong>payment</strong></td><td>payment.process</td><td>payment_gateway</td><td>Payment processing</td><td>Both</td></tr>
+<tr><td></td><td>payment.success</td><td>bike_celebration</td><td>Success celebration</td><td>Both</td></tr>
+<tr><td><strong>post_purchase</strong></td><td>post_purchase.status_intro</td><td>none</td><td>Policy prep intro</td><td>Both</td></tr>
+<tr><td></td><td>post_purchase.policy_tracker</td><td>policy_tracker</td><td>Issuance tracker</td><td>Both</td></tr>
+<tr><td></td><td>post_purchase.kyc_prompt</td><td>selection_cards</td><td>KYC prompt</td><td>Both</td></tr>
+<tr><td></td><td>post_purchase.nps</td><td>nps_feedback</td><td>Experience rating</td><td>Both</td></tr>
+<tr><td></td><td>post_purchase.app_download</td><td>app_download_cta</td><td>App download</td><td>Both</td></tr>
+<tr><td></td><td>post_purchase.end</td><td>selection_cards</td><td>Journey completion</td><td>Both</td></tr>
+</table>
+
+<p><strong>Legend:</strong></p>
+<ul>
+<li><strong>J1</strong>: Journey 1 (Existing bike owner)</li>
+<li><strong>J2</strong>: Journey 2 (New bike buyer)</li>
+<li><strong>Both</strong>: Available in both journeys</li>
+</ul>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  // Initialize mermaid
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#7c3aed',
+      primaryTextColor: '#e0e0e0',
+      primaryBorderColor: '#a78bfa',
+      lineColor: '#64748b',
+      secondaryColor: '#1e1b2e',
+      tertiaryColor: '#0f0f13',
+      background: '#0f0f13',
+      mainBkg: '#1a1a24',
+      secondBkg: '#2a2a3a',
+      tertiaryBkg: '#1e1e2e'
+    }
+  });
+
+  // Mode switching logic
+  function setMode(mode) {
+    document.body.setAttribute('data-mode', mode);
+    localStorage.setItem('bikeJourneyMode', mode);
+    
+    // Update button states
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+  }
+
+  // Initialize mode from localStorage or default to 'dev'
+  const savedMode = localStorage.getItem('bikeJourneyMode') || 'dev';
+  
+  // Add event listeners to mode buttons
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  // Wait for DOM to be fully loaded, then render mermaid and set mode
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Render all mermaid diagrams first (while everything is visible)
+    await mermaid.run();
+    
+    // Then apply the mode (which will hide/show appropriate diagrams)
+    setMode(savedMode);
+  });
+</script>
+
+</body>
+</html>
