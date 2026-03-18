@@ -183,6 +183,14 @@ export function determinePlanCombination(state: MotorJourneyState): PlanCombinat
     ? new Date().getFullYear() - state.vehicleData.registrationYear
     : 3;
 
+  // Bike plans use simplified combinations — no ZD/garage tiers
+  if (state.vehicleType === 'bike') {
+    if (state.vehicleEntryType === 'brand_new') return 'C'; // New bike: Comp + TP (fixed tenure)
+    if (state.hasActiveTpPolicy && vehicleAge < 5) return 'OD-1'; // OD eligible
+    return 'C'; // Standard: Comp + TP
+  }
+
+  // Car plan combinations (unchanged)
   if (state.hasActiveTpPolicy && vehicleAge >= 1 && vehicleAge <= 3) {
     if (vehicleAge <= 1) return 'OD-3';
     if (vehicleAge <= 2) return 'OD-2';

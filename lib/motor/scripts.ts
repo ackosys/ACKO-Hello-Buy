@@ -1464,11 +1464,140 @@ const quotePlansReady: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'quote.plan_selection',
+  getNextStep: (_, state) => {
+    if (state.vehicleType === 'bike') return 'bike_plan.select';
+    return 'quote.plan_selection';
+  },
 };
 
 /* ═══════════════════════════════════════════════
-   GUIDED PLAN SELECTION — Step by step per skill file
+   BIKE PLAN SELECTION — Per bike planning logic
+   Comprehensive / OD / Third Party with tenure
+   ═══════════════════════════════════════════════ */
+
+const bikePlanSelect: MotorConversationStep = {
+  id: 'bike_plan.select',
+  module: 'quote',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    const isNewBike = state.vehicleEntryType === 'brand_new';
+    const vehicleAge = state.vehicleData.registrationYear
+      ? new Date().getFullYear() - state.vehicleData.registrationYear : 0;
+    const canOfferOD = !isNewBike && state.hasActiveTpPolicy && vehicleAge < 5;
+
+    if (isNewBike) {
+      return {
+        botMessages: [`Choose a plan for your new bike.`],
+        subText: 'New bikes come with bundled multi-year Third Party coverage as required by law.',
+        options: [
+          {
+            id: 'comprehensive',
+            label: 'Comprehensive',
+            description: '5-year Third Party + 1-year Own Damage. Full protection for your bike and others.',
+            icon: 'shield',
+            badge: 'Recommended',
+          },
+          {
+            id: 'third_party',
+            label: 'Third Party (5 Year)',
+            description: '5-year Third Party coverage only. Legal minimum required to ride.',
+            icon: 'document',
+          },
+        ],
+      };
+    }
+
+    const options = [
+      {
+        id: 'comprehensive',
+        label: 'Comprehensive',
+        description: 'Covers your bike damage + third-party liabilities. Complete protection.',
+        icon: 'shield',
+        badge: 'Recommended',
+      },
+      ...(canOfferOD
+        ? [{
+            id: 'od',
+            label: 'Own Damage',
+            description: 'Covers your bike damage only. Your TP policy is already active.',
+            icon: 'bike',
+          }]
+        : []),
+      {
+        id: 'third_party',
+        label: 'Third Party',
+        description: 'Legal minimum — covers liabilities towards others only.',
+        icon: 'document',
+      },
+    ];
+
+    return {
+      botMessages: [`Choose a plan that fits your needs.`],
+      subText: 'Select a plan to see tenure and pricing options.',
+      options,
+    };
+  },
+  processResponse: (response) => ({
+    selectedPlanType: response as any,
+    guidedPlanChoice: response as any,
+  }),
+  getNextStep: (response, state) => {
+    // New bikes have fixed tenure — skip tenure selection
+    if (state.vehicleEntryType === 'brand_new') return 'bike_plan.confirmed';
+    return 'bike_plan.tenure';
+  },
+};
+
+const bikePlanTenure: MotorConversationStep = {
+  id: 'bike_plan.tenure',
+  module: 'quote',
+  widgetType: 'selection_cards',
+  getScript: (state) => {
+    const planName = state.guidedPlanChoice === 'comprehensive'
+      ? 'Comprehensive'
+      : state.guidedPlanChoice === 'od'
+        ? 'Own Damage'
+        : 'Third Party';
+    return {
+      botMessages: [`How long would you like your ${planName} plan?`],
+      subText: 'Longer tenures offer better savings compared to buying yearly.',
+      options: [
+        { id: '1', label: '1 Year', description: 'Standard yearly coverage', icon: 'calendar' },
+        { id: '2', label: '2 Years', description: 'Save more with a 2-year plan', icon: 'calendar' },
+        { id: '3', label: '3 Years', description: 'Maximum savings — best value', icon: 'calendar', badge: 'Best value' },
+      ],
+    };
+  },
+  processResponse: (response) => ({
+    guidedVariantChoice: `${response}_year`,
+  }),
+  getNextStep: () => 'bike_plan.confirmed',
+};
+
+const bikePlanConfirmed: MotorConversationStep = {
+  id: 'bike_plan.confirmed',
+  module: 'quote',
+  widgetType: 'none',
+  getScript: (state) => {
+    const planName = state.guidedPlanChoice === 'comprehensive'
+      ? 'Comprehensive'
+      : state.guidedPlanChoice === 'od'
+        ? 'Own Damage'
+        : 'Third Party';
+    const isNewBike = state.vehicleEntryType === 'brand_new';
+    const tenureNote = isNewBike
+      ? `Your ${planName} plan is locked in.`
+      : `Great choice — ${planName} plan selected.`;
+    return {
+      botMessages: [tenureNote, `Now let's add some extra protection.`],
+    };
+  },
+  processResponse: () => ({}),
+  getNextStep: () => 'addons.intro',
+};
+
+/* ═══════════════════════════════════════════════
+   GUIDED PLAN SELECTION — Step by step per skill file (CAR)
    ═══════════════════════════════════════════════ */
 
 /* Case 0: Active TP policy — OD renewal only */
@@ -1719,7 +1848,10 @@ const guidedPlanConfirmed: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'addons.paid_driver_question',
+  getNextStep: (_, state) => {
+    if (state.vehicleType === 'bike') return 'addons.intro';
+    return 'addons.paid_driver_question';
+  },
 };
 
 /* Still support the old plan selector for backward compat / "Help me choose" */
@@ -1931,7 +2063,10 @@ const quotePlanSelected: MotorConversationStep = {
     };
   },
   processResponse: () => ({}),
-  getNextStep: () => 'addons.paid_driver_question',
+  getNextStep: (_, state) => {
+    if (state.vehicleType === 'bike') return 'addons.intro';
+    return 'addons.paid_driver_question';
+  },
 };
 
 /* ═══════════════════════════════════════════════
@@ -2624,7 +2759,11 @@ const MOTOR_STEPS: Record<string, MotorConversationStep> = {
   'pre_quote.view_prices': preQuoteViewPrices,
   'quote.calculating': quoteCalculating,
   'quote.plans_ready': quotePlansReady,
-  // Guided plan selection
+  // Bike plan selection
+  'bike_plan.select': bikePlanSelect,
+  'bike_plan.tenure': bikePlanTenure,
+  'bike_plan.confirmed': bikePlanConfirmed,
+  // Guided plan selection (car)
   'guided.od_tp_active': guidedOdTpActive,
   'guided.od_only_info': guidedOdOnlyInfo,
   'guided.od_zd_vs_standard': guidedOdZdVsStandard,
