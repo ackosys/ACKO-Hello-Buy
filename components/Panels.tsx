@@ -415,10 +415,7 @@ export function AIChatPanel() {
               {messages.length === 0 && (
                 <div>
                   {/* AI greeting */}
-                  <div className="flex gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-900/20">
-                      <svg className="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="#EF4444" xmlns="http://www.w3.org/2000/svg"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-                    </div>
+                  <div className="flex mb-6">
                     <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 max-w-[85%]">
                       <p className="text-body-sm text-white/90">{t.panels.aiIntro}</p>
                     </div>
@@ -443,12 +440,7 @@ export function AIChatPanel() {
               )}
 
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-3'}`}>
-                  {msg.role === 'bot' && (
-                    <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-1 shadow-lg shadow-purple-900/20">
-                      <svg className="w-3.5 h-3.5" width="14" height="14" viewBox="0 0 24 24" fill="#EF4444" xmlns="http://www.w3.org/2000/svg"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-                    </div>
-                  )}
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-body-sm ${
                     msg.role === 'user'
                       ? 'bg-purple-700 text-white rounded-br-md shadow-lg shadow-purple-900/10'

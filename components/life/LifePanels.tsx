@@ -217,10 +217,7 @@ export function LifeAIChatPanel() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.length === 0 && (
                 <div>
-                  <div className="flex gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-900/20">
-                      <svg className="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12h4a6 6 0 0 1 12 0h4c0-5.523-4.477-10-10-10Z" fill="#7C3AED"/><path d="M12 12v8c0 1.105-.895 2-2 2s-2-.895-2-2" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/><line x1="12" y1="2" x2="12" y2="4" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/></svg>
-                    </div>
+                  <div className="mb-6">
                     <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 max-w-[85%]">
                       <p className="text-body-sm text-white/90">Hi! I'm your ACKO AI assistant. I can help you understand term life insurance, calculate the right coverage, and guide you through the buying process.</p>
                     </div>
@@ -241,12 +238,7 @@ export function LifeAIChatPanel() {
               )}
 
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-3'}`}>
-                  {msg.role === 'bot' && (
-                    <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-1 shadow-lg shadow-purple-900/20">
-                      <svg className="w-3.5 h-3.5" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12h4a6 6 0 0 1 12 0h4c0-5.523-4.477-10-10-10Z" fill="#7C3AED"/><path d="M12 12v8c0 1.105-.895 2-2 2s-2-.895-2-2" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/><line x1="12" y1="2" x2="12" y2="4" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/></svg>
-                    </div>
-                  )}
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-body-sm ${
                     msg.role === 'user'
                       ? 'bg-purple-700 text-white rounded-br-md shadow-lg shadow-purple-900/10'
