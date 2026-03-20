@@ -791,6 +791,7 @@ export default function AuraMotorChatContainer() {
                   onEdit={handleEditRequest}
                   onPlanInfo={() => setShowPlanDetails(true)}
                   animate={isLatestBot}
+                  avatar={null}
                 />
               );
             })}
@@ -798,7 +799,7 @@ export default function AuraMotorChatContainer() {
 
           {isTyping && (
             <div className="mb-4">
-              <AuraTypingIndicator />
+              <AuraTypingIndicator avatar={null} />
             </div>
           )}
 

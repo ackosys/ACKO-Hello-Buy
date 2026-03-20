@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import BaseChatMessage, { TypingIndicator as BaseTypingIndicator, type ChatMessageData, type ChatBubbleTheme } from '../../ds/ChatMessage';
 
 const AURA_CHAT_THEME: ChatBubbleTheme = {
@@ -27,9 +28,10 @@ interface AuraChatMessageProps {
   onEdit?: (stepId: string) => void;
   onPlanInfo?: (stepId: string) => void;
   animate?: boolean;
+  avatar?: React.ReactNode;
 }
 
-export default function AuraChatMessage({ message, onEdit, onPlanInfo, animate = false }: AuraChatMessageProps) {
+export default function AuraChatMessage({ message, onEdit, onPlanInfo, animate = false, avatar }: AuraChatMessageProps) {
   return (
     <BaseChatMessage
       message={message}
@@ -37,10 +39,11 @@ export default function AuraChatMessage({ message, onEdit, onPlanInfo, animate =
       onPlanInfo={onPlanInfo}
       animate={animate}
       theme={AURA_CHAT_THEME}
+      avatar={avatar}
     />
   );
 }
 
-export function AuraTypingIndicator() {
-  return <BaseTypingIndicator theme={AURA_CHAT_THEME} />;
+export function AuraTypingIndicator({ avatar }: { avatar?: React.ReactNode } = {}) {
+  return <BaseTypingIndicator theme={AURA_CHAT_THEME} avatar={avatar} />;
 }

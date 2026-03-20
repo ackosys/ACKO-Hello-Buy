@@ -786,6 +786,7 @@ export default function MotorChatContainer() {
                   onEdit={handleEditRequest}
                   onPlanInfo={() => setShowPlanDetails(true)}
                   animate={isLatestBot}
+                  avatar={null}
                 />
               );
             })}
@@ -793,7 +794,7 @@ export default function MotorChatContainer() {
 
           {isTyping && (
             <div className="mb-4">
-              <TypingIndicator />
+              <TypingIndicator avatar={null} />
             </div>
           )}
 

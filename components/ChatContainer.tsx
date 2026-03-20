@@ -577,14 +577,14 @@ export default function ChatContainer() {
                 index === conversationHistory.length - 1 &&
                 !isTyping;
               return (
-                <ChatMessage key={msg.id} message={msg} onEdit={handleEditRequest} animate={isLatestBot} />
+                <ChatMessage key={msg.id} message={msg} onEdit={handleEditRequest} animate={isLatestBot} avatar={null} />
               );
             })}
           </AnimatePresence>
 
           {isTyping && (
             <div className="mb-4">
-              <TypingIndicator />
+              <TypingIndicator avatar={null} />
             </div>
           )}
 
