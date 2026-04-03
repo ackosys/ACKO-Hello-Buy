@@ -948,6 +948,177 @@ Display a summary of everything the user has selected, grouped into the followin
 
 ---
 
+## Policy Issuance Steps
+
+This section defines the steps that occur after the user completes payment and before the policy is formally issued. There are three steps in this flow, not all of which apply to every user.
+
+---
+
+### Overview
+
+| Step | Name | When it applies |
+|------|------|----------------|
+| 1 | **Policy Data Confirmation** | All cases — always required |
+| 2 | **Inspection** | Only when: (a) the previous policy expired more than 10 days ago, OR (b) the user is switching from a TP plan to a Comprehensive or ZD plan |
+| 3 | **KYC** | All cases — standard PAN + OTP KYC process for all payers |
+
+---
+
+### Step 1 — Policy Data Confirmation
+
+This step confirms the key data that will be printed on the policy document before issuance.
+
+---
+
+#### 1a — Policyholder Name
+
+The name printed on the policy is confirmed in this step. Two scenarios apply based on whether the RC name was auto-fetched.
+
+---
+
+**Scenario A — RC name auto-fetched**
+
+- Display the auto-fetched RC name to the user and ask them to confirm: _"This is the name that will be printed on your policy. Please confirm or change it."_
+- Provide a **"Change name"** option.
+
+**If user chooses to change the name:**
+- Ask the user to enter the new name.
+- Ask the user to select the reason for the name change from the following options:
+
+| # | Reason |
+|---|--------|
+| 1 | I am buying this policy for someone I know |
+| 2 | The car is registered in the name of my company |
+| 3 | Others _(free text)_ |
+
+- After the name change, inform the user: _"Please upload your RC (Registration Certificate) within 60 days of policy issuance for a smooth claims experience."_
+- This RC upload is not mandatory to proceed — it is a soft nudge to ensure claims are not delayed.
+
+---
+
+**Scenario B — RC name NOT auto-fetched**
+
+- Ask the user to manually enter the name of the car owner.
+- Ask the user to declare their relationship with the car owner from the following options:
+
+| # | Relationship |
+|---|-------------|
+| 1 | I am the owner of the car |
+| 2 | Someone I know owns the car |
+| 3 | The car is registered in the name of my company |
+| 4 | I am planning to buy this used car |
+| 5 | I have bought this car but RC transfer is pending |
+| 6 | Others _(free text)_ |
+
+---
+
+#### 1b — GST Number
+
+**When to ask:** Only if the user selected **"The car is registered in the name of my company"** in step 1a (either as a reason for name change in Scenario A, or as their relationship declaration in Scenario B).
+
+**Field:** Optional — the user is not required to provide this to proceed.
+
+**Why we ask:** _"Enter your GST number so we can include it in your invoice. You can use this to claim a tax deduction on your insurance premium."_
+
+---
+
+#### 1c — Engine Number and Chassis Number
+
+**When to ask:** Always — shown to all users as the final confirmation in Step 1.
+
+**Pre-fill behaviour:**
+- If Engine Number and Chassis Number were auto-fetched earlier, display them pre-filled and ask the user to verify.
+- If not auto-fetched, show empty fields.
+
+**Field:** Optional — the user is not required to provide these to proceed.
+
+**Why we ask:** _"Your Engine and Chassis numbers are needed to upload your policy to the Vahan portal. If not provided now, you can add them later — however, they are required for the policy to reflect on the government's vehicle records."_
+
+Once the user confirms or skips these fields → Step 1 (Policy Data Confirmation) is complete.
+
+---
+
+### Step 2 — Inspection
+
+**Trigger conditions (either of the following):**
+- Previous policy expired more than 10 days ago
+- User is switching from a Third Party plan to a Comprehensive or Zero Depreciation plan
+
+---
+
+#### Sub-step 2a — Inspection Location
+
+- Ask the user to select the location where they want the inspection to take place.
+- Location input uses a **map / Google Places picker** for the primary selection.
+- After selecting the location from the map/places search, ask the user to fill in supporting address fields:
+  - Address Line 1
+  - Address Line 2
+  - Landmark
+
+---
+
+#### Sub-step 2b — Serviceability Check
+
+Once the user confirms the location, the system checks whether the selected location is serviceable for inspection.
+
+**If location is NOT serviceable:**
+- Inform the user: _"Sorry, we are unable to schedule an inspection at this location. Please select a different location."_
+- Redirect the user back to the location selection component (Sub-step 2a).
+- Do not proceed until a serviceable location is selected.
+
+**If location is serviceable:**
+- Proceed to slot selection (Sub-step 2c).
+
+---
+
+#### Sub-step 2c — Slot Selection
+
+- Fetch available inspection slots for the **next 3 days** from the confirmed location.
+- Display available slots grouped by date and time.
+- **Default selection:** The most recent available slot is pre-selected.
+- The user can change the slot to any other available option.
+- Once the user confirms their preferred slot → inspection is scheduled and Step 2 is complete.
+- The user receives a confirmation with the scheduled date, time, and location.
+
+---
+
+### Step 3 — KYC
+
+**When to trigger:** Only for users who have not previously completed KYC with ACKO. Users who have already done KYC once are skipped past this step entirely.
+
+---
+
+#### Sub-step 3a — KYC Details Entry
+
+Ask the user to fill in the following fields:
+
+| Field | Notes |
+|-------|-------|
+| **PAN Number** | Permanent Account Number of the payer |
+| **Date of Birth** | Must match the PAN records |
+| **Aadhaar Number** | 12-digit Aadhaar number |
+| **Captcha** | Standard captcha verification to prevent automated submissions |
+
+Once the user fills in all fields and submits → proceed to OTP verification.
+
+---
+
+#### Sub-step 3b — Aadhaar OTP Verification
+
+- An OTP is sent to the **mobile number linked with the user's Aadhaar**.
+- Ask the user to enter the OTP.
+
+**If OTP verification is successful:**
+- KYC is marked complete.
+- Check for any remaining pending steps (e.g., inspection if scheduled).
+- If no pending steps remain → **policy is issued immediately**.
+
+**If OTP verification fails:**
+- Allow the user to retry or request a new OTP.
+- _Further failure handling TBD (e.g., maximum retry limit, fallback KYC options)._
+
+---
+
 ## Test Cases — Dummy Registration Numbers
 
 Each test case below maps to a dummy registration number. Together they cover the key axes of variation: what the API fetches vs what is manually asked, which plan combination is offered, and whether inspection is required. Use these to validate the full purchase journey end-to-end.
